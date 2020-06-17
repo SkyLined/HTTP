@@ -1,3 +1,39 @@
 [submodule "modules/mWindowsAPI"]
 	path = modules/mWindowsAPI
 	url = https://github.com/SkyLined/mWindowsAPI/
+[submodule "modules\\mWindowsSDK"]
+	path = modules\\mWindowsSDK
+	url = https://github.com/SkyLined/mWindowsSDK
+[submodule "modules\\mSSL"]
+	path = modules\\mSSL
+	url = https://github.com/SkyLined/mSSL
+[submodule "modules\\mDateTime"]
+	path = modules\\mDateTime
+	url = https://github.com/SkyLined/mDateTime
+[submodule "modules\\mMultiThreading"]
+	path = modules\\mMultiThreading
+	url = https://github.com/SkyLined/mMultiThreading
+[submodule "modules\\mHTTP"]
+	path = modules\\mHTTP
+	url = https://github.com/SkyLined/mHTTP
+[submodule "modules\\mHTTPConnections"]
+	path = modules\\mHTTPConnections
+	url = https://github.com/SkyLined/mHTTPConnections
+[submodule "modules\\cFileSystemItem"]
+	path = modules\\cFileSystemItem
+	url = https://github.com/SkyLined/cFileSystemItem
+[submodule "modules\\mRegistry"]
+	path = modules\\mRegistry
+	url = https://github.com/SkyLined/mRegistry
+[submodule "modules\\mTCPIPConnections"]
+	path = modules\\mTCPIPConnections
+	url = https://github.com/SkyLined/mTCPIPConnections
+[submodule "modules\\mProductDetails"]
+	path = modules\\mProductDetails
+	url = https://github.com/SkyLined/mProductDetails
+[submodule "modules\\mHTTPProtocol"]
+	path = modules\\mHTTPProtocol
+	url = https://github.com/SkyLined/mHTTPProtocol
+[submodule "modules\\oConsole"]
+	path = modules\\oConsole
+	url = https://github.com/SkyLined/oConsole

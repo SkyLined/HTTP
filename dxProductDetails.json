@@ -10,11 +10,13 @@
     "mTCPIPConnections", 
     "mWindowsAPI", 
     "mWindowsSDK", 
-    "oConsole"
+    "oConsole", 
+    "mDateTime", 
+    "mRegistry"
   ], 
   "asOptionalProductNames": [
     "mDebugOutput"
-  ],
+  ], 
   "oProductVersion": "2019-11-13 10:15", 
   "oRepository": {
     "sBranch": "master", 
@@ -22,6 +24,8 @@
     "sType": "GitHub", 
     "sUserName": "SkyLined"
   }, 
+  "oTrialPeriodDuration": null, 
+  "sLicenseServerURL": null, 
   "sProductAuthor": "SkyLined", 
   "sProductName": "HTTP", 
   "sProductURL": "https://github.com/SkyLined/HTTP"
