@@ -117,7 +117,7 @@ try:
         assert not sValue, \
             "--%s argument does not accept a value!" % sName;
         bFollowRedirects = True;
-      elif sName == ["-dc", "--decode-body"]:
+      elif sName in ["-db", "--decode-body"]:
         assert not sValue, \
             "--%s argument does not accept a value!" % sName;
         bDecodeBody = True;

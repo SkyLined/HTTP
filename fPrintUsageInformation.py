@@ -31,7 +31,7 @@ def fPrintUsageInformation():
     oConsole.fOutput("  ", INFO, "--follow-redirects", NORMAL, " or ", INFO, "-r");
     oConsole.fOutput("    If the server respondse with a HTTP 3xx redirect, follow the redirect");
     oConsole.fOutput("    and make another request.");
-    oConsole.fOutput("  ", INFO, "--decode-body", NORMAL, " or ", INFO, "-dc");
+    oConsole.fOutput("  ", INFO, "--decode-body", NORMAL, " or ", INFO, "-db");
     oConsole.fOutput("    Show the decoded body of the response instead of the raw encoded data.");
     oConsole.fOutput("  ", INFO, "--http-proxy=<URL>", NORMAL, " or ", INFO, "-p=<URL>");
     oConsole.fOutput("    Use the given HTTP proxy to make requests.");
