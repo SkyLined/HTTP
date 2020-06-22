@@ -16,7 +16,7 @@ try:
   
   from oConsole import oConsole;
   from cFileSystemItem import cFileSystemItem;
-  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL;
+  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL, mHTTPExceptions;
   
   from mColors import *;
   from fPrintUsageInformation import fPrintUsageInformation;
@@ -66,6 +66,7 @@ try:
   bDecodeBody = False;
   bDownload = False;
   bFollowRedirects = False;
+  bAllowUnverifiableCertificates = False;
   sDownloadToFilePath = None;
   for sArgument in asArguments:
     if sArgument.startswith("-"):
@@ -95,6 +96,8 @@ try:
         assert sValue and oDataFileSystemItem.fbIsFile(bParseZipFiles = True), \
             "%s argument requires a valid file path as a value!" % sName;
         szRequestData = oDataFileSystemItem.fsRead(bParseZipFiles = True);
+      elif sName in ["--unsecure", "--unsecured", "--insecure"]:
+        bAllowUnverifiableCertificates = True;
       elif sName in ["-dl", "--download"]:
         assert not bDecodeBody, \
             "The --decode-body is superfluous when the --download argument is provided";
@@ -161,8 +164,9 @@ try:
   sMethod = szMethod or "GET";
   sHTTPVersion = szHTTPVersion or "HTTP/1.1";
   oHTTPClient = (
-    cHTTPClientUsingProxyServer(oHTTPProxyServerURL) if oHTTPProxyServerURL else
-    cHTTPClient()
+    cHTTPClientUsingProxyServer(oHTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
+    if oHTTPProxyServerURL else
+    cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
   );
   oHTTPHeaders = cHTTPHeaders.foDefaultHeadersForVersion(sHTTPVersion);
   for (sName, sValue) in dsAdditionalHeaders.items():
@@ -182,13 +186,28 @@ try:
         assert oURL, \
             "Invalid URL %s" % sURL;
     oConsole.fStatus(INFO, sHTTPVersion, " ", sMethod, " ", str(oURL), NORMAL, "...");
-    oRequest, oResponse = oHTTPClient.ftoGetRequestAndResponseForURL(
-      oURL = oURL,
-      szVersion = sHTTPVersion,
-      szMethod = sMethod,
-      ozHeaders = oHTTPHeaders,
-      szData = szRequestData,
-    );
+    try:
+      oRequest, ozResponse = oHTTPClient.ftozGetRequestAndResponseForURL(
+        oURL = oURL,
+        szVersion = sHTTPVersion,
+        szMethod = sMethod,
+        ozHeaders = oHTTPHeaders,
+        szData = szRequestData,
+      );
+    except Exception as oException:
+      if isinstance(oException, mHTTPExceptions.cHTTPException):
+        oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
+        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
+        sys.exit(1);
+      elif hasattr(mHTTPExceptions, "cSSLException") and isinstance(oException, mHTTPExceptions.cSSLException):
+        # SSL support is optional
+        oConsole.fOutput(ERROR, "- Could not establish a secure connection to the server:");
+        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
+        sys.exit(1);
+      raise;
+    assert ozResponse, \
+        "Expected a response, got %s" % ozResponse;
+    oResponse = ozResponse;
     if bFollowRedirects and oResponse.uStatusCode in [301, 302, 307, 308]:
       asRedirectedFromURLs.append(str(oURL));
       if len(asRedirectedFromURLs) >= 10:
