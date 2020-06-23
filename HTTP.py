@@ -11,6 +11,11 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
+CR_CHAR = u"\u2190";
+LF_CHAR = u"\u2193";
+CRLF_CHAR = u"\u2190\u2518";
+EOF_CHAR = u"\u25A0";
+
 try:
   import re, sys;
   
@@ -21,7 +26,7 @@ try:
   from mColors import *;
   from fPrintUsageInformation import fPrintUsageInformation;
   from fPrintVersionInformation import fPrintVersionInformation;
-
+  
   rURL = re.compile(r"^https?://.*$", re.I);
   rMethod = re.compile(r"^[A-Z]+$", re.I);
   rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
@@ -37,22 +42,50 @@ try:
       r"(?:\?.*)?"
     ")"
   );
-
+  
   def fOutputResponseStatusLine(oResponse):
     if 100 <= oResponse.uStatusCode < 200: 
-      xColor = HTTP_STATUS_LINE_1xx;
+      xColor = HTTP_RESPONSE_STATUS_LINE_1xx;
     elif 200 <= oResponse.uStatusCode < 300: 
-      xColor = HTTP_STATUS_LINE_2xx;
+      xColor = HTTP_RESPONSE_STATUS_LINE_2xx;
     elif 300 <= oResponse.uStatusCode < 400: 
-      xColor = HTTP_STATUS_LINE_3xx;
+      xColor = HTTP_RESPONSE_STATUS_LINE_3xx;
     elif 400 <= oResponse.uStatusCode < 500: 
-      xColor = HTTP_STATUS_LINE_4xx;
+      xColor = HTTP_RESPONSE_STATUS_LINE_4xx;
     elif 500 <= oResponse.uStatusCode < 600: 
-      xColor = HTTP_STATUS_LINE_5xx;
+      xColor = HTTP_RESPONSE_STATUS_LINE_5xx;
     else:
-      xColor = HTTP_STATUS_LINE_INVALID;
-    oConsole.fOutput(xColor, oResponse.fsGetStatusLine());
-
+      xColor = HTTP_RESPONSE_STATUS_LINE_INVALID;
+    oConsole.fOutput(
+      xColor, oResponse.fsGetStatusLine(),
+      HTTP_CRLF, CRLF_CHAR
+    );
+  
+  def fOutputBodyLines(xColor, asBodyLines):
+    for sBodyLine in asBodyLines[:-1]:
+      # "" -> [""], "A" -> ["A"], "A\r" -> ["A", ""], "A\rB" -> ["A", "B"]
+      asBodyLineChunks = sBodyLine.split("\r");
+      bBodyLineEndsWithCRLF = len(asBodyLineChunks) > 1 and asBodyLineChunks[-1] == "";
+      if bBodyLineEndsWithCRLF:
+        asBodyLineChunks.pop();
+      # "" -> [""]/F, "A" -> ["A"]/F, "A\r" -> ["A"]/T, "A\rB" -> ["A", "B"]/F
+      for sBodyLineChunks in asBodyLineChunks[:-1]:
+        oConsole.fOutput(xColor, sBodyLineChunks, HTTP_CRLF, CR_CHAR);
+      sLastBodyLineChunk = asBodyLineChunks[-1];
+      # "" -> ""/F, "A" -> "A"/F, "A\r" -> "A"/T, "A\rB" -> "B"/F
+      oConsole.fOutput(xColor, sLastBodyLineChunk, HTTP_CRLF, CRLF_CHAR if bBodyLineEndsWithCRLF else LF_CHAR);
+    if asBodyLines:
+      sLastBodyLine = asBodyLines[-1];
+      asLastBodyLineChunks = sLastBodyLine.split("\r") if sLastBodyLine else [];
+      # "" -> [], "A" -> ["A"], "A\r" -> ["A", ""], "A\rB" -> ["A", "B"]
+      bLastBodyLineEndsWithCRLF = len(asLastBodyLineChunks) > 1 and asLastBodyLineChunks[-1] == "";
+      if bLastBodyLineEndsWithCRLF:
+        asLastBodyLineChunks.pop();
+      for sBodyLineChunks in asLastBodyLineChunks[:-1]:
+        oConsole.fOutput(xColor, sBodyLineChunks, HTTP_CRLF, CR_CHAR);
+      if asLastBodyLineChunks:
+        sLastBodyLineLastChunk = asLastBodyLineChunks[-1];
+        oConsole.fOutput(xColor, sLastBodyLineLastChunk, HTTP_CRLF, EOF_CHAR);
   
   asArguments = sys.argv[1:];
   dsAdditionalHeaders = {};
@@ -176,15 +209,21 @@ try:
   oURL = None;
   while 1:
     if oURL is None:
-      if bSegmentedVideo:
-        sCurrentURL = "%s%d%s" % (sURLSegmentHeader, uIndex, sURLSegmentFooter);
-        oURL = cURL.foFromString(sCurrentURL);
-        assert oURL, \
-            "Invalid URL %s" % sCurrentURL;
-      else:
-        oURL = cURL.foFromString(sURL);
-        assert oURL, \
-            "Invalid URL %s" % sURL;
+      try:
+        if bSegmentedVideo:
+          sCurrentURL = "%s%d%s" % (sURLSegmentHeader, uIndex, sURLSegmentFooter);
+          oURL = cURL.foFromString(sCurrentURL);
+          assert oURL, \
+              "Invalid URL %s" % sCurrentURL;
+        else:
+          oURL = cURL.foFromString(sURL);
+          assert oURL, \
+              "Invalid URL %s" % sURL;
+      except mHTTPExceptions.cInvalidURLException as oException:
+        oConsole.fOutput(ERROR, "- Invalid URL:");
+        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
+        sys.exit(1);
+    
     oConsole.fStatus(INFO, sHTTPVersion, " ", sMethod, " ", str(oURL), NORMAL, "...");
     try:
       oRequest, ozResponse = oHTTPClient.ftozGetRequestAndResponseForURL(
@@ -195,16 +234,48 @@ try:
         szData = szRequestData,
       );
     except Exception as oException:
-      if isinstance(oException, mHTTPExceptions.cHTTPException):
+      bSSLSupportEnabled = hasattr(mHTTPExceptions, "cSSLException");
+      if isinstance(oException, mHTTPExceptions.cTimeoutException):
+        oConsole.fOutput(ERROR, "- Connecting to server timed out:");
+      if isinstance(oException, (
+        mHTTPExceptions.cConnectionRefusedException,
+        mHTTPExceptions.cInvalidAddressException,
+        mHTTPExceptions.cUnknownHostnameException,
+      )):
+        oConsole.fOutput(ERROR, "- Could not connect to server:");
+      elif isinstance(oException, (
+        mHTTPExceptions.cDisconnectedException,
+        mHTTPExceptions.cShutdownException,
+      )):
+        oConsole.fOutput(ERROR, "- The server did not respond to our request:");
+      elif isinstance(oException, mHTTPExceptions.cHTTPProxyConnectFailedException):
+        oConsole.fOutput(ERROR, "- Could not connect to proxy server:");
+      elif isinstance(oException, (
+        mHTTPExceptions.cMaxConnectionsReachedException,
+      )):
+        oConsole.fOutput(ERROR, "- Could not connect to server:");
+      elif isinstance(oException, (
+        mHTTPExceptions.cMaxConnectionsReachedException,
+      )):
+        oConsole.fOutput(ERROR, "- Could not connect to server:");
+      elif isinstance(oException, (
+        mHTTPExceptions.cOutOfBandDataException,
+        mHTTPExceptions.cInvalidMessageException,
+      )):
         oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
-        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
-        sys.exit(1);
-      elif hasattr(mHTTPExceptions, "cSSLException") and isinstance(oException, mHTTPExceptions.cSSLException):
-        # SSL support is optional
-        oConsole.fOutput(ERROR, "- Could not establish a secure connection to the server:");
-        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
-        sys.exit(1);
-      raise;
+      elif bSSLSupportEnabled and isinstance(oException, mHTTPExceptions.cSSLTimeoutException):
+        oConsole.fOutput(ERROR, "- Securing the connection to the server timed out:");
+      elif bSSLSupportEnabled and isinstance(oException, (
+        mHTTPExceptions.cSSLWrapSocketException,
+        mHTTPExceptions.cSSLSecureHandshakeException,
+        mHTTPExceptions.cSSLCannotGetRemoteCertificateException,
+        mHTTPExceptions.cSSLIncorrectHostnameException,
+      )):
+        oConsole.fOutput(ERROR, "- Securing the connection to the server failed:");
+      else:
+        raise;
+      oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
+      sys.exit(1);
     assert ozResponse, \
         "Expected a response, got %s" % ozResponse;
     oResponse = ozResponse;
@@ -220,7 +291,12 @@ try:
           oURL = cURL.foFromString(sRedirectToURL);
           if oURL:
             fOutputResponseStatusLine(oResponse);
-            oConsole.fOutput(HTTP_HEADER_NAME, "Location", NORMAL, ": ", HTTP_HEADER_VALUE, str(oURL));
+            oConsole.fOutput(
+              HTTP_HEADER_NAME, "Location",
+              NORMAL, ":",
+              HTTP_HEADER_VALUE, str(oURL),
+              HTTP_CRLF, CRLF_CHAR,
+            );
             continue;
           else:
             oConsole.fOutput(ERROR, "- Redirected to invalid URL ", ERROR_INFO, repr(sRedirectToURL), ERROR, ".");
@@ -251,37 +327,69 @@ try:
       oConsole.fOutput("Found %d segments." % (uIndex - 1));
     else:
       # Output request status line
-      oConsole.fOutput(HTTP_REQUEST_STATUS_LINE, oRequest.fsGetStatusLine());
+      oConsole.fOutput(
+        HTTP_REQUEST_STATUS_LINE, oRequest.fsGetStatusLine(),
+        HTTP_CRLF, CRLF_CHAR
+      );
       # Output request headers
       for oHTTPHeader in oRequest.oHeaders.faoGetHeaders():
         asValueLines = oHTTPHeader.asValueLines;
-        oConsole.fOutput(HTTP_HEADER_NAME, oHTTPHeader.sName, NORMAL, ": ", HTTP_HEADER_VALUE, asValueLines[0]);
+        oConsole.fOutput(
+          HTTP_HEADER_NAME, oHTTPHeader.sName,
+          NORMAL, ":",
+          HTTP_HEADER_VALUE, asValueLines[0],
+          HTTP_CRLF, CRLF_CHAR
+        );
         for sValueLine in asValueLines[1:]:
-          oConsole.fOutput(HTTP_HEADER_VALUE, sValueLine);
+          oConsole.fOutput(
+            HTTP_HEADER_VALUE, sValueLine,
+            HTTP_CRLF, CRLF_CHAR
+          );
+      oConsole.fOutput(
+        HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not oRequest.sBody else ""
+      );
       if oRequest.sBody:
         # Output request body
-        oConsole.fOutput(HTTP_BODY, oRequest.sBody);
+        fOutputBodyLines(HTTP_BODY, oRequest.sBody.split("\n"));
       # Output separator
-      oConsole.fOutput(sPadding = "-");
+      oConsole.fOutput(HTTP_REQUEST_RESPONSE_SEPARATOR, sPadding = u"\u2500");
       # Output response status line
       fOutputResponseStatusLine(oResponse);
       # Output response headers
       for oHTTPHeader in oResponse.oHeaders.faoGetHeaders():
         asValueLines = oHTTPHeader.asValueLines;
-        oConsole.fOutput(HTTP_HEADER_NAME, oHTTPHeader.sName, NORMAL, ": ", HTTP_HEADER_VALUE, asValueLines[0]);
+        oConsole.fOutput(
+          HTTP_HEADER_NAME, oHTTPHeader.sName,
+          NORMAL, ":",
+          HTTP_HEADER_VALUE, asValueLines[0],
+          HTTP_CRLF, CRLF_CHAR
+        );
         for sValueLine in asValueLines[1:]:
-          oConsole.fOutput(HTTP_HEADER_VALUE, sValueLine);
+          oConsole.fOutput(
+            HTTP_HEADER_VALUE, sValueLine,
+            HTTP_CRLF, CRLF_CHAR
+          );
       # Output response body
       if bDecodeBody:
-        if sResponseData:
-          oConsole.fOutput(HTTP_BODY_DECODED, unicode(sResponseData));
+        asBodyLines = sResponseData.split("\n") if sResponseData else [];
+        xColor = HTTP_BODY_DECODED;
       elif oResponse.sBody:
-        oConsole.fOutput(HTTP_BODY, oResponse.sBody);
+        asBodyLines = oResponse.sBody.split("\n") if oResponse.sBody else [];
+        xColor = HTTP_BODY;
+      oConsole.fOutput(
+        HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not asBodyLines else ""
+      );
+      fOutputBodyLines(xColor, asBodyLines);
       if oRequest.ozAdditionalHeaders:
         # Output response additional headers
         for oHTTPHeader in oRequest.ozAdditionalHeaders.faoGetHeaders():
           asValueLines = oHTTPHeader.asValueLines;
-          oConsole.fOutput(HTTP_HEADER_NAME, oHTTPHeader.sName, NORMAL, ": ", HTTP_HEADER_VALUE, asValueLines[0]);
+          oConsole.fOutput(
+            HTTP_HEADER_NAME, oHTTPHeader.sName,
+            NORMAL, ": ",
+            HTTP_HEADER_VALUE, asValueLines[0],
+            HTTP_CRLF, CRLF_CHAR
+          );
           for sValueLine in asValueLines[1:]:
             oConsole.fOutput(HTTP_HEADER_VALUE, sValueLine);
     if bSegmentedVideo and oResponse.uStatusCode == 200:
