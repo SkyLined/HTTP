@@ -21,7 +21,7 @@ try:
   
   from oConsole import oConsole;
   from cFileSystemItem import cFileSystemItem;
-  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL, mHTTPExceptions;
+  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL, mExceptions;
   
   from mColors import *;
   from fPrintUsageInformation import fPrintUsageInformation;
@@ -219,7 +219,7 @@ try:
           oURL = cURL.foFromString(sURL);
           assert oURL, \
               "Invalid URL %s" % sURL;
-      except mHTTPExceptions.cInvalidURLException as oException:
+      except mExceptions.cInvalidURLException as oException:
         oConsole.fOutput(ERROR, "- Invalid URL:");
         oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
         sys.exit(1);
@@ -234,42 +234,44 @@ try:
         szData = szRequestData,
       );
     except Exception as oException:
-      bSSLSupportEnabled = hasattr(mHTTPExceptions, "cSSLException");
-      if isinstance(oException, mHTTPExceptions.cTimeoutException):
+      bSSLSupportEnabled = hasattr(mExceptions, "cSSLException");
+      if isinstance(oException, mExceptions.cTCPIPConnectTimeoutException):
         oConsole.fOutput(ERROR, "- Connecting to server timed out:");
-      if isinstance(oException, (
-        mHTTPExceptions.cConnectionRefusedException,
-        mHTTPExceptions.cInvalidAddressException,
-        mHTTPExceptions.cUnknownHostnameException,
+      elif isinstance(oException, (
+        mExceptions.cTCPIPConnectionRefusedException,
+        mExceptions.cTCPIPInvalidAddressException,
+        mExceptions.cDNSUnknownHostnameException,
       )):
         oConsole.fOutput(ERROR, "- Could not connect to server:");
       elif isinstance(oException, (
-        mHTTPExceptions.cDisconnectedException,
-        mHTTPExceptions.cShutdownException,
+        mExceptions.cTCPIPConnectionDisconnectedException,
+        mExceptions.cTCPIPConnectionShutdownException,
       )):
         oConsole.fOutput(ERROR, "- The server did not respond to our request:");
-      elif isinstance(oException, mHTTPExceptions.cHTTPProxyConnectFailedException):
+      elif isinstance(oException, mExceptions.cHTTPProxyConnectFailedException):
         oConsole.fOutput(ERROR, "- Could not connect to proxy server:");
       elif isinstance(oException, (
-        mHTTPExceptions.cMaxConnectionsReachedException,
+        mExceptions.cMaxConnectionsReachedException,
       )):
         oConsole.fOutput(ERROR, "- Could not connect to server:");
       elif isinstance(oException, (
-        mHTTPExceptions.cMaxConnectionsReachedException,
+        mExceptions.cMaxConnectionsReachedException,
       )):
         oConsole.fOutput(ERROR, "- Could not connect to server:");
+      elif isinstance(oException, mExceptions.cTCPIPDataTimeoutException):
+        oConsole.fOutput(ERROR, "- The server was unable to respond in a timely manner.");
       elif isinstance(oException, (
-        mHTTPExceptions.cOutOfBandDataException,
-        mHTTPExceptions.cInvalidMessageException,
+        mExceptions.cHTTPOutOfBandDataException,
+        mExceptions.cHTTPInvalidMessageException,
       )):
         oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
-      elif bSSLSupportEnabled and isinstance(oException, mHTTPExceptions.cSSLTimeoutException):
+      elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLTimeoutException):
         oConsole.fOutput(ERROR, "- Securing the connection to the server timed out:");
       elif bSSLSupportEnabled and isinstance(oException, (
-        mHTTPExceptions.cSSLWrapSocketException,
-        mHTTPExceptions.cSSLSecureHandshakeException,
-        mHTTPExceptions.cSSLCannotGetRemoteCertificateException,
-        mHTTPExceptions.cSSLIncorrectHostnameException,
+        mExceptions.cSSLWrapSocketException,
+        mExceptions.cSSLSecureHandshakeException,
+        mExceptions.cSSLCannotGetRemoteCertificateException,
+        mExceptions.cSSLIncorrectHostnameException,
       )):
         oConsole.fOutput(ERROR, "- Securing the connection to the server failed:");
       else:
