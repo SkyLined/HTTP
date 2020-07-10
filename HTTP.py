@@ -304,7 +304,7 @@ try:
             oConsole.fOutput(ERROR, "- Redirected to invalid URL ", ERROR_INFO, repr(sRedirectToURL), ERROR, ".");
         else:
           oConsole.fOutput(ERROR, "- Redirected without providing a ", ERROR_INFO, "Location", ERROR, " header.");
-    sResponseData = oResponse.sData;
+    sResponseData = oResponse.szData or "";
     if bDownload and oResponse.uStatusCode == 200:
       if sDownloadToFilePath is None:
         sFilePath = oURL.asPath[-1];
