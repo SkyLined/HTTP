@@ -372,16 +372,17 @@ try:
             HTTP_CRLF, CRLF_CHAR
           );
       # Output response body
-      if bDecodeBody:
-        asBodyLines = sResponseData.split("\n") if sResponseData else [];
-        xColor = HTTP_BODY_DECODED;
-      elif oResponse.sBody:
-        asBodyLines = oResponse.sBody.split("\n") if oResponse.sBody else [];
-        xColor = HTTP_BODY;
-      oConsole.fOutput(
-        HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not asBodyLines else ""
-      );
-      fOutputBodyLines(xColor, asBodyLines);
+      if oResponse.sBody:
+        if bDecodeBody:
+          asBodyLines = sResponseData.split("\n") if sResponseData else [];
+          xColor = HTTP_BODY_DECODED;
+        else:
+          asBodyLines = oResponse.sBody.split("\n") if oResponse.sBody else [];
+          xColor = HTTP_BODY;
+        oConsole.fOutput(
+          HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not asBodyLines else ""
+        );
+        fOutputBodyLines(xColor, asBodyLines);
       if oRequest.ozAdditionalHeaders:
         # Output response additional headers
         for oHTTPHeader in oRequest.ozAdditionalHeaders.faoGetHeaders():
