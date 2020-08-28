@@ -265,7 +265,7 @@ try:
         mExceptions.cHTTPInvalidMessageException,
       )):
         oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
-      elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLTimeoutException):
+      elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLSecureTimeoutException):
         oConsole.fOutput(ERROR, "- Securing the connection to the server timed out:");
       elif bSSLSupportEnabled and isinstance(oException, (
         mExceptions.cSSLWrapSocketException,
