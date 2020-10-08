@@ -35,8 +35,10 @@ def fPrintUsageInformation():
     oConsole.fOutput("    Show the decoded body of the response instead of the raw encoded data.");
     oConsole.fOutput("  ", INFO, "--http-proxy=<URL>", NORMAL, " or ", INFO, "-p=<URL>");
     oConsole.fOutput("    Use the given HTTP proxy to make requests.");
-    oConsole.fOutput("  ", INFO, "--header=<name:value>");
-    oConsole.fOutput("    Add the given HTTP header to the requests.");
+    oConsole.fOutput("  ", INFO, "--header=<name[:value]>");
+    oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
+    oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
+    oConsole.fOutput("    for each request. This argument can be used to modify them.");
     oConsole.fOutput("  ", INFO, "--debug");
     oConsole.fOutput("    Show debug output");
   finally:             
