@@ -32,8 +32,9 @@ try:
   rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
   rSegmentedVideo = re.compile(
     "("
-      r".*\b"
-      r"[\w\-]+"
+      r".*?/"
+      r"(?:\w+\-)+"
+      r"(?:\w*?)"
     ")("
       r"\d+"
     ")("
@@ -194,6 +195,8 @@ try:
         "Could not identify segmentation from URL %s!" % sURL;
     sURLSegmentHeader, sIndex, sURLSegmentFooter = oURLSegmentMatch.groups();
     uIndex = long(sIndex);
+    oConsole.fOutput(NORMAL, "+ Segmented URL: ", sURLSegmentHeader, INFO, "*INDEX*", NORMAL, sURLSegmentFooter);
+    oConsole.fOutput(NORMAL, "  Starting at index ", INFO, str(uIndex), NORMAL, ".");
   sMethod = szMethod or "GET";
   sHTTPVersion = szHTTPVersion or "HTTP/1.1";
   oHTTPClient = (
