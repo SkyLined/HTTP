@@ -89,7 +89,7 @@ try:
         oConsole.fOutput(xColor, sLastBodyLineLastChunk, HTTP_CRLF, EOF_CHAR);
   
   asArguments = sys.argv[1:];
-  dsAdditionalHeaders = {};
+  dsAdditionalOrRemovedHeaders = {};
   szMethod = None;
   sURL = None;
   bSegmentedVideo = None;
@@ -170,10 +170,15 @@ try:
             "Invalid argument %s: value is not a valid URL!" % sArgument;
       elif sName in ["--header"]:
         tsHeader = sValue.split(":", 1);
-        assert len(tsHeader) == 2, \
-            "Headers must be of the form name:value";
-        sName, sValue = tsHeader;
-        dsAdditionalHeaders[sName] = sValue;
+        if len(tsHeader) == 1:
+          sHeaderName = sValue; sHeaderValue = None;
+        else:
+          assert len(tsHeader) == 2, \
+              "Headers must be of the form name:value";
+          sHeaderName, sHeaderValue = tsHeader;
+          if sHeaderValue.strip() == "":
+            sHeaderValue = None;
+        dsAdditionalOrRemovedHeaders[sHeaderName] = sHeaderValue;
       else:
         assert False, \
             "Unknown argument %s" % sArgument;
@@ -205,8 +210,11 @@ try:
     cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
   );
   oHTTPHeaders = cHTTPHeaders.foDefaultHeadersForVersion(sHTTPVersion);
-  for (sName, sValue) in dsAdditionalHeaders.items():
-    oHTTPHeaders.fbReplaceHeadersForName(sName, sValue);
+  for (sName, sValue) in dsAdditionalOrRemovedHeaders.items():
+    if sValue is None:
+      oHTTPHeaders.fbRemoveHeadersForName(sName);
+    else:
+      oHTTPHeaders.fbReplaceHeadersForName(sName, sValue);
   asRedirectedFromURLs = [];
   bFirstDownload = True;
   oURL = None;
