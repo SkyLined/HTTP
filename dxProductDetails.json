@@ -6,7 +6,6 @@
     "mHTTPProtocol", 
     "mMultiThreading", 
     "mProductDetails", 
-    "mSSL", 
     "mTCPIPConnections", 
     "mWindowsAPI", 
     "mWindowsSDK", 
@@ -15,7 +14,9 @@
     "mRegistry"
   ], 
   "asOptionalProductNames": [
-    "mDebugOutput"
+    "cFileSystemItem",
+    "mDebugOutput",
+    "mSSL"
   ], 
   "oProductVersion": "2020-08-12 11:53", 
   "oRepository": {
