@@ -30,19 +30,32 @@ try:
   rURL = re.compile(r"^https?://.*$", re.I);
   rMethod = re.compile(r"^[A-Z]+$", re.I);
   rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
-  rSegmentedVideo = re.compile(
-    "("
-      r".*?/"
-      r"(?:\w+\-)+"
-      r"(?:\w*?)"
-    ")("
-      r"\d+"
-    ")("
-      r"(?:\-\w+)*"
-      r"\.ts"
-      r"(?:\?.*)?"
-    ")"
-  );
+  arSegmentedVideos = [re.compile(s) for s in [
+    (
+      "("
+        r".*?/"
+        r"(?:\w+\-)+?"
+      ")("
+        r"\d+"
+      ")("
+        r"(?:\-\w+)*"
+        r"\.ts"
+        r"(?:\?.*)?"
+      ")"
+    ), (
+      "("
+        r".*?/"
+        r"(?:\w+\-)+?"
+        r"(?:\w*?)"
+      ")("
+        r"\d+"
+      ")("
+        r"(?:\-\w+)*"
+        r"\.ts"
+        r"(?:\?.*)?"
+      ")"
+    )
+  ]];
   
   def fOutputResponseStatusLine(oResponse):
     if 100 <= oResponse.uStatusCode < 200: 
@@ -195,9 +208,12 @@ try:
     fPrintUsageInformation();
     sys.exit(0);
   if bSegmentedVideo:
-    oURLSegmentMatch = rSegmentedVideo.match(sURL);
-    assert oURLSegmentMatch, \
-        "Could not identify segmentation from URL %s!" % sURL;
+    for rSegmentedVideo in arSegmentedVideos:
+      oURLSegmentMatch = rSegmentedVideo.match(sURL);
+      if oURLSegmentMatch:
+        break;
+    else:
+      raise AssertionError("Could not identify segmentation from URL %s!" % sURL);
     sURLSegmentHeader, sIndex, sURLSegmentFooter = oURLSegmentMatch.groups();
     uIndex = long(sIndex);
     oConsole.fOutput(NORMAL, "+ Segmented URL: ", sURLSegmentHeader, INFO, "*INDEX*", NORMAL, sURLSegmentFooter);
