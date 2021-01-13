@@ -1,5 +1,5 @@
-from fCheckDependencies import fCheckDependencies;
-fCheckDependencies();
+from fInitializeProduct import fInitializeProduct;
+fInitializeProduct();
 
 try: # mDebugOutput use is Optional
   from mDebugOutput import *;
