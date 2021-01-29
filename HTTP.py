@@ -109,7 +109,7 @@ try:
   uIndex = None;
   szHTTPVersion = None;
   oHTTPProxyServerURL = None;
-  szRequestData = None;
+  s0RequestData = None;
   bDecodeBody = False;
   bDownload = False;
   bFollowRedirects = False;
@@ -137,12 +137,12 @@ try:
         from mDebugOutput import fEnableAllDebugOutput;
         fEnableAllDebugOutput();
       elif sName in ["--data"]:
-        szRequestData = sValue;
+        s0RequestData = sValue;
       elif sName in ["--data-file"]:
         oDataFileSystemItem = cFileSystemItem(sValue);
         assert sValue and oDataFileSystemItem.fbIsFile(bParseZipFiles = True), \
             "%s argument requires a valid file path as a value!" % sName;
-        szRequestData = oDataFileSystemItem.fsRead(bParseZipFiles = True);
+        s0zRequestData = oDataFileSystemItem.fsRead(bParseZipFiles = True);
       elif sName in ["--unsecure", "--unsecured", "--insecure"]:
         bAllowUnverifiableCertificates = True;
       elif sName in ["-dl", "--download"]:
@@ -225,16 +225,11 @@ try:
     if oHTTPProxyServerURL else
     cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
   );
-  oHTTPHeaders = cHTTPHeaders.foDefaultHeadersForVersion(sHTTPVersion);
-  for (sName, sValue) in dsAdditionalOrRemovedHeaders.items():
-    if sValue is None:
-      oHTTPHeaders.fbRemoveHeadersForName(sName);
-    else:
-      oHTTPHeaders.fbReplaceHeadersForName(sName, sValue);
   asRedirectedFromURLs = [];
   bFirstDownload = True;
   oURL = None;
   while 1:
+    # Construct the (next) URL
     if oURL is None:
       try:
         if bSegmentedVideo:
@@ -250,16 +245,22 @@ try:
         oConsole.fOutput(ERROR, "- Invalid URL:");
         oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
         sys.exit(1);
-    
+    # Construct the HTTP request
+    oRequest = oHTTPClient.foGetRequestForURL(
+      oURL = oURL,
+      szVersion = sHTTPVersion,
+      szMethod = sMethod,
+      s0Data = s0RequestData,
+    );
+    for (sName, sValue) in dsAdditionalOrRemovedHeaders.items():
+      if sValue is None:
+        oRequest.oHTTPHeaders.fbRemoveHeadersForName(sName);
+      else:
+        oRequest.oHTTPHeaders.fbReplaceHeadersForName(sName, sValue);
+    # Send the request and get the response.
     oConsole.fStatus(INFO, sHTTPVersion, " ", sMethod, " ", str(oURL), NORMAL, "...");
     try:
-      oRequest, ozResponse = oHTTPClient.ftozGetRequestAndResponseForURL(
-        oURL = oURL,
-        szVersion = sHTTPVersion,
-        szMethod = sMethod,
-        ozHeaders = oHTTPHeaders,
-        szData = szRequestData,
-      );
+      o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
     except Exception as oException:
       bSSLSupportEnabled = hasattr(mExceptions, "cSSLException");
       if isinstance(oException, mExceptions.cTCPIPConnectTimeoutException):
@@ -305,9 +306,9 @@ try:
         raise;
       oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
       sys.exit(1);
-    assert ozResponse, \
-        "Expected a response, got %s" % ozResponse;
-    oResponse = ozResponse;
+    assert o0Response, \
+        "Expected a response, got %s" % o0Response;
+    oResponse = o0Response;
     if bFollowRedirects and oResponse.uStatusCode in [301, 302, 307, 308]:
       asRedirectedFromURLs.append(str(oURL));
       if len(asRedirectedFromURLs) >= 10:
@@ -331,7 +332,7 @@ try:
             oConsole.fOutput(ERROR, "- Redirected to invalid URL ", ERROR_INFO, repr(sRedirectToURL), ERROR, ".");
         else:
           oConsole.fOutput(ERROR, "- Redirected without providing a ", ERROR_INFO, "Location", ERROR, " header.");
-    sResponseData = oResponse.szData or "";
+    sResponseData = oResponse.s0Data or "";
     if bDownload and oResponse.uStatusCode == 200:
       if sDownloadToFilePath is None:
         sFilePath = oURL.asPath[-1];
@@ -410,9 +411,9 @@ try:
           HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not asBodyLines else ""
         );
         fOutputBodyLines(xColor, asBodyLines);
-      if oRequest.ozAdditionalHeaders:
+      if oRequest.o0AdditionalHeaders:
         # Output response additional headers
-        for oHTTPHeader in oRequest.ozAdditionalHeaders.faoGetHeaders():
+        for oHTTPHeader in oRequest.o0AdditionalHeaders.faoGetHeaders():
           asValueLines = oHTTPHeader.asValueLines;
           oConsole.fOutput(
             HTTP_HEADER_NAME, oHTTPHeader.sName,
