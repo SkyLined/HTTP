@@ -1,3 +1,5 @@
+import re, sys;
+
 from fInitializeProduct import fInitializeProduct;
 fInitializeProduct();
 
@@ -17,15 +19,13 @@ CRLF_CHAR = u"\u2190\u2518";
 EOF_CHAR = u"\u25A0";
 
 try:
-  import re, sys;
-  
   from oConsole import oConsole;
   from cFileSystemItem import cFileSystemItem;
   from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL, mExceptions;
   
-  from mColors import *;
   from fPrintUsageInformation import fPrintUsageInformation;
   from fPrintVersionInformation import fPrintVersionInformation;
+  from mColors import *;
   
   rURL = re.compile(r"^https?://.*$", re.I);
   rMethod = re.compile(r"^[A-Z]+$", re.I);
