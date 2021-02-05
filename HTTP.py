@@ -13,16 +13,15 @@ except: # Do nothing if not available.
   fEnableAllDebugOutput = lambda: None;
   cCallStack = fTerminateWithException = fTerminateWithConsoleOutput = None;
 
-CR_CHAR = u"\u2190";
-LF_CHAR = u"\u2193";
-CRLF_CHAR = u"\u2190\u2518";
-EOF_CHAR = u"\u25A0";
 
 try:
   from oConsole import oConsole;
   from cFileSystemItem import cFileSystemItem;
-  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPHeaders, cURL, mExceptions;
+  from fsBytesToHumanReadableString import fsBytesToHumanReadableString;
+  from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cHTTPHeaders, cURL, mExceptions;
   
+  from fOutputRequest import fOutputRequest;
+  from fOutputResponse import fOutputResponse;
   from fPrintUsageInformation import fPrintUsageInformation;
   from fPrintVersionInformation import fPrintVersionInformation;
   from mColors import *;
@@ -57,49 +56,11 @@ try:
     )
   ]];
   
-  def fOutputResponseStatusLine(oResponse):
-    if 100 <= oResponse.uStatusCode < 200: 
-      xColor = HTTP_RESPONSE_STATUS_LINE_1xx;
-    elif 200 <= oResponse.uStatusCode < 300: 
-      xColor = HTTP_RESPONSE_STATUS_LINE_2xx;
-    elif 300 <= oResponse.uStatusCode < 400: 
-      xColor = HTTP_RESPONSE_STATUS_LINE_3xx;
-    elif 400 <= oResponse.uStatusCode < 500: 
-      xColor = HTTP_RESPONSE_STATUS_LINE_4xx;
-    elif 500 <= oResponse.uStatusCode < 600: 
-      xColor = HTTP_RESPONSE_STATUS_LINE_5xx;
-    else:
-      xColor = HTTP_RESPONSE_STATUS_LINE_INVALID;
-    oConsole.fOutput(
-      xColor, oResponse.fsGetStatusLine(),
-      HTTP_CRLF, CRLF_CHAR
-    );
-  
-  def fOutputBodyLines(xColor, asBodyLines):
-    for sBodyLine in asBodyLines[:-1]:
-      # "" -> [""], "A" -> ["A"], "A\r" -> ["A", ""], "A\rB" -> ["A", "B"]
-      asBodyLineChunks = sBodyLine.split("\r");
-      bBodyLineEndsWithCRLF = len(asBodyLineChunks) > 1 and asBodyLineChunks[-1] == "";
-      if bBodyLineEndsWithCRLF:
-        asBodyLineChunks.pop();
-      # "" -> [""]/F, "A" -> ["A"]/F, "A\r" -> ["A"]/T, "A\rB" -> ["A", "B"]/F
-      for sBodyLineChunks in asBodyLineChunks[:-1]:
-        oConsole.fOutput(xColor, sBodyLineChunks, HTTP_CRLF, CR_CHAR);
-      sLastBodyLineChunk = asBodyLineChunks[-1];
-      # "" -> ""/F, "A" -> "A"/F, "A\r" -> "A"/T, "A\rB" -> "B"/F
-      oConsole.fOutput(xColor, sLastBodyLineChunk, HTTP_CRLF, CRLF_CHAR if bBodyLineEndsWithCRLF else LF_CHAR);
-    if asBodyLines:
-      sLastBodyLine = asBodyLines[-1];
-      asLastBodyLineChunks = sLastBodyLine.split("\r") if sLastBodyLine else [];
-      # "" -> [], "A" -> ["A"], "A\r" -> ["A", ""], "A\rB" -> ["A", "B"]
-      bLastBodyLineEndsWithCRLF = len(asLastBodyLineChunks) > 1 and asLastBodyLineChunks[-1] == "";
-      if bLastBodyLineEndsWithCRLF:
-        asLastBodyLineChunks.pop();
-      for sBodyLineChunks in asLastBodyLineChunks[:-1]:
-        oConsole.fOutput(xColor, sBodyLineChunks, HTTP_CRLF, CR_CHAR);
-      if asLastBodyLineChunks:
-        sLastBodyLineLastChunk = asLastBodyLineChunks[-1];
-        oConsole.fOutput(xColor, sLastBodyLineLastChunk, HTTP_CRLF, EOF_CHAR);
+  def fExitWithError(*asMessages):
+    oConsole.fOutput(ERROR, "- ", ERROR_INFO, str(asMessages[0]));
+    for sMessage in asMessages[1:]:
+      oConsole.fOutput("  ", ERROR, str(sMessage));
+    sys.exit(1);
   
   asArguments = sys.argv[1:];
   dsAdditionalOrRemovedHeaders = {};
@@ -108,7 +69,12 @@ try:
   bSegmentedVideo = None;
   uIndex = None;
   szHTTPVersion = None;
-  oHTTPProxyServerURL = None;
+  bShowProgress = True;
+  bShowRequest = True;
+  bShowResponse = True;
+  bShowDetails = True;
+  bUseProxy = False;
+  o0HTTPProxyServerURL = None;
   s0RequestData = None;
   bDecodeBody = False;
   bDownload = False;
@@ -116,85 +82,82 @@ try:
   bAllowUnverifiableCertificates = False;
   sDownloadToFilePath = None;
   for sArgument in asArguments:
-    if sArgument.startswith("-"):
-      sName, sValuePlusEqualsSign = (sArgument + "=").split("=", 1);
-      assert sName, \
-          "Invalid argument %s!" % sArgument;
+    if len(sArgument) >= 2 and sArgument.startswith("-") or sArgument.startswith("/"):
+      sNameWithPrefix, sValuePlusEqualsSign = (sArgument + "=").split("=", 1);
+      if sNameWithPrefix.startswith("--"):
+        sLowerName = sNameWithPrefix[2:].lower();
+      else:
+        sLowerName = sNameWithPrefix[1:].lower();
       sValue = sValuePlusEqualsSign[:-1];
-      if sName in ["-?", "-h", "--help", "/?", "/h", "/help"]:
+      if sLowerName in ["debug"]:
+        if sValue:
+          fExitWithError("%s argument does not accept a value!" % sNameWithPrefix);
+        from mDebugOutput import fEnableAllDebugOutput;
+        fEnableAllDebugOutput();
+      elif sLowerName in ["data"]:
+        s0RequestData = sValue;
+      elif sLowerName in ["df", "data-file"]:
+        oDataFileSystemItem = cFileSystemItem(sValue);
+        if not sValue or not oDataFileSystemItem.fbIsFile(bParseZipFiles = True):
+            fExitWithError("%s argument requires a valid file path as a value!" % sNameWithPrefix);
+        s0zRequestData = oDataFileSystemItem.fsRead(bParseZipFiles = True);
+      elif sLowerName in ["db", "decode", "decode-body"]:
+        if sValue:
+          fExitWithError("%s argument does not accept a value!" % sNameWithPrefix);
+        bDecodeBody = True;
+      elif sLowerName in ["dl", "download"]:
+        bDownload = True;
+        if sValue:
+          if sDownloadToFilePath not in [None, sValue]:
+            fExitWithError("You cannot provide more than one file path to download to.");
+          sDownloadToFilePath = sValue;
+      elif sLowerName in ["header"]:
+        tsHeader = sValue.split(":", 1);
+        if len(tsHeader) == 1:
+          sHeaderName = sValue; sHeaderValue = None;
+        else:
+          sHeaderName, sHeaderValue = tsHeader;
+          if sHeaderValue.strip() == "":
+            sHeaderValue = None;
+        dsAdditionalOrRemovedHeaders[sHeaderName] = sHeaderValue;
+      elif sLowerName in ["?", "h", "help"]:
         fPrintUsageInformation();
         sys.exit(0);
-      elif sName in ["--version", "/version"]:
+      elif sLowerName in ["p", "proxy", "http-proxy"]:
+        bUseProxy = True;
+        if sValue:
+          o0HTTPProxyServerURL = cURL.foFromString(sValue);
+      elif sLowerName in ["r", "follow-redirects"]:
+        if sValue:
+          fExitWithError("%s argument does not accept a value!" % sNameWithPrefix);
+        bFollowRedirects = True;
+      elif sLowerName in ["sv", "segmented-video"]:
+        bDownload = True;
+        bFollowRedirects = True;
+        bSegmentedVideo = True;
+        if sValue:
+          if sDownloadToFilePath not in [None, sValue]:
+            fExitWithError("You cannot provide more than one file path to download to.");
+          sDownloadToFilePath = sValue;
+      elif sLowerName in ["u", "unsecure", "unsecured", "insecure"]:
+        bAllowUnverifiableCertificates = True;
+      elif sLowerName in ["no-progress"]:
+        bShowProgress = False;
+      elif sLowerName in ["no-request"]:
+        bShowRequest = False;
+      elif sLowerName in ["no-response"]:
+        bShowResponse = False;
+      elif sLowerName in ["no-details"]:
+        bShowDetails = False;
+      elif sLowerName in ["version"]:
         fPrintVersionInformation(
           bCheckForUpdates = True,
           bCheckAndShowLicenses = True,
           bShowInstallationFolders = True,
         );
         sys.exit(0);
-      elif sName in ["--debug"]:
-        assert not sValue, \
-            "--%s argument does not accept a value!" % sName;
-        from mDebugOutput import fEnableAllDebugOutput;
-        fEnableAllDebugOutput();
-      elif sName in ["--data"]:
-        s0RequestData = sValue;
-      elif sName in ["--data-file"]:
-        oDataFileSystemItem = cFileSystemItem(sValue);
-        assert sValue and oDataFileSystemItem.fbIsFile(bParseZipFiles = True), \
-            "%s argument requires a valid file path as a value!" % sName;
-        s0zRequestData = oDataFileSystemItem.fsRead(bParseZipFiles = True);
-      elif sName in ["--unsecure", "--unsecured", "--insecure"]:
-        bAllowUnverifiableCertificates = True;
-      elif sName in ["-dl", "--download"]:
-        assert not bDecodeBody, \
-            "The --decode-body is superfluous when the --download argument is provided";
-        bDownload = True;
-        if sValue:
-          assert sDownloadToFilePath in [None, sValue], \
-              "You cannot provide more than one file path to download to.";
-          sDownloadToFilePath = sValue;
-      elif sName in ["-sv", "--segmented-video"]:
-        assert not bDecodeBody, \
-            "The --decode-body is superfluous when the --segmented-video argument is provided";
-        bDownload = True;
-        bFollowRedirects = True;
-        bSegmentedVideo = True;
-        if sValue:
-          assert sDownloadToFilePath in [None, sValue], \
-              "You cannot provide more than one file path to download to.";
-          sDownloadToFilePath = sValue;
-      elif sName in ["-r", "--follow-redirects"]:
-        assert not sValue, \
-            "--%s argument does not accept a value!" % sName;
-        bFollowRedirects = True;
-      elif sName in ["-db", "--decode-body"]:
-        assert not sValue, \
-            "--%s argument does not accept a value!" % sName;
-        bDecodeBody = True;
-        assert not bDownload, \
-            "The --decode-body is superfluous when the --download argument is provided";
-        assert not bSegmentedVideo, \
-            "The --decode-body is superfluous when the --segmented-video argument is provided";
-      elif sName in ["-p", "--http-proxy"]:
-        assert sValue, \
-            "--%s argument requires a value!" % sName;
-        oHTTPProxyServerURL = cURL.foFromString(sValue);
-        assert oHTTPProxyServerURL, \
-            "Invalid argument %s: value is not a valid URL!" % sArgument;
-      elif sName in ["--header"]:
-        tsHeader = sValue.split(":", 1);
-        if len(tsHeader) == 1:
-          sHeaderName = sValue; sHeaderValue = None;
-        else:
-          assert len(tsHeader) == 2, \
-              "Headers must be of the form name:value";
-          sHeaderName, sHeaderValue = tsHeader;
-          if sHeaderValue.strip() == "":
-            sHeaderValue = None;
-        dsAdditionalOrRemovedHeaders[sHeaderName] = sHeaderValue;
       else:
-        assert False, \
-            "Unknown argument %s" % sArgument;
+        fExitWithError("Unknown argument \"%s\"" % sArgument);
     elif sURL is None and rURL.match(sArgument):
       sURL = sArgument;
     elif szMethod is None and rMethod.match(sArgument):
@@ -202,8 +165,7 @@ try:
     elif szHTTPVersion is None and rHTTPVersion.match(sArgument):
       szHTTPVersion = sArgument;
     else:
-      assert False, \
-          "Superfluous argument %s" % sArgument;
+      fExitWithError("Superfluous argument \"%s\"" % sArgument);
   if sURL is None:
     fPrintUsageInformation();
     sys.exit(0);
@@ -213,18 +175,68 @@ try:
       if oURLSegmentMatch:
         break;
     else:
-      raise AssertionError("Could not identify segmentation from URL %s!" % sURL);
+      fExitWithError("Could not identify segmentation from URL %s!" % sURL);
     sURLSegmentHeader, sIndex, sURLSegmentFooter = oURLSegmentMatch.groups();
     uIndex = long(sIndex);
-    oConsole.fOutput(NORMAL, "+ Segmented URL: ", sURLSegmentHeader, INFO, "*INDEX*", NORMAL, sURLSegmentFooter);
-    oConsole.fOutput(NORMAL, "  Starting at index ", INFO, str(uIndex), NORMAL, ".");
+    if bShowProgress:
+      oConsole.fOutput(NORMAL, "+ Segmented URL: ", INFO, sURLSegmentHeader, HILITE, "*INDEX*", INFO, sURLSegmentFooter);
+      oConsole.fOutput(NORMAL, "  Starting at index ", HILITE, str(uIndex), HILITE, ".");
   sMethod = szMethod or "GET";
   sHTTPVersion = szHTTPVersion or "HTTP/1.1";
-  oHTTPClient = (
-    cHTTPClientUsingProxyServer(oHTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
-    if oHTTPProxyServerURL else
-    cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates)
-  );
+  
+  def fReportRequestSent(oConnection, oRequest, o0ProxyServerURL):
+    if bShowProgress:
+      oConsole.fOutput(
+        "+ ", HILITE, oRequest.fsGetStatusLine(), NORMAL, " request sent (",
+        INFO, fsBytesToHumanReadableString(len(oRequest.fsSerialize())), NORMAL, ") ",
+        ["through proxy server at ", INFO, str(o0ProxyServerURL), NORMAL] if o0ProxyServerURL else
+            ["directly to server at ", INFO, str(oConnection.foGetURLForRemoteServer()), NORMAL],
+        "."
+      );
+    if bShowRequest:
+      fOutputRequest(oRequest, bShowDetails);
+  def fReportResponseReceived(oConnection, oResponse, o0ProxyServerURL):
+    if bShowProgress:
+      oConsole.fOutput(
+        "+ ", HILITE, oResponse.fsGetStatusLine(), NORMAL, " response received (",
+        INFO, fsBytesToHumanReadableString(len(oResponse.fsSerialize())),
+        [" ", oResponse.s0MediaType] if oResponse.s0MediaType else [], NORMAL, ") ",
+        ["through proxy server at ", INFO, str(o0ProxyServerURL), NORMAL]
+            if o0ProxyServerURL else
+            ["directly from server at ", INFO, str(oConnection.foGetURLForRemoteServer()), NORMAL],
+        "."
+      );
+    if bShowResponse:
+      fOutputResponse(oResponse, bDecodeBody, bShowDetails);
+  
+  if not bUseProxy:
+    # No proxy
+    oHTTPClient = cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+    def fHandleRequestSent(oHTTPClient, oConnection, oRequest):
+      fReportRequestSent(oConnection, oRequest, None);
+    def fHandleResponseReceived(oHTTPClient, oConnection, oResponse):
+      fReportResponseReceived(oConnection, oResponse, None);
+  elif o0HTTPProxyServerURL:
+    # Static proxy
+    oHTTPClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+    def fHandleRequestSent(oHTTPClient, oConnection, oRequest):
+      fReportRequestSent(oConnection, oRequest, oHTTPClient.oProxyServerURL);
+    def fHandleResponseReceived(oHTTPClient, oConnection, oResponse):
+      fReportResponseReceived(oConnection, oResponse, oHTTPClient.oProxyServerURL);
+  else:
+    # Dynamic proxy
+    oHTTPClient = cHTTPClientUsingAutomaticProxyServer(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+    # The cHTTPClientUsingAutomaticProxyServer instance creates a single cHTTPClient instance to make direct requests and
+    # one or more cHTTPClientUsingProxyServer instances to make requests through various proxies.
+    # Whether or not a proxy was used for a request depends on what class oSecondaryHTTPClientUsingProxyServerOrNot is
+    # in the event arguments.
+    def fHandleRequestSent(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oRequest):
+      fReportRequestSent(oConnection, oRequest, o0ProxyServerURL);
+    def fHandleResponseReceived(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oResponse):
+      fReportResponseReceived(oConnection, oResponse, o0ProxyServerURL);
+  oHTTPClient.fAddCallback("request sent", fHandleRequestSent);
+  oHTTPClient.fAddCallback("response received", fHandleResponseReceived);
+  
   asRedirectedFromURLs = [];
   bFirstDownload = True;
   oURL = None;
@@ -235,16 +247,10 @@ try:
         if bSegmentedVideo:
           sCurrentURL = "%s%d%s" % (sURLSegmentHeader, uIndex, sURLSegmentFooter);
           oURL = cURL.foFromString(sCurrentURL);
-          assert oURL, \
-              "Invalid URL %s" % sCurrentURL;
         else:
           oURL = cURL.foFromString(sURL);
-          assert oURL, \
-              "Invalid URL %s" % sURL;
       except mExceptions.cInvalidURLException as oException:
-        oConsole.fOutput(ERROR, "- Invalid URL:");
-        oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
-        sys.exit(1);
+        fExitWithError("Invalid URL %s: %s" % (sCurrentURL, oException.sMessage));
     # Construct the HTTP request
     oRequest = oHTTPClient.foGetRequestForURL(
       oURL = oURL,
@@ -264,75 +270,66 @@ try:
     except Exception as oException:
       bSSLSupportEnabled = hasattr(mExceptions, "cSSLException");
       if isinstance(oException, mExceptions.cTCPIPConnectTimeoutException):
-        oConsole.fOutput(ERROR, "- Connecting to server timed out:");
+        sErrorMessage = "Connecting to server timed out:";
       elif isinstance(oException, (
         mExceptions.cTCPIPConnectionRefusedException,
         mExceptions.cTCPIPInvalidAddressException,
         mExceptions.cDNSUnknownHostnameException,
       )):
-        oConsole.fOutput(ERROR, "- Could not connect to server:");
+        sErrorMessage = "Could not connect to server:";
       elif isinstance(oException, (
         mExceptions.cTCPIPConnectionDisconnectedException,
         mExceptions.cTCPIPConnectionShutdownException,
       )):
-        oConsole.fOutput(ERROR, "- The server did not respond to our request:");
+        sErrorMessage = "The server did not respond to our request:";
       elif isinstance(oException, mExceptions.cHTTPProxyConnectFailedException):
-        oConsole.fOutput(ERROR, "- Could not connect to proxy server:");
+        sErrorMessage = "Could not connect to proxy server:";
       elif isinstance(oException, (
         mExceptions.cMaxConnectionsReachedException,
       )):
-        oConsole.fOutput(ERROR, "- Could not connect to server:");
+        sErrorMessage = "Could not connect to server:";
       elif isinstance(oException, (
         mExceptions.cMaxConnectionsReachedException,
       )):
-        oConsole.fOutput(ERROR, "- Could not connect to server:");
+        sErrorMessage = "Could not connect to server:";
       elif isinstance(oException, mExceptions.cTCPIPDataTimeoutException):
-        oConsole.fOutput(ERROR, "- The server was unable to respond in a timely manner.");
+        sErrorMessage = "The server was unable to respond in a timely manner.";
       elif isinstance(oException, (
         mExceptions.cHTTPOutOfBandDataException,
         mExceptions.cHTTPInvalidMessageException,
       )):
-        oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
+        sErrorMessage = "There was a protocol error while talking to the server:";
       elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLSecureTimeoutException):
-        oConsole.fOutput(ERROR, "- Securing the connection to the server timed out:");
+        sErrorMessage = "Securing the connection to the server timed out:";
       elif bSSLSupportEnabled and isinstance(oException, (
         mExceptions.cSSLWrapSocketException,
         mExceptions.cSSLSecureHandshakeException,
         mExceptions.cSSLCannotGetRemoteCertificateException,
         mExceptions.cSSLIncorrectHostnameException,
       )):
-        oConsole.fOutput(ERROR, "- Securing the connection to the server failed:");
+        sErrorMessage = "Securing the connection to the server failed:";
       else:
         raise;
-      oConsole.fOutput(ERROR, "  ", ERROR_INFO, oException.sMessage);
-      sys.exit(1);
-    assert o0Response, \
-        "Expected a response, got %s" % o0Response;
+      fExitWithError(sErrorMessage, oException.sMessage);
+    if not o0Response:
+      fExitWithError("No response received.");
     oResponse = o0Response;
     if bFollowRedirects and oResponse.uStatusCode in [301, 302, 307, 308]:
       asRedirectedFromURLs.append(str(oURL));
       if len(asRedirectedFromURLs) >= 10:
-        oConsole.fOutput(ERROR, "- Too many sequential redirects.");
-        for sRedirectedFromURL in asRedirectedFromURLs:
-          oConsole.fOutput(ERROR_INFO, "  ", sRedirectedFromURL);
+        fExitWithError("Too many sequential redirects:", *asRedirectedFromURLs);
       else:
         sRedirectToURL = oResponse.oHeaders.fsGet("Location");
         if sRedirectToURL:
-          oURL = cURL.foFromString(sRedirectToURL);
-          if oURL:
-            fOutputResponseStatusLine(oResponse);
-            oConsole.fOutput(
-              HTTP_HEADER_NAME, "Location",
-              NORMAL, ":",
-              HTTP_HEADER_VALUE, str(oURL),
-              HTTP_CRLF, CRLF_CHAR,
-            );
-            continue;
-          else:
-            oConsole.fOutput(ERROR, "- Redirected to invalid URL ", ERROR_INFO, repr(sRedirectToURL), ERROR, ".");
+          try:
+            oURL = cURL.foFromString(sRedirectToURL);
+          except mExceptions.cInvalidURLException as oException:
+            fExitWithError("Redirect to invalid URL %s: %s" % (sCurrentURL, oException.sMessage));
+          if bShowProgress:
+            oConsole.fOutput(NORMAL, "+ Redirected to URL: ", INFO, str(oURL), NORMAL, ".");
+          continue;
         else:
-          oConsole.fOutput(ERROR, "- Redirected without providing a ", ERROR_INFO, "Location", ERROR, " header.");
-    sResponseData = oResponse.s0Data or "";
+          fExitWithError("Redirected without a \"Location\" header.");
     if bDownload and oResponse.uStatusCode == 200:
       if sDownloadToFilePath is None:
         sFilePath = oURL.asPath[-1];
@@ -341,88 +338,19 @@ try:
         oDownloadToFile = cFileSystemItem(sDownloadToFilePath);
         if not bFirstDownload:
           oDownloadToFile.fbOpenAsFile(bWritable = True, bAppend = True);
+      sResponseData = oResponse.s0Data or "";
       if not oDownloadToFile.fbWrite(sResponseData):
-        oConsole.fOutput(
-          ERROR, "- Cannot write ", ERROR_INFO, str(len(sResponseData)), ERROR, " bytes to ",
-          ERROR_INFO, oDownloadToFile.sPath, ERROR, "."
-        );
-        break;
+        fExitWithError("Cannot write %s to %s." % (fsBytesToHumanReadableString(len(sResponseData)), oDownloadToFile.sPath));
       if oDownloadToFile.fbIsOpenAsFile():
         oDownloadToFile.fbClose();
-      oConsole.fOutput(
-        "+ Saved ", INFO, str(len(sResponseData)), NORMAL, " bytes to ",
-        INFO, oDownloadToFile.sPath, NORMAL, "."
-      );
+      if bShowProgress:
+        oConsole.fOutput(
+          "+ Saved ", INFO, fsBytesToHumanReadableString(len(sResponseData)), NORMAL, " to ",
+          INFO, oDownloadToFile.sPath, NORMAL, "."
+        );
     elif bSegmentedVideo and oResponse.uStatusCode == 404:
-      oConsole.fOutput("Found %d segments." % (uIndex - 1));
-    else:
-      # Output request status line
-      oConsole.fOutput(
-        HTTP_REQUEST_STATUS_LINE, oRequest.fsGetStatusLine(),
-        HTTP_CRLF, CRLF_CHAR
-      );
-      # Output request headers
-      for oHTTPHeader in oRequest.oHeaders.faoGetHeaders():
-        asValueLines = oHTTPHeader.asValueLines;
-        oConsole.fOutput(
-          HTTP_HEADER_NAME, oHTTPHeader.sName,
-          NORMAL, ":",
-          HTTP_HEADER_VALUE, asValueLines[0],
-          HTTP_CRLF, CRLF_CHAR
-        );
-        for sValueLine in asValueLines[1:]:
-          oConsole.fOutput(
-            HTTP_HEADER_VALUE, sValueLine,
-            HTTP_CRLF, CRLF_CHAR
-          );
-      oConsole.fOutput(
-        HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not oRequest.sBody else ""
-      );
-      if oRequest.sBody:
-        # Output request body
-        fOutputBodyLines(HTTP_BODY, oRequest.sBody.split("\n"));
-      # Output separator
-      oConsole.fOutput(HTTP_REQUEST_RESPONSE_SEPARATOR, sPadding = u"\u2500");
-      # Output response status line
-      fOutputResponseStatusLine(oResponse);
-      # Output response headers
-      for oHTTPHeader in oResponse.oHeaders.faoGetHeaders():
-        asValueLines = oHTTPHeader.asValueLines;
-        oConsole.fOutput(
-          HTTP_HEADER_NAME, oHTTPHeader.sName,
-          NORMAL, ":",
-          HTTP_HEADER_VALUE, asValueLines[0],
-          HTTP_CRLF, CRLF_CHAR
-        );
-        for sValueLine in asValueLines[1:]:
-          oConsole.fOutput(
-            HTTP_HEADER_VALUE, sValueLine,
-            HTTP_CRLF, CRLF_CHAR
-          );
-      # Output response body
-      if oResponse.sBody:
-        if bDecodeBody:
-          asBodyLines = sResponseData.split("\n") if sResponseData else [];
-          xColor = HTTP_BODY_DECODED;
-        else:
-          asBodyLines = oResponse.sBody.split("\n") if oResponse.sBody else [];
-          xColor = HTTP_BODY;
-        oConsole.fOutput(
-          HTTP_CRLF, CRLF_CHAR, EOF_CHAR if not asBodyLines else ""
-        );
-        fOutputBodyLines(xColor, asBodyLines);
-      if oRequest.o0AdditionalHeaders:
-        # Output response additional headers
-        for oHTTPHeader in oRequest.o0AdditionalHeaders.faoGetHeaders():
-          asValueLines = oHTTPHeader.asValueLines;
-          oConsole.fOutput(
-            HTTP_HEADER_NAME, oHTTPHeader.sName,
-            NORMAL, ": ",
-            HTTP_HEADER_VALUE, asValueLines[0],
-            HTTP_CRLF, CRLF_CHAR
-          );
-          for sValueLine in asValueLines[1:]:
-            oConsole.fOutput(HTTP_HEADER_VALUE, sValueLine);
+      if bShowProgress:
+        oConsole.fOutput("+ Found %d segments." % (uIndex - 1));
     if bSegmentedVideo and oResponse.uStatusCode == 200:
       asRedirectedFromURLs = [];
       uIndex += 1;
