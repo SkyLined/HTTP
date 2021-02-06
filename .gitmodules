@@ -40,3 +40,6 @@
 [submodule "modules/mNotProvided"]
 	path = modules/mNotProvided
 	url = https://github.com/SkyLined/mNotProvided/
+[submodule "modules/fsBytesToHumanReadableString"]
+	path = modules/fsBytesToHumanReadableString
+	url = https://github.com/SkyLined/fsBytesToHumanReadableString/
