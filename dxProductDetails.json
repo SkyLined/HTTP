@@ -1,16 +1,12 @@
 {
-  "asProductTypes": ["Python application"],
-  "asPythonApplicationNames": [
-    "HTTP"
-  ],
   "asDependentOnProductNames": [
     "cFileSystemItem", 
-    "fsBytesToHumanReadableString",
+    "fsBytesToHumanReadableString", 
     "mHTTP", 
     "mHTTPConnections", 
     "mHTTPProtocol", 
     "mMultiThreading", 
-    "mNotProvided",
+    "mNotProvided", 
     "mProductDetails", 
     "mTCPIPConnections", 
     "mWindowsAPI", 
@@ -19,20 +15,26 @@
     "mDateTime", 
     "mRegistry"
   ], 
+  "asJavaScriptModuleNames": [], 
   "asOptionalProductNames": [
-    "cFileSystemItem",
-    "mDebugOutput",
+    "cFileSystemItem", 
+    "mDebugOutput", 
     "mSSL"
   ], 
-  "oProductVersion": "2020-08-12 11:53", 
+  "asPHPModuleNames": [], 
+  "asProductTypes": [
+    "Python application"
+  ], 
+  "asPythonApplicationNames": [
+    "HTTP"
+  ], 
+  "oProductVersion": "2021-03-01 10:14", 
   "oRepository": {
     "sBranch": "master", 
     "sRepositoryName": "HTTP", 
     "sType": "GitHub", 
     "sUserName": "SkyLined"
   }, 
-  "oTrialPeriodDuration": null, 
-  "sLicenseServerURL": null, 
   "sProductAuthor": "SkyLined", 
   "sProductName": "HTTP", 
   "sProductURL": "https://github.com/SkyLined/HTTP"
