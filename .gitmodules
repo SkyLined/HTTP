@@ -43,3 +43,6 @@
 [submodule "modules/fsBytesToHumanReadableString"]
 	path = modules/fsBytesToHumanReadableString
 	url = https://github.com/SkyLined/fsBytesToHumanReadableString/
+[submodule "modules/mHumanReadable"]
+	path = modules/mHumanReadable
+	url = https://github.com/SkyLined/mHumanReadable/
