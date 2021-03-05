@@ -17,7 +17,7 @@ except: # Do nothing if not available.
 try:
   from oConsole import oConsole;
   from cFileSystemItem import cFileSystemItem;
-  from fsBytesToHumanReadableString import fsBytesToHumanReadableString;
+  from mHumanReadable import fsBytesToHumanReadableString;
   from mHTTP import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cHTTPHeaders, cURL, mExceptions;
   
   from fOutputRequest import fOutputRequest;
