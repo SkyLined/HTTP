@@ -1,19 +1,24 @@
-from oConsole import oConsole;
+from mConsole import oConsole;
 
 # Colors used in output for various types of information:
 NORMAL =                            0xFF07; # Light gray
 DIM =                               0xFF08; # Dark gray
 INFO =                              0xFF0B; # Bright blue
 HILITE =                            0xFF0F; # Bright white
+OK =                                0x0F02; # Green
+OK_INFO =                           0x0F0A; # Bright Green
 ERROR =                             0xFF04; # Red
 ERROR_INFO =                        0xFF0C; # Bright red
 WARNING =                           0xFF06; # Yellow
 WARNING_INFO =                      0xFF0E; # Bright yellow
 UNDERLINE =                        0x10000;
 
-oConsole.uDefaultColor =            NORMAL;
-oConsole.uDefaultBarColor =         0xFF1B; # Light cyan on Dark blue
-oConsole.uDefaultProgressColor =    0xFFB1; # Dark blue on light cyan
+BAR =                               0xFF1B; # Light cyan on Dark blue
+PROGRESS =                          0xFFB1; # Dark blue on light cyan
+
+oConsole.uDefaultColor = NORMAL;
+oConsole.uDefaultBarColor = BAR;
+oConsole.uDefaultProgressColor = PROGRESS;
 
 HTTP_REQUEST_RESPONSE_BOX =         0xFF08;
 HTTP_REQUEST_RESPONSE_BOX_HEADER =  0xFF80;
