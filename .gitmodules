@@ -46,3 +46,6 @@
 [submodule "modules/mHumanReadable"]
 	path = modules/mHumanReadable
 	url = https://github.com/SkyLined/mHumanReadable/
+[submodule "modules\\mConsole"]
+	path = modules\\mConsole
+	url = https://github.com/SkyLined/mConsole
