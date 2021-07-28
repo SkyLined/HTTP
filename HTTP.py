@@ -143,7 +143,7 @@ try:
         sbValue = bytes(ord(s) for s in s0Value);
         tsbHeader = sbValue.split(b":", 1);
         if len(tsbHeader) == 1:
-          sbHeaderName = sbValue; sbHeaderValue = None;
+          sbHeaderName = sbValue; sb0HeaderValue = None;
         else:
           sbHeaderName, sb0HeaderValue = tsbHeader;
           if sb0HeaderValue.strip() == "":
@@ -327,10 +327,10 @@ try:
         s0Data = s0RequestData,
       );
       for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
-        if sValue is None:
-          oRequest.oHTTPHeaders.fbRemoveHeadersForName(sName);
+        if sbValue is None:
+          oRequest.oHeaders.fbRemoveHeadersForName(sbName);
         else:
-          oRequest.oHTTPHeaders.fbReplaceHeadersForName(sName, sValue);
+          oRequest.oHeaders.fbReplaceHeadersForName(sbName, sbValue);
       # Send the request and get the response.
       oConsole.fStatus(
         INFO, fsCP437FromBytesString(oRequest.sbVersion), " ", fsCP437FromBytesString(oRequest.sbMethod), " ", fsCP437FromBytesString(oURL.sbAbsolute), NORMAL, "...");
