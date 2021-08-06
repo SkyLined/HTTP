@@ -52,12 +52,12 @@
 [submodule "modules/mFileSystemItem"]
 	path = modules/mFileSystemItem
 	url = https://github.com/SkyLined/mFileSystemItem
-[submodule "modules\\mHTTPClient"]
-	path = modules\\mHTTPClient
+[submodule "modules/mHTTPClient"]
+	path = modules/mHTTPClient
 	url = https://github.com/SkyLined/mHTTPClient
-[submodule "modules\\mHTTPConnection"]
-	path = modules\\mHTTPConnection
+[submodule "modules/mHTTPConnection"]
+	path = modules/mHTTPConnection
 	url = https://github.com/SkyLined/mHTTPConnection
-[submodule "modules\\mTCPIPConnection"]
-	path = modules\\mTCPIPConnection
+[submodule "modules/mTCPIPConnection"]
+	path = modules/mTCPIPConnection
 	url = https://github.com/SkyLined/mTCPIPConnection
