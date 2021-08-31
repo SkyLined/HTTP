@@ -168,7 +168,7 @@ try:
         bDownload = True;
         bSegmentedVideo = True;
         if s0Value:
-          if s0DownloadToFilePath not in None:
+          if s0DownloadToFilePath is not None:
             oConsole.fOutput(ERROR, "- You can only provide a path to download to once.");
             sys.exit(2);
           s0DownloadToFilePath = s0Value;
