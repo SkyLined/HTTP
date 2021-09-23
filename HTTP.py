@@ -10,6 +10,7 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
+guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   from mConsole import oConsole;
   from mFileSystemItem import cFileSystemItem;
@@ -17,17 +18,22 @@ try:
   from mHTTPClient import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cHTTPHeaders, cURL, mExceptions;
   from mNotProvided import *;
   
-  from fOutputRequest import fOutputRequest;
-  from fOutputResponse import fOutputResponse;
+  from cSession import cSession;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
+  from fbApplySessionJSONToSession import fbApplySessionJSONToSession;
+  from foGetResponseForURL import foGetResponseForURL;
+  from fOutputExceptionAndExit import fOutputExceptionAndExit;
+  from fOutputHostnameResolved import fOutputHostnameResolved;
+  from fOutputRequestSent import fOutputRequestSent;
+  from fOutputResponseReceived import fOutputResponseReceived;
+  from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
+  from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
+  from fOutputSessionSetCookie import fOutputSessionSetCookie;
   from mCP437 import fsCP437FromBytesString;
-  from mColors import *;
+  from mColorsAndChars import *;
+  from mExitCodes import *;
   
   if __name__ == "__main__":
-    oConsole.uDefaultColor =            NORMAL;
-    oConsole.uDefaultBarColor =         BAR;
-    oConsole.uDefaultProgressColor =    PROGRESS;
-    
     rURL = re.compile(r"^https?://.*$", re.I);
     rMethod = re.compile(r"^[A-Z]+$", re.I);
     rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
@@ -58,21 +64,13 @@ try:
       )
     ]];
     
-    def fExitWithError(sMessage, o0Exception = None):
-      oConsole.fOutput(ERROR, "- ", ERROR_INFO, sMessage);
-      if o0Exception:
-        oConsole.fOutput("  ", ERROR_INFO, str(o0Exception.sMessage));
-        for (sName, xValue) in o0Exception.dxDetails.items():
-          oConsole.fOutput("  ", ERROR, "\u2022 ", str(sName), " = ", ERROR_INFO, repr(xValue));
-      sys.exit(1);
-    
     asArguments = sys.argv[1:];
     dsbAdditionalOrRemovedHeaders = {};
     sbzMethod = zNotProvided;
     o0URL = None;
     bSegmentedVideo = None;
     uStartIndex = None;
-    sbzHTTPVersion = zNotProvided;
+    oSession = cSession();
     bShowProgress = True;
     bShowRequest = True;
     bShowResponse = True;
@@ -81,66 +79,79 @@ try:
     o0HTTPProxyServerURL = None;
     s0RequestData = None;
     bDecodeBody = False;
-    bDownload = False;
-    uMaxRedirects = 0;
+    u0MaxRedirects = None;
     bAllowUnverifiableCertificates = False;
-    s0DownloadToFilePath = None;
+    s0zDownloadToFilePath = zNotProvided;
+    s0zSessionPath = zNotProvided;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
-      if s0LowerName in ["debug"]:
+      def fbParseBooleanArgument():
         if s0Value is None or s0Value.lower() == "true":
+          return True;
+        if s0Value.lower() == "false":
+          return False;
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " The value for \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\" must be \"",
+          COLOR_INFO, "true",
+          COLOR_NORMAL, "\" (default) or \"",
+          COLOR_INFO, "false",
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+      def fsRequireArgumentValue():
+        if s0Value:
+          return s0Value;
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " You must provide a value for \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+      if s0LowerName in ["debug"]:
+        if fbParseBooleanArgument():
           if not m0DebugOutput:
-            oConsole.fOutput(ERROR, "The ", ERROR_INFO, "mDebugOutput", ERROR, " module is needed to show debug information!");
-            sys.exit(3);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The ",
+              COLOR_INFO, "mDebugOutput",
+              COLOR_NORMAL, " module is needed to show debug information but it is not available!",
+            );
+            sys.exit(guExitCodeBadArgument);
           m0DebugOutput.fEnableAllDebugOutput();
-        elif s0Value.lower() == "false":
-          pass;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
       elif s0LowerName in ["data"]:
-        if not s0Value:
-          oConsole.fOutput(ERROR, "- You must provide a value for \"", ERROR_INFO, sArgument, ERROR, "\".");
-          sys.exit(2);
-        s0RequestData = s0Value;
+        s0RequestData = fsRequireArgumentValue();
       elif s0LowerName in ["df", "data-file"]:
-        if not s0Value:
-          oConsole.fOutput(ERROR, "- You must provide a value for \"", ERROR_INFO, sArgument, ERROR, "\".");
-          sys.exit(2);
-        oDataFileSystemItem = cFileSystemItem(s0Value);
+        oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
         if not oDataFileSystemItem.fbIsFile(bParseZipFiles = True):
-          oConsole.fOutput(ERROR, "- You must provide a path to an existing file as the value for \"", ERROR_INFO, sArgument, ERROR, "\".");
-          sys.exit(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot find file \"",
+            COLOR_INFO, oDataFileSystemItem.sPath,
+            COLOR_NORMAL, "\"."
+          );
+          sys.exit(guExitCodeBadArgument);
         try:
           sbRequestData = oDataFileSystemItem.fsbRead(bParseZipFiles = True, bThrowErrors = true);
           s0RequestData = str(sbRequestData, "utf-8", "strict");
         except Exception as oException:
-          oConsole.fOutput(ERROR, "Cannot read from file ", ERROR_INFO, s0Value, ERROR, ":");
-          oConsole.fOutput("  ", ERROR_INFO, str(oException.sMessage));
-          for (sName, xValue) in oException.dxDetails.items():
-            oConsole.fOutput("  ", ERROR, "\u2022 ", str(sName), " = ", ERROR_INFO, repr(xValue));
-          sys.exit(5);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot read from file ",
+            COLOR_INFO, oDataFileSystemItem.sPath,
+            COLOR_NORMAL, ".",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
       elif s0LowerName in ["db", "decode", "decode-body"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bDecodeBody = True;
-        elif s0Value.lower() == "false":
-          bDecodeBody = False;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bDecodeBody = fbParseBooleanArgument();
       elif s0LowerName in ["dl", "download"]:
-        bDownload = True;
-        if s0Value:
-          if s0DownloadToFilePath is not None:
-            oConsole.fOutput(ERROR, "- You can only provide a path to download to once.");
-            sys.exit(2);
-          s0DownloadToFilePath = s0Value;
+        s0zDownloadToFilePath = s0Value;
+      elif s0LowerName in ["s", "session"]:
+        s0zSessionPath = s0Value;
       elif s0LowerName in ["header"]:
-        if not s0Value:
-          oConsole.fOutput(ERROR, "- You must provide a value for \"", ERROR_INFO, sArgument, ERROR, "\".");
-          sys.exit(2);
-        sbValue = bytes(ord(s) for s in s0Value);
+        sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbHeader = sbValue.split(b":", 1);
         if len(tsbHeader) == 1:
           sbHeaderName = sbValue; sb0HeaderValue = None;
@@ -153,301 +164,305 @@ try:
         bUseProxy = True;
         if s0Value:
           if o0HTTPProxyServerURL is not None:
-            oConsole.fOutput(ERROR, "- You can only provide a proxy URL once.");
-            sys.exit(2);
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You can only provide one proxy server URL.",
+            );
+            sys.exit(guExitCodeBadArgument);
           o0HTTPProxyServerURL = cURL.foFromBytesString(bytes(ord(s) for s in s0Value));
       elif s0LowerName in ["r", "max-redirects"]:
+        sMaxRedirects = fsRequireArgumentValue();
         try:
-          uMaxRedirects = int(s0Value);
-          assert uMaxRedirects >= 0, "";
+          u0MaxRedirects = int(sMaxRedirects);
+          assert u0MaxRedirects >= 0, "";
         except:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be an ", ERROR_INFO, "integer larger than or equal to zero", ERROR, ".");
-          sys.exit(2);
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " The value for \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\" must be a positive integer number or zero.",
+          );
+          sys.exit(guExitCodeBadArgument);
       elif s0LowerName in ["sv", "segmented-video"]:
-        bDownload = True;
         bSegmentedVideo = True;
-        if s0Value:
-          if s0DownloadToFilePath is not None:
-            oConsole.fOutput(ERROR, "- You can only provide a path to download to once.");
-            sys.exit(2);
-          s0DownloadToFilePath = s0Value;
+        # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
+        if s0Value is not None or not fbIsProvided(s0zDownloadToFilePath):
+          s0zDownloadToFilePath = s0Value;
       elif s0LowerName in ["s", "secure"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bAllowUnverifiableCertificates = False;
-        elif s0Value.lower() == "false":
-          bAllowUnverifiableCertificates = True;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bAllowUnverifiableCertificates = fbParseBooleanArgument();
       elif s0LowerName in ["show-progress"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bShowProgress = True;
-        elif s0Value.lower() == "false":
-          bShowProgress = False;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bShowProgress = fbParseBooleanArgument();
       elif s0LowerName in ["show-request"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bShowRequest = True;
-        elif s0Value.lower() == "false":
-          bShowRequest = False;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bShowRequest = fbParseBooleanArgument();
       elif s0LowerName in ["show-response"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bShowResponse = True;
-        elif s0Value.lower() == "false":
-          bShowResponse = False;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bShowResponse = fbParseBooleanArgument();
       elif s0LowerName in ["show-details"]:
-        if s0Value is None or s0Value.lower() == "true":
-          bShowDetails = True;
-        elif s0Value.lower() == "false":
-          bShowDetails = False;
-        else:
-          oConsole.fOutput(ERROR, "- The value for ", ERROR_INFO, sArgument, ERROR, \
-              " must be \"", ERROR_INFO, "true", ERROR, "\" (default) or \"", ERROR_INFO, "false", ERROR, "\".");
-          sys.exit(2);
+        bShowDetails = fbParseBooleanArgument();
       elif s0LowerName:
-        oConsole.fOutput(ERROR, "- Unknown argument ", ERROR_INFO, sArgument, ERROR, ".");
-        sys.exit(2);
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Unknown argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
       elif o0URL is None and rURL.match(sArgument):
         o0URL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
       elif not fbIsProvided(sbzMethod) and rMethod.match(sArgument):
         sbzMethod = bytes(ord(s) for s in sArgument);
-      elif not fbIsProvided(sbzHTTPVersion) and rHTTPVersion.match(sArgument):
-        sbzHTTPVersion = bytes(ord(s) for s in sArgument);
+      elif not fbIsProvided(oSession.sbzHTTPVersion) and rHTTPVersion.match(sArgument):
+        oSession.sbzHTTPVersion = bytes(ord(s) for s in sArgument);
       else:
-        oConsole.fOutput(ERROR, "- Superfluous argument ", ERROR_INFO, sArgument, ERROR, ".");
-        sys.exit(2);
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Superfluous argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+    ### DONE PARSING ARGUMENTS #################################################
     if o0URL is None:
-      fPrintUsageInformation();
-      sys.exit(0);
+      fOutputUsageInformation();
+      sys.exit(guExitCodeSuccess);
     if bSegmentedVideo:
       for rbSegmentedVideo in arbSegmentedVideos:
         obURLSegmentMatch = rbSegmentedVideo.match(o0URL.sbAbsolute);
         if obURLSegmentMatch:
           break;
       else:
-        oConsole.fOutput(ERROR, "Could not identify segmentation from URL ", ERROR_INFO, sURL);
-        sys.exit(2);
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not identify segmentation from URL \"",
+          COLOR_INFO, sURL,
+          COLOR_NORMAL, "\"",
+        );
+        sys.exit(guExitCodeBadArgument);
       sbURLSegmentHeader, sbStartIndex, sbURLSegmentFooter = obURLSegmentMatch.groups();
       uStartIndex = int(sbStartIndex);
       if bShowProgress:
-        oConsole.fOutput(NORMAL, "+ Segmented URL: ", INFO, sbURLSegmentHeader, HILITE, "*INDEX*", INFO, sbURLSegmentFooter);
-        oConsole.fOutput(NORMAL, "  Starting at index ", HILITE, str(uStartIndex), HILITE, ".");
+        oConsole.fOutput(
+          COLOR_OK, CHAR_OK,
+          COLOR_NORMAL, " Segmented URL: \"",
+          COLOR_INFO, sbURLSegmentHeader,
+          COLOR_HILITE, "*INDEX*",
+          COLOR_INFO, sbURLSegmentFooter,
+          COLOR_NORMAL, "\".",
+        );
+        oConsole.fOutput(
+          COLOR_NORMAL, "  Index will start at ",
+          COLOR_HILITE, str(uStartIndex),
+          COLOR_NORMAL, ".",
+        );
+    ### HTTP CLIENT ###########################################################
+    # We need to use a HTTP client with no proxy, a static proxy or a dynamic
+    # proxy. We'll create an instance of the right type of HTTP client now and
+    # add event handlers for reporting requests and responses to the user.
     
-    def fReportRequestSent(oConnection, oRequest, o0ProxyServerURL):
-      if bShowProgress:
-        oConsole.fOutput(
-          "+ ", HILITE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()), NORMAL, " request (",
-          INFO, fsBytesToHumanReadableString(len(oRequest.fsbSerialize())), NORMAL, ") sent ",
-          [INFO, "securely "] if oConnection.bSecure else [WARNING, "in plain text "], NORMAL,
-          ["through proxy server at ", INFO, fsCP437FromBytesString(o0ProxyServerURL.sbAbsolute), NORMAL] if o0ProxyServerURL else
-              ["to server at ", INFO, fsCP437FromBytesString(oConnection.foGetURLForRemoteServer().sbAbsolute), NORMAL],
-          "."
-        );
-      if bShowRequest:
-        fOutputRequest(oRequest, bDecodeBody, bShowDetails);
-    def fReportResponseReceived(oConnection, oResponse, o0ProxyServerURL):
-      if bShowProgress:
-        oConsole.fOutput(
-          "+ ", HILITE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()), NORMAL, " response (",
-          INFO, fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
-          [" ", fsCP437FromBytesString(oResponse.sb0MediaType)] if oResponse.sb0MediaType else [], NORMAL, ") received ",
-          [INFO, "securely "] if oConnection.bSecure else [WARNING, "in plain text "], NORMAL,
-          ["through proxy server at ", INFO, fsCP437FromBytesString(o0ProxyServerURL.sbAbsolute), NORMAL]
-              if o0ProxyServerURL else
-              ["from server at ", INFO, fsCP437FromBytesString(oConnection.foGetURLForRemoteServer().sbAbsolute), NORMAL],
-          "."
-        );
-      if bShowResponse:
-        fOutputResponse(oResponse, bDecodeBody, bShowDetails);
+    # Since the event arguments differ for each type of HTTP client, event
+    # handlers specific to the client are created which call into the following
+    # two generic functions for reporting the requests/reponses:
     if not bUseProxy:
-      # No proxy
+      # Create a HTTP client instance that uses no proxy
       oHTTPClient = cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
-      def fHandleRequestSent(oHTTPClient, oConnection, oRequest):
-        fReportRequestSent(oConnection, oRequest, None);
-      def fHandleResponseReceived(oHTTPClient, oConnection, oResponse):
-        fReportResponseReceived(oConnection, oResponse, None);
+      # Create event handlers specific to this situation that call the generic request/response reporters
+      def fRequestSentEventHandler(oHTTPClient, oConnection, oRequest):
+        fOutputRequestSent(
+          oConnection, oRequest, None, # 3rd argument == None => Did not use a proxy
+          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
+        );
+      def fResponseReceivedEventHandler(oHTTPClient, oConnection, oResponse):
+        fOutputResponseReceived(
+          oConnection, oResponse, None, # 3rd argument == None => Did not use a proxy
+          bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
+        );
       if bShowProgress:
-        def fHandleHostnameResolved(oHTTPClient, sbHostname, iFamily, sCanonicalName, sIPAddress):
-          sHostname = str(sbHostname, "ascii", "strict");
-          if sHostname.lower() != sIPAddress.lower():
-            oConsole.fOutput(
-              "+ Hostname ", HILITE, sHostname, NORMAL, " resolved as ",
-              INFO, sIPAddress, NORMAL, 
-              [" (", INFO, sCanonicalName, NORMAL, ")"] if sCanonicalName.lower() != sHostname.lower() else [],
-              "."
-            );
-          elif not sCanonicalName.startswith("%s:" % sIPAddress):
-            oConsole.fOutput(
-              "+ Hostname for IP address ", HILITE, sIPAddress, NORMAL, " is ",
-              INFO, sCanonicalName, NORMAL,
-              "."
-            );
-        oHTTPClient.fAddCallback("hostname resolved", fHandleHostnameResolved);
+        def fHostnameResolvedEventHandler(oHTTPClient, sbHostname, iFamily, sCanonicalName, sIPAddress):
+          fOutputHostnameResolved(sbHostname, sCanonicalName, sIPAddress);
+        oHTTPClient.fAddCallback("hostname resolved", fHostnameResolvedEventHandler);
     elif o0HTTPProxyServerURL:
-      # Static proxy
+      # Create a HTTP client instance that uses a static proxy
       oHTTPClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
-      def fHandleRequestSent(oHTTPClient, oConnection, oRequest):
-        fReportRequestSent(oConnection, oRequest, oHTTPClient.oProxyServerURL);
-      def fHandleResponseReceived(oHTTPClient, oConnection, oResponse):
-        fReportResponseReceived(oConnection, oResponse, oHTTPClient.oProxyServerURL);
+      # Create event handlers specific to this situation that call the generic request/response reporters
+      def fRequestSentEventHandler(oHTTPClient, oConnection, oRequest):
+        fOutputRequestSent(
+          oConnection, oRequest, oHTTPClient.oProxyServerURL, # 3rd argument == URL => Used a proxy
+          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
+        );
+      def fResponseReceivedEventHandler(oHTTPClient, oConnection, oResponse):
+        fOutputResponseReceived(
+         oConnection, oResponse, oHTTPClient.oProxyServerURL,# 3rd argument == URL => Used a proxy
+         bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
+       ); 
     else:
-      # Dynamic proxy
+      # Create a HTTP client instance that uses dynamic proxies.
       oHTTPClient = cHTTPClientUsingAutomaticProxyServer(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
-      # The cHTTPClientUsingAutomaticProxyServer instance creates a single cHTTPClient instance to make direct requests and
-      # one or more cHTTPClientUsingProxyServer instances to make requests through various proxies.
-      # Whether or not a proxy was used for a request depends on what class oSecondaryHTTPClientUsingProxyServerOrNot is
-      # in the event arguments.
-      def fHandleRequestSent(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oRequest):
-        fReportRequestSent(oConnection, oRequest, o0ProxyServerURL);
-      def fHandleResponseReceived(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oResponse):
-        fReportResponseReceived(oConnection, oResponse, o0ProxyServerURL);
-    oHTTPClient.fAddCallback("request sent", fHandleRequestSent);
-    oHTTPClient.fAddCallback("response received", fHandleResponseReceived);
+      def fRequestSentEventHandler(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oRequest):
+        fOutputRequestSent(
+          oConnection, oRequest, o0ProxyServerURL, # 3rd argument == None/URL => May have used a proxy
+          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
+        );
+      def fResponseReceivedEventHandler(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oResponse):
+        fOutputResponseReceived(
+          oConnection, oResponse, o0ProxyServerURL, # 3rd argument == None/URL => May have used a proxy
+          bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
+        );
+    # If needed, apply the event handlers specific to this situation which where created above:
+    if bShowProgress or bShowRequest:
+      oHTTPClient.fAddCallback("request sent", fRequestSentEventHandler);
+    if bShowProgress or bShowResponse:
+      oHTTPClient.fAddCallback("response received", fResponseReceivedEventHandler);
     
-    # Helper function to get a single URL
-    def foGetResponseForURL(oURL, uMaxRedirectsLeft, bFirstDownload):
-      # Construct the HTTP request
-      oRequest = oHTTPClient.foGetRequestForURL(
-        oURL = oURL,
-        sbzVersion = sbzHTTPVersion,
-        sbzMethod = sbzMethod,
-        s0Data = s0RequestData,
-      );
-      for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
-        if sbValue is None:
-          oRequest.oHeaders.fbRemoveHeadersForName(sbName);
-        else:
-          oRequest.oHeaders.fbReplaceHeadersForName(sbName, sbValue);
-      # Send the request and get the response.
-      oConsole.fStatus(
-        INFO, fsCP437FromBytesString(oRequest.sbVersion), " ", fsCP437FromBytesString(oRequest.sbMethod), " ", fsCP437FromBytesString(oURL.sbAbsolute), NORMAL, "...");
-      try:
-        o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
-      except Exception as oException:
-        bSSLSupportEnabled = hasattr(mExceptions, "cSSLException");
-        if isinstance(oException, mExceptions.cTCPIPConnectTimeoutException):
-          oConsole.fOutput(ERROR, "- Connecting to server timed out:");
-        elif isinstance(oException, (
-          mExceptions.cTCPIPConnectionRefusedException,
-          mExceptions.cTCPIPInvalidAddressException,
-          mExceptions.cDNSUnknownHostnameException,
-        )):
-          oConsole.fOutput(ERROR, "- Could not connect to server:");
-        elif isinstance(oException, (
-          mExceptions.cTCPIPConnectionDisconnectedException,
-          mExceptions.cTCPIPConnectionShutdownException,
-        )):
-          oConsole.fOutput(ERROR, "- The server did not respond to our request:");
-        elif isinstance(oException, mExceptions.cHTTPFailedToConnectToProxyException):
-          oConsole.fOutput(ERROR, "- Could not connect to proxy server:");
-        elif isinstance(oException, (
-          mExceptions.cMaxConnectionsReachedException,
-        )):
-          oConsole.fOutput(ERROR, "- Could not connect to server:");
-        elif isinstance(oException, mExceptions.cTCPIPDataTimeoutException):
-          oConsole.fOutput(ERROR, "- The server was unable to respond in a timely manner.");
-        elif isinstance(oException, (
-          mExceptions.cHTTPOutOfBandDataException,
-          mExceptions.cHTTPInvalidMessageException,
-        )):
-          oConsole.fOutput(ERROR, "- There was a protocol error while talking to the server:");
-        elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLSecureTimeoutException):
-          oConsole.fOutput(ERROR, "- Securing the connection to the server timed out:");
-        elif bSSLSupportEnabled and isinstance(oException, (
-          mExceptions.cSSLWrapSocketException,
-          mExceptions.cSSLSecureHandshakeException,
-          mExceptions.cSSLCannotGetRemoteCertificateException,
-          mExceptions.cSSLIncorrectHostnameException,
-        )):
-          oConsole.fOutput(ERROR, "- Securing the connection to the server failed:");
-        else:
-          raise;
-        oConsole.fOutput("  ", ERROR_INFO, str(oException.sMessage));
-        for (sName, xValue) in oException.dxDetails.items():
-          oConsole.fOutput("  ", ERROR, "\u2022 ", str(sName), " = ", ERROR_INFO, repr(xValue));
-        sys.exit(4);
-      if not o0Response:
-        oConsole.fOutput(ERROR, "- No response received.");
-        sys.exit(4);
-      oResponse = o0Response;
-      if uMaxRedirects and oResponse.uStatusCode in [301, 302, 307, 308]:
-        oLocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
-        if not oLocationHeader:
-          oConsole.fOutput(ERROR, "- Redirected without a \"Location\" header.");
-          sys.exit(4);
-        sbRedirectToURL = oLocationHeader.sbValue;
-        try:
-          oURL = cURL.foFromBytesString(sbRedirectToURL);
-        except mExceptions.cInvalidURLException as oException:
-          oConsole.fOutput(ERROR, "Redirect to invalid URL ", ERROR_INFO, sbRedirectToURL, ERROR, ":");
-          oConsole.fOutput("  ", ERROR_INFO, str(oException.sMessage));
-          for (sName, xValue) in oException.dxDetails.items():
-            oConsole.fOutput("  ", ERROR, "\u2022 ", str(sName), " = ", ERROR_INFO, repr(xValue));
-          sys.exit(4);
-        if bShowProgress:
-          oConsole.fOutput(NORMAL, ">>> Redirected to URL: ", INFO, fsCP437FromBytesString(oURL.sbAbsolute), NORMAL, ".");
-        if uMaxRedirectsLeft == 0:
-          oConsole.fOutput(ERROR, "- Too many sequential redirects.");
-          sys.exit(4);
-        return foGetResponseForURL(oURL, uMaxRedirectsLeft - 1, bFirstDownload);
-      if bDownload and oResponse.uStatusCode == 200:
-        if s0DownloadToFilePath is None:
-          sFilePath = oURL.asPath[-1];
-          oDownloadToFile = cFileSystemItem(sFilePath);
-        else:
-          oDownloadToFile = cFileSystemItem(s0DownloadToFilePath);
-          if not bFirstDownload:
-            oDownloadToFile.fbOpenAsFile(bWritable = True, bAppend = True);
-        sb0DecompressedBody = oResponse.sb0DecompressedBody or "";
-        try:
-          oDownloadToFile.fbWrite(sb0DecompressedBody, bThrowErrors = True);
-        except Exception as oException:
-          oConsole.fOutput(
-            ERROR, "Cannot write ",
-            ERROR_INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)),
-            ERROR, "to file ",
-            ERROR_INFO, oDownloadToFile.sPath,
-            ERROR, ":"
-          );
-          oConsole.fOutput("  ", ERROR_INFO, str(oException.sMessage));
-          for (sName, xValue) in oException.dxDetails.items():
-            oConsole.fOutput("  ", ERROR, "\u2022 ", str(sName), " = ", ERROR_INFO, repr(xValue));
-          sys.exit(6);
-        if oDownloadToFile.fbIsOpenAsFile():
-          oDownloadToFile.fbClose();
-        if bShowProgress:
-          oConsole.fOutput(
-            "+ Saved ", INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)), NORMAL, " to ",
-            INFO, oDownloadToFile.sPath, NORMAL, "."
-          );
-      return oResponse;
-    
-    if not bSegmentedVideo:
-      oResponse = foGetResponseForURL(o0URL, uMaxRedirects, True);
+    ### SESSION FILE ##########################################################
+    if fbIsProvided(s0zSessionPath) and s0zSessionPath is not None:
+      oSessionFileOrFolder = cFileSystemItem(s0zSessionPath);
+      if oSessionFileOrFolder.fbIsFolder():
+        o0SessionFile = oSessionFileOrFolder.foGetChild("http-session.json");
+      elif oSessionFileOrFolder.fbIsFile():
+        o0SessionFile = oSessionFileOrFolder;
+      elif oSessionFileOrFolder.oParent.fbIsFolder():
+        o0SessionFile = oSessionFileOrFolder;
+      else:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not find session file ",
+          COLOR_INFO, oSessionFileOrFolder.sPath,
+          COLOR_NORMAL, ".",
+        );
+        sys.exit(guExitCodeBadArgument);
     else:
+      o0SessionFile = None;
+    
+    if o0SessionFile and o0SessionFile.fbIsFile():
+      if bShowProgress:
+        oConsole.fOutput(
+          COLOR_INFO, CHAR_INFO,
+          COLOR_NORMAL, " Session settings:",
+        );
+        oConsole.fStatus(
+          COLOR_BUSY, CHAR_BUSY,
+          COLOR_NORMAL, " Loading session from file ",
+          COLOR_INFO, o0SessionFile.sPath,
+          COLOR_NORMAL, "...",
+        );
+      try:
+        sbSessionFileJSON = o0SessionFile.fsbRead(bThrowErrors = True);
+      except Exception as oException:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not read session file ",
+          COLOR_INFO, o0SessionFile.sPath,
+          COLOR_NORMAL, ".",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
+      if bShowProgress:
+        oConsole.fStatus(
+          COLOR_BUSY, CHAR_BUSY,
+          COLOR_NORMAL, " Parsing session file ",
+          COLOR_INFO, o0SessionFile.sPath,
+          COLOR_NORMAL, "...",
+        );
+      def fOutputSessionHTTPVersion(oSession, sbHTTPVersion):
+        oConsole.fOutput(
+          "  ",
+          CHAR_LIST,
+          COLOR_NORMAL, " HTTP version: ",
+          COLOR_INFO, fsCP437FromBytesString(sbHTTPVersion),
+          COLOR_NORMAL, ".",
+        );
+      def fOutputSessionMaxRedirects(oSession, u0MaxRedirects):
+        if u0MaxRedirects is None:
+          oConsole.fOutput(
+            "  ",
+            CHAR_LIST,
+            COLOR_NORMAL, " Redirects: ",
+            COLOR_INFO, "not followed",
+            COLOR_NORMAL, ".",
+          );
+        else:
+          oConsole.fOutput(
+            "  ",
+            CHAR_LIST,
+            COLOR_NORMAL, " Max redirects: ",
+            COLOR_INFO, str(u0MaxRedirects),
+            COLOR_NORMAL, ".",
+          );
+      def fOutputSessionUserAgent(oSession, sbUserAgent):
+        oConsole.fOutput(
+          "  ",
+          CHAR_LIST,
+          COLOR_NORMAL, " User agent: ",
+          COLOR_INFO, fsCP437FromBytesString(sbUserAgent),
+          COLOR_NORMAL, ".",
+        );
+      def fOutputSessionDoNotTrackHeader(oSession, bDoNotTrack):
+        oConsole.fOutput(
+          "  ",
+          CHAR_LIST,
+          COLOR_NORMAL, " Do not track: ",
+          COLOR_INFO,
+          "" if bDoNotTrack else "do NOT ", "add \"DNT: 1\" header",
+          COLOR_NORMAL, ".",
+        );
+      def fApplySessionJSONAddCookieEventHandler(oSession, sbOrigin, oCookie):
+        fOutputSessionSetCookie(sbOrigin, oCookie, False, False); # 3rd argument: cookie is added, 4rth argument, cookie is modified.
+      try:
+        bSessionJSONHasData = fbApplySessionJSONToSession(
+          sbSessionFileJSON,
+          oSession,
+          f0SetHTTPVersionCallback = fOutputSessionHTTPVersion if bShowProgress else None,
+          f0SetMaxRedirectsCallback = fOutputSessionMaxRedirects if bShowProgress else None,
+          f0SetUserAgentCallback = fOutputSessionUserAgent if bShowProgress else None,
+          f0SetAddDoNotTrackHeaderCallback = fOutputSessionDoNotTrackHeader if bShowProgress else None,
+          f0AddCookieCallback = fApplySessionJSONAddCookieEventHandler if bShowProgress else None,
+        );
+      except ValueError as oException:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not parse session file ",
+          COLOR_INFO, o0SessionFile.sPath,
+          COLOR_NORMAL, ":",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
+      if bShowProgress and not bSessionJSONHasData:
+        oConsole.fOutput(
+          "  (Session file has not data).",
+        );
+    if not bSegmentedVideo:
+      # Single request
+      foGetResponseForURL(
+        oHTTPClient,
+        o0SessionFile, oSession,
+        o0URL, sbzMethod, s0RequestData,
+        dsbAdditionalOrRemovedHeaders,
+        u0MaxRedirects,
+        s0zDownloadToFilePath, True, # bIsFirstDownload
+        bShowProgress,
+      );
+    else:
+      # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
       uIndex = uStartIndex;
       while 1:
         oURL = cURL.foFromBytesString(b"%s%d%s" % (sbURLSegmentHeader, uIndex, sbURLSegmentFooter));
-        oResponse = foGetResponseForURL(oURL, uMaxRedirects, uIndex == uStartIndex);
+        oResponse = foGetResponseForURL(
+          oHTTPClient,
+          o0SessionFile, oSession,
+          oURL, sbzMethod, s0RequestData,
+          dsbAdditionalOrRemovedHeaders,
+          u0MaxRedirects,
+          s0zDownloadToFilePath, uIndex == uStartIndex, # bIsFirstDownload
+          bShowProgress,
+        );
         if oResponse.uStatusCode != 200:
           break;
         uIndex += 1;
       if bShowProgress:
-        oConsole.fOutput("+ Found %d segments." % (uIndex - uStartIndex));
+        oConsole.fOutput(
+          COLOR_OK, CHAR_OK,
+          COLOR_NORMAL, "+ Found ",
+          COLOR_INFO, str(uIndex - uStartIndex),
+          COLOR_NORMAL, " segments.",
+        );
 except Exception as oException:
   if m0DebugOutput:
-    m0DebugOutput.fTerminateWithException(oException);
+    m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
   raise;
