@@ -11,18 +11,18 @@ from mConsole import oConsole;
 
 
 asLogo = [s.rstrip() for s in """
-                                                         _   _
-           ┄┄┄┄┄┄┄┄╒╦╦┄┄╦╦╕┄╒═╦╦═╕┄╒═╦╦═╕┄╒╦╦══╦╗┄┄┄┄┄┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄
-                    ║╠══╣║    ║║     ║║    ║╠══╩╝  □   ╱╱  ╱╱
-         ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄┄□┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄
-                                                      ‾   ‾""".split("""
+                                                         _   _                  
+           ┄┄┄┄┄┄┄┄╒╦╦┄┄╦╦╕┄╒═╦╦═╕┄╒═╦╦═╕┄╒╦╦══╦╗┄┄┄┄┄┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄          
+                    ║╠══╣║    ║║     ║║    ║╠══╩╝  □   ╱╱  ╱╱                   
+         ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄┄□┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
+                                                      ‾   ‾                     """.split("""
 """)];
 asColors = [s.rstrip() for s in """
-                                                         F   F
-           99999999FFB99FB39FFFBB39FFFBB39FFFFBB39999999F399F399999999
-                    B3BFB3    B3     B3    B33B33  B   F3  B3
-         9999999999FB399B3399FB33999FB3399FB3399999399B399B399999999
-                                                      3   3""".split("""
+                                                         F   F                  
+           99999999FFB99FB39FFFBB39FFFBB39FFFFBB39999999F399F399999999          
+                    B3BFB3    B3     B3    B33B33  B   F3  B3                   
+         9999999999FB399B3399FB33999FB3399FB3399999399B399B399999999            
+                                                      3   3                     """.split("""
 """)];
 def fOutputLogo():
   # We will use the above ASCII and color data to create a list of arguments
