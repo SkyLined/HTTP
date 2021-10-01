@@ -1,14 +1,6 @@
-﻿# -*- coding: utf-8 -*-
+﻿from mConsole import oConsole;
 
-if __name__ == "__main__":
-  import sys;
-  sys.path.append("..");
-  from mColorsAndChars import *;
-else:
-  from .mColorsAndChars import *;
-
-from mConsole import oConsole;
-
+from mColorsAndChars import *;
 
 asLogo = [s.rstrip() for s in """
                                                          _   _                  
