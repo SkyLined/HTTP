@@ -21,7 +21,6 @@ guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need
 try:
   from mConsole import oConsole;
   from mFileSystemItem import cFileSystemItem;
-  from mHumanReadable import fsBytesToHumanReadableString;
   from mHTTPClient import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cHTTPHeaders, cURL, mExceptions;
   from mNotProvided import *;
   
