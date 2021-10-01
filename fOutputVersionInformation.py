@@ -8,7 +8,7 @@ from faxListOutput import faxListOutput;
 from mColorsAndChars import *;
 
 try:
-  from fOutputLogo import fOutputLogo as fOutputLogo;
+  from fOutputLogo import fOutputLogo as f0OutputLogo;
 except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'fOutputLogo'":
     raise;
@@ -17,7 +17,7 @@ except ModuleNotFoundError as oException:
 def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFolders, bCheckForUpdates, bCheckForUpdatesSuccessful):
   oConsole.fOutput(*(
     [
-      "\u2502 ", (
+      "│ ", (
         [COLOR_WARNING, CHAR_WARNING] if (
           (
             bCheckForUpdates and (
@@ -28,14 +28,14 @@ def fOutputProductDetails(oProductDetails, bIsMainProduct, bShowInstallationFold
             oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod
           )
         ) else
-        [COLOR_INFO, CHAR_LIST] if bCheckForUpdates and bCheckForUpdatesSuccessful and oProductDetails.bVersionIsPreRelease else
+        [COLOR_NORMAL, CHAR_LIST] if bCheckForUpdates and bCheckForUpdatesSuccessful and oProductDetails.bVersionIsPreRelease else
         [COLOR_OK, CHAR_OK] if oProductDetails.o0License or not oProductDetails.bRequiresLicense else
         [COLOR_ERROR, CHAR_ERROR]
       ), " ", (
         COLOR_INFO if (not oProductDetails.bRequiresLicense or oProductDetails.o0License) else
         COLOR_WARNING if (oProductDetails.bHasTrialPeriod and oProductDetails.bInTrialPeriod) else
         COLOR_ERROR
-      ) + (UNDERLINE if oProductDetails.o0License else 0),
+      ) + (CONSOLE_UNDERLINE if oProductDetails.o0License else 0),
       oProductDetails.sProductName, COLOR_NORMAL, " version: ", (
         COLOR_WARNING if (
           bCheckForUpdates and (
@@ -88,8 +88,11 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
           oProductDetails.foGetLatestProductDetailsFromRepository();
         except mProductDetails.mExceptions.cProductDetailsException as oException:
           oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR, " Version check for ", ERROR_INFO, oProductDetails.sProductName,
-            COLOR_ERROR, " failed: ", ERROR_INFO, str(oException),
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Version check for ",
+            COLOR_INFO, oProductDetails.sProductName,
+            COLOR_NORMAL, " failed: ",
+            COLOR_INFO, str(oException),
           );
         else:
           aoProductDetailsSuccessfullyCheckedForUpdates.append(oProductDetails);
@@ -116,7 +119,7 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
       f0OutputLogo();
     
     oConsole.fOutput(
-      "\u250C\u2500 ", COLOR_HILITE, "Version information", COLOR_NORMAL, " ", sPadding = "\u2500"
+      "┌───[", COLOR_HILITE, " Version information ", COLOR_NORMAL, "]", sPadding = "─",
     );
     # Output the main product information first, then its dependencies alphabetically:
     if o0MainProductDetails:
@@ -147,7 +150,7 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
     );
     
     oConsole.fOutput(
-      "\u2502 ", CHAR_LIST, " ", COLOR_INFO, "Windows",
+      "│ ", CHAR_LIST, " ", COLOR_INFO, "Windows",
       COLOR_NORMAL, " version: ", COLOR_INFO, oSystemInfo.sOSName,
       COLOR_NORMAL, " release ", COLOR_INFO, oSystemInfo.sOSReleaseId,
       COLOR_NORMAL, ", build ", COLOR_INFO, oSystemInfo.sOSBuild,
@@ -155,14 +158,14 @@ def fOutputVersionInformation(bCheckForUpdates, bShowInstallationFolders):
       COLOR_NORMAL, ".",
     );
     oConsole.fOutput(
-      "\u2502 ", CHAR_LIST, " ", COLOR_INFO, "Python",
+      "│ ", CHAR_LIST, " ", COLOR_INFO, "Python",
       COLOR_NORMAL, " version: ", COLOR_INFO, str(platform.python_version()),
       COLOR_NORMAL, " ", COLOR_INFO, fsGetPythonISA(),
       COLOR_NORMAL, ".",
     );
     
     oConsole.fOutput(
-      "\u2514", sPadding = "\u2500",
+      "└", sPadding = "─",
     );
   finally:
     oConsole.fUnlock();

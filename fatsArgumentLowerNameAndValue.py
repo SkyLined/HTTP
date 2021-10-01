@@ -7,6 +7,18 @@ from mColorsAndChars import *;
 from mExitCodes import *;
 from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
 
+def fExitWithBadArgumentValue(sArgumentName, sMessage):
+  oConsole.fOutput(
+    COLOR_ERROR, CHAR_ERROR,
+    COLOR_NORMAL, " Invalid ",
+    COLOR_INFO, sArgumentName,
+    COLOR_NORMAL, " argument:",
+  );
+  oConsole.fOutput(
+    COLOR_INFO, "  ", sMessage,
+  );
+  sys.exit(guExitCodeBadArgument);
+
 def fatsArgumentLowerNameAndValue():
   atsArgumentNameAndValue = [];
   asArguments = sys.argv[1:];
@@ -25,39 +37,29 @@ def fatsArgumentLowerNameAndValue():
         sLowerName = sNameWithPrefix[1:].lower();
       if sLowerName in ["h", "?", "help"]:
         fOutputUsageInformation();
-        sys.exit(uExitCodeSuccess);
+        sys.exit(guExitCodeSuccess);
       if sLowerName in ["version", "version-check"]:
-        fOutputUsageInformation(
+        fOutputVersionInformation(
           bCheckForUpdates = sLowerName == "version-check",
           bShowInstallationFolders = sLowerName == "version",
         );
-        sys.exit(uExitCodeSuccess);
+        sys.exit(guExitCodeSuccess);
       if sLowerName in ["license", "license-update"]:
-        fOutputUsageInformation(
+        fOutputLicenseInformation(
           bUpdateIfNeeded = sLowerName == "license-update",
         );
-        sys.exit(uExitCodeSuccess);
+        sys.exit(guExitCodeSuccess);
       if sLowerName in ["license-server-url"]:
-        if not s0Value:
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " Invalid ", ERROR_INFO, sLowerName, COLOR_ERROR, " argument:"
-          );
-          oConsole.fOutput(
-            "  You must provide a URL for a license server as value for this argument.",
-          );
-          sys.exit(uExitCodeBadArgument);
-        try:
-          sbLicenseServerURL = bytes(s0Value, "ascii", "strict");
-        except:
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " Invalid ", ERROR_INFO, sLowerName, COLOR_ERROR, " argument:"
-          );
-          oConsole.fOutput(
-            "  You must provide a valid URL for a license server as value for this argument."
-          );
-          sys.exit(uExitCodeBadArgument);
+        bValueIsIsValidURL = False;
+        if s0Value:
+          try:
+            sbLicenseServerURL = bytes(s0Value, "ascii", "strict");
+          except:
+            pass;
+          else:
+            bValueIsIsValidURL = True;
+        if not bValueIsIsValidURL:
+          fExitWithBadArgumentValue(sLowerName, "You must provide a valid URL for a license server as value for this argument.");
         for oProductDetails in mProductDetails.faoGetProductDetailsForAllLoadedModules():
           if oProductDetails.sb0LicenseServerURL is not None:
             oProductDetails.sb0LicenseServerURL = sbLicenseServerURL;
@@ -65,9 +67,19 @@ def fatsArgumentLowerNameAndValue():
         # Remove all cached licenses from registry
         aoCachedLicenses = faoGetLicensesFromRegistry();
         if len(aoCachedLicenses) == 0:
-          oConsole.fOutput("* There are ", COLOR_INFO, "no", COLOR_NORMAL, " licenses cached in the registry.");
+          oConsole.fOutput(
+            COLOR_WARNING, CHAR_WARNING,
+            COLOR_NORMAL, " There are ",
+            COLOR_INFO, "no",
+            COLOR_NORMAL, " licenses cached in the registry.",
+          );
         else:
-          oConsole.fOutput("* Removing ", COLOR_INFO, str(len(aoCachedLicenses)), COLOR_NORMAL, " cached licenses from the registry:");
+          oConsole.fOutput(
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Removing ",
+            COLOR_INFO, str(len(aoCachedLicenses)),
+            COLOR_NORMAL, " cached licenses from the registry:",
+          );
           for oLicense in aoCachedLicenses:
             assert oLicense.fbRemoveFromRegistry(bThrowErrors = True), \
                 "Unreachable code !?";
@@ -78,40 +90,54 @@ def fatsArgumentLowerNameAndValue():
               COLOR_NORMAL, " covering ", COLOR_INFO, oLicense.sUsageTypeDescription, 
               COLOR_NORMAL, " by ", COLOR_INFO, oLicense.sLicenseeName,
               COLOR_NORMAL, " of ", COLOR_INFO, oLicense.asProductNames[0],
-              COLOR_NORMAL, " on ", COLOR_INFO, str(oLicense.uLicensedInstances), COLOR_NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "",
-              COLOR_NORMAL, ".",
+              COLOR_NORMAL, " on ", COLOR_INFO, str(oLicense.uLicensedInstances),
+              COLOR_NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "", ".",
             );
-        sys.exit(uExitCodeSuccess);
+        sys.exit(guExitCodeSuccess);
       elif sLowerName in ["license-load-file"]:
         sPath = s0Value or "#license.asc";
+        oLicenseFile = cFileSystemItem(sPath);
+        if not oLicenseFile.fbIsFile():
+          fExitWithBadArgumentValue(sLowerName, "File %s not found." % oLicenseFile.sPath);
         aoLoadedLicenses = faoGetLicensesFromFile(sPath);
         if len(aoLoadedLicenses) == 0:
-          oConsole.fOutput("* There are ", COLOR_INFO, "no", COLOR_NORMAL, " licenses in the file ", COLOR_INFO, sPath, COLOR_NORMAL, ".");
+          oConsole.fOutput(
+            COLOR_WARNING, CHAR_WARNING,
+            COLOR_NORMAL, " There are ",
+            COLOR_INFO, "no",
+            COLOR_NORMAL, " licenses in the file ",
+            COLOR_INFO, sPath,
+            COLOR_NORMAL, ".",
+          );
         else:
-          oConsole.fOutput("* Caching ", COLOR_INFO, str(len(aoLoadedLicenses)), COLOR_NORMAL, " licenses from file ", COLOR_INFO, sPath, COLOR_NORMAL, ":");
+          oConsole.fOutput(
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Caching ",
+            COLOR_INFO, str(len(aoLoadedLicenses)),
+            COLOR_NORMAL, " licenses from file ",
+            COLOR_INFO, sPath,
+            COLOR_NORMAL, ":",
+          );
           for oLicense in faoGetLicensesFromFile(sPath):
             oLicense.fWriteToRegistry();
             oConsole.fOutput(
-              "  ", COLOR_OK, CHAR_OK, " License ", COLOR_INFO, oLicense.sLicenseId,
+              "  ",
+              COLOR_ADD, CHAR_ADD,
+              COLOR_NORMAL, " License ", COLOR_INFO, oLicense.sLicenseId,
               COLOR_NORMAL, " covering ", COLOR_INFO, oLicense.sUsageTypeDescription, 
               COLOR_NORMAL, " by ", COLOR_INFO, oLicense.sLicenseeName,
               COLOR_NORMAL, " of ", COLOR_INFO, oLicense.asProductNames[0],
-              COLOR_NORMAL, " on ", COLOR_INFO, str(oLicense.uLicensedInstances), COLOR_NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "",
-              COLOR_NORMAL, ".",
+              COLOR_NORMAL, " on ", COLOR_INFO, str(oLicense.uLicensedInstances),
+              COLOR_NORMAL, " machine", "s" if oLicense.uLicensedInstances != 1 else "", ".",
             );
-        sys.exit(uExitCodeSuccess);
+        sys.exit(guExitCodeSuccess);
       elif sLowerName == "arguments":
         if not s0Value:
-          oConsole.fOutput(COLOR_ERROR, "- Invalid ", ERROR_INFO, sLowerName, COLOR_ERROR, " argument:");
-          oConsole.fOutput(COLOR_ERROR, "  You must provide a path to a file containing arguments as value for this argument.");
-          sys.exit(uExitCodeBadArgument);
+          fExitWithBadArgumentValue(sLowerName, "You must provide a path to a file containing arguments as value for this argument.");
         # Read additional arguments from file and insert them after the current argument.
         oArgumentsFile = cFileSystemItem(s0Value);
         if not oArgumentsFile.fbIsFile():
-          oConsole.fOutput(COLOR_ERROR, "- Invalid ", ERROR_INFO, sLowerName, COLOR_ERROR, " argument:");
-          oConsole.fOutput(COLOR_ERROR, "  ", ERROR_INFO, oArgumentsFile.sPath);
-          oConsole.fOutput(COLOR_ERROR, "  File not found.");
-          sys.exit(uExitCodeBadArgument);
+          fExitWithBadArgumentValue(sLowerName, "File %s not found." % oArgumentsFile.sPath);
         sArgumentsFileContent = str(oArgumentsFile.fsbRead(), "utf-8");
         asArguments = [
           os.path.expandvars(sStrippedArgumentFileLine) for sStrippedArgumentFileLine in [
