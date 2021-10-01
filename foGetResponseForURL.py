@@ -1,6 +1,8 @@
 import sys;
 
 from mConsole import oConsole;
+from mFileSystemItem import cFileSystemItem;
+from mHumanReadable import fsBytesToHumanReadableString;
 from mNotProvided import *;
 
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
