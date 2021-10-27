@@ -203,7 +203,7 @@ def foGetResponseForURL(
   # Download response to file if needed
   if fbIsProvided(s0zDownloadToFilePath) and oResponse.uStatusCode == 200:
     if s0zDownloadToFilePath is None:
-      s0zDownloadToFilePath = oURL.asPath[-1];
+      s0zDownloadToFilePath = oURL.asURLDecodedPath[-1];
     oDownloadToFile = cFileSystemItem(s0zDownloadToFilePath);
     oConsole.fStatus(
       COLOR_BUSY, CHAR_BUSY,
