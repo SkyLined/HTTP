@@ -5,6 +5,7 @@ from mFileSystemItem import cFileSystemItem;
 from mHumanReadable import fsBytesToHumanReadableString;
 from mNotProvided import *;
 
+from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
 from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
 from fOutputSessionSetCookie import fOutputSessionSetCookie;
@@ -55,64 +56,63 @@ def foGetResponseForURL(
   try:
     o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
   except Exception as oException:
-    bSSLSupportEnabled = hasattr(mExceptions, "cSSLException");
-    if isinstance(oException, mExceptions.cTCPIPConnectTimeoutException):
+    if isinstance(oException, oHTTPClient.cTCPIPConnectTimeoutException):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Connecting to server timed out:",
       );
     elif isinstance(oException, (
-      mExceptions.cTCPIPConnectionRefusedException,
-      mExceptions.cTCPIPInvalidAddressException,
-      mExceptions.cDNSUnknownHostnameException,
+      oHTTPClient.cTCPIPConnectionRefusedException,
+      oHTTPClient.cTCPIPInvalidAddressException,
+      oHTTPClient.cDNSUnknownHostnameException,
     )):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server:",
       );
     elif isinstance(oException, (
-      mExceptions.cTCPIPConnectionDisconnectedException,
-      mExceptions.cTCPIPConnectionShutdownException,
+      oHTTPClient.cTCPIPConnectionDisconnectedException,
+      oHTTPClient.cTCPIPConnectionShutdownException,
     )):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server did not respond to our request:",
       );
-    elif isinstance(oException, mExceptions.cHTTPFailedToConnectToProxyException):
+    elif isinstance(oException, oHTTPClient.cHTTPFailedToConnectToProxyException):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to proxy server:",
       );
     elif isinstance(oException, (
-      mExceptions.cMaxConnectionsReachedException,
+      oHTTPClient.cMaxConnectionsReachedException,
     )):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server:",
       );
-    elif isinstance(oException, mExceptions.cTCPIPDataTimeoutException):
+    elif isinstance(oException, oHTTPClient.cTCPIPDataTimeoutException):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server was unable to respond in a timely manner.",
       );
     elif isinstance(oException, (
-      mExceptions.cHTTPOutOfBandDataException,
-      mExceptions.cHTTPInvalidMessageException,
+      oHTTPClient.cHTTPOutOfBandDataException,
+      oHTTPClient.cHTTPInvalidMessageException,
     )):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " There was a protocol error while talking to the server:",
       );
-    elif bSSLSupportEnabled and isinstance(oException, mExceptions.cSSLSecureTimeoutException):
+    elif oHTTPClient.bSSLIsSupported and isinstance(oException, cSSLSecureTimeoutException):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Securing the connection to the server timed out:",
       );
-    elif bSSLSupportEnabled and isinstance(oException, (
-      mExceptions.cSSLWrapSocketException,
-      mExceptions.cSSLSecureHandshakeException,
-      mExceptions.cSSLCannotGetRemoteCertificateException,
-      mExceptions.cSSLIncorrectHostnameException,
+    elif oHTTPClient.bSSLIsSupported and isinstance(oException, (
+      oHTTPClient.cSSLWrapSocketException,
+      oHTTPClient.cSSLSecureHandshakeException,
+      oHTTPClient.cSSLCannotGetRemoteCertificateException,
+      oHTTPClient.cSSLIncorrectHostnameException,
     )):
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
@@ -176,7 +176,7 @@ def foGetResponseForURL(
     sbRedirectToURL = oLocationHeader.sbValue;
     try:
       oURL = cURL.foFromBytesString(sbRedirectToURL);
-    except mExceptions.cInvalidURLException as oException:
+    except cURL.cInvalidURLException as oException:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Redirect to invalid URL ",
