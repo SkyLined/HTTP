@@ -78,12 +78,12 @@ def fOutputUsageInformation():
     oConsole.fOutput("  ", COLOR_ERROR, "1", COLOR_NORMAL, "  = Unable to parse the command-line arguments provided.");
     oConsole.fOutput("  ", COLOR_ERROR, "2", COLOR_NORMAL, "  = There was an internal error: please report the details!");
     oConsole.fOutput("  ", COLOR_ERROR, "3", COLOR_NORMAL, "  = You do not have a valid license to run HTTP.");
-    oConsole.fOutput("  ", COLOR_ERROR, "4", COLOR_NORMAL, "  = The session could not be loaded from file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "5", COLOR_NORMAL, "  = The session could not be saved to file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "6", COLOR_NORMAL, "  = The request body could not be read from file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "7", COLOR_NORMAL, "  = The response body could not be saved to file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "8", COLOR_NORMAL, "  = A secure connection could not be established.");
-    oConsole.fOutput("  ", COLOR_ERROR, "9", COLOR_NORMAL, "  = The server did not return a valid response.");
-    oConsole.fOutput("  ", COLOR_ERROR, "10", COLOR_NORMAL, " = There were too many consecutive redirects.");
+    oConsole.fOutput("  ", COLOR_ERROR, "10", COLOR_NORMAL, "  = The session could not be loaded from file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "11", COLOR_NORMAL, "  = The session could not be saved to file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "12", COLOR_NORMAL, "  = The request body could not be read from file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "13", COLOR_NORMAL, "  = The response body could not be saved to file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "14", COLOR_NORMAL, "  = A secure connection could not be established.");
+    oConsole.fOutput("  ", COLOR_ERROR, "15", COLOR_NORMAL, "  = The server did not return a valid response.");
+    oConsole.fOutput("  ", COLOR_ERROR, "16", COLOR_NORMAL, " = There were too many consecutive redirects.");
   finally:             
     oConsole.fUnlock();
