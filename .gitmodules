@@ -54,7 +54,7 @@
 	url = https://github.com/SkyLined/mFileSystemItem
 [submodule "modules/mHTTPClient"]
 	path = modules/mHTTPClient
-	url = https://github.com/SkyLined/mHTTPClient/
+	url = https://github.com/SkyLined/mHTTPClient
 [submodule "modules/mHTTPConnection"]
 	path = modules/mHTTPConnection
 	url = https://github.com/SkyLined/mHTTPConnection
