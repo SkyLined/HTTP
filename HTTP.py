@@ -3,7 +3,7 @@
                     ║╠══╣║    ║║     ║║    ║╠══╩╝  □   ╱╱  ╱╱                   
          ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄┄□┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
                                                       ‾   ‾                  """;
-import os, re, sys;
+import base64, os, re, sys;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -72,6 +72,7 @@ try:
     
     asArguments = sys.argv[1:];
     dsbAdditionalOrRemovedHeaders = {};
+    d0Form_sValue_by_sName = {};
     sbzMethod = zNotProvided;
     o0URL = None;
     bSegmentedVideo = None;
@@ -158,14 +159,27 @@ try:
         s0zSessionPath = s0Value;
       elif s0LowerName in ["header"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
-        tsbHeader = sbValue.split(b":", 1);
-        if len(tsbHeader) == 1:
-          sbHeaderName = sbValue; sb0HeaderValue = None;
+        tsbNameAndValue = sbValue.split(b":", 1);
+        if len(tsbNameAndValue) == 1:
+          sbName = sbValue; sb0Value = None;
         else:
-          sbHeaderName, sb0HeaderValue = tsbHeader;
-          if sb0HeaderValue.strip() == "":
-            sb0HeaderValue = None;
-        dsbAdditionalOrRemovedHeaders[sbHeaderName] = sb0HeaderValue;
+          sbName, sb0Value = tsbNameAndValue;
+          if sb0Value.strip() == "":
+            sb0Value = None;
+        dsbAdditionalOrRemovedHeaders[sbName] = sb0Value;
+      elif s0LowerName in ["form"]:
+        sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
+        tsbNameAndValue = sbValue.split(b"=", 1);
+        if len(tsbNameAndValue) == 1:
+          sbName = sbValue; sb0Value = "";
+        else:
+          sbName, sb0Value = tsbNameAndValue;
+        if d0Form_sValue_by_sName is None:
+          d0Form_sValue_by_sName = [];
+        d0Form_sValue_by_sName[sbName] = sb0Value;
+      elif s0LowerName in ["basic-login"]:
+        sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(s0Value or "", "ascii", "strict"));
+        dsbAdditionalOrRemovedHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
       elif s0LowerName in ["p", "proxy", "http-proxy"]:
         bUseProxy = True;
         if s0Value:
@@ -440,6 +454,7 @@ try:
         o0SessionFile, oSession,
         o0URL, sbzMethod, s0RequestData,
         dsbAdditionalOrRemovedHeaders,
+        d0Form_sValue_by_sName,
         u0MaxRedirects,
         s0zDownloadToFilePath, True, # bIsFirstDownload
         bShowProgress,
@@ -454,6 +469,7 @@ try:
           o0SessionFile, oSession,
           oURL, sbzMethod, s0RequestData,
           dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName,
           u0MaxRedirects,
           s0zDownloadToFilePath, uIndex == uStartIndex, # bIsFirstDownload
           bShowProgress,

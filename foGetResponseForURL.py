@@ -20,10 +20,13 @@ def foGetResponseForURL(
   o0SessionFile, oSession, 
   oURL, sbzMethod, s0RequestData,
   dsbAdditionalOrRemovedHeaders,
+  d0Form_sValue_by_sName,
   u0MaxRedirects,
   s0zDownloadToFilePath, bFirstDownload,
   bShowProgress,
 ):
+  if d0Form_sValue_by_sName is not None and not fbIsProvided(sbzMethod):
+    sbzMethod = "POST";
   # Construct the HTTP request
   oRequest = oHTTPClient.foGetRequestForURL(
     oURL = oURL,
@@ -44,6 +47,10 @@ def foGetResponseForURL(
       oRequest.oHeaders.fbRemoveHeadersForName(sbName);
     else:
       oRequest.oHeaders.fbReplaceHeadersForNameAndValue(sbName, sbValue);
+  if d0Form_sValue_by_sName:
+    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
+    for (sName, sValue) in d0Form_sValue_by_sName.items():
+      oRequest.fSetFormValue(sName, sValue);
   # Send the request and get the response.
   oConsole.fStatus(
     COLOR_BUSY, CHAR_BUSY,
