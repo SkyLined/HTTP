@@ -48,6 +48,12 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
     oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
     oConsole.fOutput("    for each request. This argument can be used to modify them.");
+    oConsole.fOutput("  ", COLOR_INFO, "--form=<name[=value]>");
+    oConsole.fOutput("    POST the given name-value pair as a `application/x-www-form-urlencoded` form. Use multiple");
+    oConsole.fOutput("    arguments to add multiple name-value pairs. A `Content-Type` header will automatically be");
+    oConsole.fOutput("    added and the default HTTP method will be POST.");
+    oConsole.fOutput("  ", COLOR_INFO, "--basic-login=username:password");
+    oConsole.fOutput("    Add an `Authorization: basic ...` header with the base64 encoded username and password.");
     oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
     oConsole.fOutput("    Send \"<text>\" in the body of the request.");
     oConsole.fOutput("  ", COLOR_INFO, "--df=<path>", COLOR_NORMAL, ", ", COLOR_INFO, "--data-file=<path>");
