@@ -27,7 +27,6 @@ def fOutputUsageInformation():
     oConsole.fOutput("  ", COLOR_INFO, "--arguments", COLOR_NORMAL, "=<", COLOR_INFO, "file path", COLOR_NORMAL, ">");
     oConsole.fOutput("    Load additional arguments from the provided value and insert them in place");
     oConsole.fOutput("    of this argument.");
-    
     oConsole.fOutput("  ", COLOR_INFO, "-r", COLOR_NORMAL, ", ", COLOR_INFO, "--max-redirects=<integer>");
     oConsole.fOutput("    If the server respondse with a HTTP 3xx redirect, follow the redirect");
     oConsole.fOutput("    to make another request up to the specified number of times.");
@@ -79,6 +78,11 @@ def fOutputUsageInformation():
     oConsole.fOutput("  ", COLOR_INFO, "--debug", axBoolean);
     oConsole.fOutput("    Show debug output. Set to \"false\" to hide them (default).");
     oConsole.fOutput();
+    oConsole.fOutput("You can encode characters using \"\\x##\" (e.g. \"\\x41\" == \"A\") in the value of the arguments");
+    oConsole.fOutput(COLOR_INFO, "--data", COLOR_NORMAL, ", ",
+                     COLOR_INFO, "--data-file", COLOR_NORMAL, ", ",
+                     COLOR_INFO, "--header", COLOR_NORMAL, ", and ",
+                     COLOR_INFO, "--form", COLOR_NORMAL, ".");
     oConsole.fOutput(COLOR_HILITE, "Exit codes:");
     oConsole.fOutput("  ", COLOR_OK,    "0", COLOR_NORMAL,"  = Success.");
     oConsole.fOutput("  ", COLOR_ERROR, "1", COLOR_NORMAL, "  = Unable to parse the command-line arguments provided.");

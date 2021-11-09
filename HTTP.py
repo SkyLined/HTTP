@@ -43,6 +43,7 @@ try:
     rURL = re.compile(r"^https?://.*$", re.I);
     rMethod = re.compile(r"^[A-Z]+$", re.I);
     rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
+    rCharEncoding = re.compile(r"([^\\]+)|\\(?:x([0-9a-f]{2}))?", re.I);
     arbSegmentedVideos = [re.compile(sb) for sb in [
       (
         rb"("
@@ -109,7 +110,11 @@ try:
         sys.exit(guExitCodeBadArgument);
       def fsRequireArgumentValue():
         if s0Value:
-          return s0Value;
+          return "".join([
+            oMatch.group(1) if oMatch.group(1)
+                else chr(int(oMatch.group(2), 16)) if oMatch.group(2) else ""
+            for oMatch in rCharEncoding.finditer(s0Value)
+          ]);
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " You must provide a value for \"",
