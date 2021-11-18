@@ -7,6 +7,9 @@
 [submodule "modules/mFileSystemItem"]
 	path = modules/mFileSystemItem
 	url = https://github.com/SkyLined/mFileSystemItem
+[submodule "modules/mHTTPClient"]
+	path = modules/mHTTPClient
+	url = https://github.com/SkyLined/mHTTPClient
 [submodule "modules/mHTTPConnection"]
 	path = modules/mHTTPConnection
 	url = https://github.com/SkyLined/mHTTPConnection
@@ -37,6 +40,3 @@
 [submodule "modules/mWindowsSDK"]
 	path = modules/mWindowsSDK
 	url = https://github.com/SkyLined/mWindowsSDK
-[submodule "modules/mHTTPClient"]
-	path = modules/mHTTPClient
-	url = https://github.com/SkyLined/mHTTPClient
