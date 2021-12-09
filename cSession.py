@@ -1,5 +1,7 @@
 import re;
 
+gbDebugOutput = False;
+
 from mDateTime import cDateTime;
 from mConsole import oConsole;
 from mNotProvided import *;
@@ -39,7 +41,7 @@ class cSession(object):
     oSelf.u0MaxRedirects = u0MaxRedirects;
     oSelf.sbzUserAgent = sbzUserAgent;
     oSelf.bAddDoNotTrackHeader = bAddDoNotTrackHeader;
-    oSelf.daoCookies_by_sbOrigin = {};
+    oSelf.daoCookies_by_sb0LowerDomainName = {};
   
   def fApplyHeadersToRequestForURL(oSelf, oRequest, oURL, f0CookieExpiredCallback = None, f0HeaderAppliedCallback = None):
     # f0CookieExpiredCallback(sbOrigin, oCookie);
@@ -53,49 +55,56 @@ class cSession(object):
         bReplaced = False;
       if f0HeaderAppliedCallback:
         f0HeaderAppliedCallback(oRequest, oURL, oHeader, bReplaced);
+    if gbDebugOutput: oConsole.fOutput(",-- Applying session headers ", sPadding = "-");
     # User-Agent
     if fbIsProvided(oSelf.sbzUserAgent):
       fApplyHeader(b"User-Agent", oSelf.sbzUserAgent, bReplace = True);
+      if gbDebugOutput: oConsole.fOutput("| User-Agent: ", fsCP437FromBytesString(oSelf.sbzUserAgent));
     if oSelf.bAddDoNotTrackHeader:
       fApplyHeader(b"DNT", b"1", bReplace = True);
+      if gbDebugOutput: oConsole.fOutput("| DNT: 1");
     # Cookies
-    aoCookiesForOrigin = oSelf.daoCookies_by_sbOrigin.get(oURL.sbOrigin, []);
-    asbCookies = [];
-    for oCookie in aoCookiesForOrigin[:]: # Operate on a copy so we can remove expired cookies.
-      if (
-        oCookie.o0ExpirationDateTime is not None
-        and not oCookie.o0ExpirationDateTime.fbIsAfter(cDateTime.foNow())
-      ):
-        aoCookiesForOrigin.remove(oCookie);
-        if f0CookieExpiredCallback:
-          f0CookieExpiredCallback(oURL.sbOrigin, oCookie);
-        continue; # Expired
-      if not oCookie.fbAppliesToDomain(oURL.sbHostname):
-        # oConsole.fOutput("Domain (", fsCP437FromBytesString(oURL.sbHostname), ") mismatch for ", str(oCookie));
-        continue; # does not match "Domain"
-      if not oCookie.fbAppliesToPath(oURL.sbPath):
-        # oConsole.fOutput("Path (", fsCP437FromBytesString(oURL.sbPath), ") mismatch for ", str(oCookie));
-        continue; # does not match "Path"
-      if (
-        oCookie.bSecure
-        and not oURL.bSecure
-      ):
-        # oConsole.fOutput("Secure mismatch for ", str(oCookie));
-        continue; # not "Secure"
-      asbCookies.append(b"%s=%s" % (oCookie.sbName, oCookie.sbValue));
-      # oConsole.fOutput("Added session cookie for ", fsCP437FromBytesString(oURL.sbOrigin), " to request: ", str(oCookie));
-    if len(asbCookies) > 0:
-      fApplyHeader(b"Cookie", b"; ".join(asbCookies), bReplace = False);
+    asbCookieHeaderElements = [];
+    if oSelf.daoCookies_by_sb0LowerDomainName and gbDebugOutput: oConsole.fOutput("|-- Cookies ", sPadding = "-");
+    for (sb0LowerDomainName, aoCookies) in oSelf.daoCookies_by_sb0LowerDomainName.items():
+      if sb0LowerDomainName is not None:
+        # a cookie for "example.com" applies to "example.com" as well as sub-domains of example.com:
+        sbLowerHostnameWithLeadingDot = b".%s" % oURL.sbHostname.lower();              # .sub-domain.example.com
+        if not sbLowerHostnameWithLeadingDot.endswith(b".%s" % sb0LowerDomainName):
+          if gbDebugOutput: oConsole.fOutput("| - URL hostname (", oURL.sbHostname, ") does not match cookie domain ", fsCP437FromBytesString(sb0LowerDomainName));
+          continue;
+      for oCookie in aoCookies[:]: # Operate on a copy so we can remove expired cookies.
+        if (
+          oCookie.o0ExpirationDateTime is not None
+          and not oCookie.o0ExpirationDateTime.fbIsAfter(cDateTime.foNow())
+        ):
+          if gbDebugOutput: oConsole.fOutput("| - Cookie expired (", str(oCookie), ")");
+          aoCookies.remove(oCookie);
+          if f0CookieExpiredCallback:
+            f0CookieExpiredCallback(oURL.sbOrigin, oCookie);
+          continue; # Expired
+        if not oCookie.fbAppliesToPath(oURL.sbPath):
+          if gbDebugOutput: oConsole.fOutput("| - URL Path (", fsCP437FromBytesString(oURL.sbPath), ") mismatch for cookie ", str(oCookie));
+          continue; # does not match "Path"
+        if (
+          oCookie.bSecure
+          and not oURL.bSecure
+        ):
+          if gbDebugOutput: oConsole.fOutput("| - URL Secure (", "yes" if oURL.bSecure else "no", ") mismatch for cookie ", str(oCookie));
+          continue; # not "Secure"
+        if gbDebugOutput: oConsole.fOutput("| + Cookie applied: ", str(oCookie));
+        asbCookieHeaderElements.append(b"%s=%s" % (oCookie.sbName, oCookie.sbValue));
+        # oConsole.fOutput("Added session cookie for ", fsCP437FromBytesString(oURL.sbOrigin), " to request: ", str(oCookie));
+    if len(asbCookieHeaderElements) > 0:
+      sbCookieHeader = b"; ".join(asbCookieHeaderElements);
+      fApplyHeader(b"Cookie", sbCookieHeader, bReplace = False);
+      if gbDebugOutput: oConsole.fOutput("| Cookie: ", fsCP437FromBytesString(sbCookieHeader));
   
-  def fUpdateFromResponse(oSelf, oResponse, oURL, f0InvalidCookieAttributeCallback = None, f0AddedCookieCallback = None, f0ExpiredCookieCallback = None):
+  def fUpdateFromResponse(oSelf, oResponse, oURL, f0InvalidCookieAttributeCallback = None, f0SetCookieCallback = None):
     # f0InvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbAttributeName, sbAttributeValue, bIsNameKnown);
     # f0AddedCookieCallback(oResponse, oURL, oCookie, bIsNewCookie);
     # f0ExpiredCookieCallback(sbOrigin, oCookie);
-    # Get a dictionary of existing cookies or an empty one if none exist yet:
-    doCookie_by_sbName_for_Origin = dict(
-      (oCookie.sbName, oCookie) for oCookie in oSelf.daoCookies_by_sbOrigin.get(oURL.sbOrigin, [])
-    );
-    # Update the dictionary with any cookies provided in the response:
+    # Update the cookies provided in the response:
     for oHeader in oResponse.oHeaders.faoGetHeadersForName(b"Set-Cookie"):
       aCookie_tsbName_and_sbValue = oHeader.fGet_atsbName_and_sbValue();
       # The first name-value pair is the cookie's name and value.
@@ -164,19 +173,15 @@ class cSession(object):
           if f0InvalidCookieAttributeCallback:
             f0InvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbName, sbValue, False);
       oCookie = cSessionCookie(sbCookieName, sbCookieValue, **dxCookieAttributeArguments);
-      bIsNewCookie = oCookie.sbName not in doCookie_by_sbName_for_Origin;
-      bIsExpired = oCookie.fbIsExpired();
-      if not bIsExpired:
-        doCookie_by_sbName_for_Origin[oCookie.sbName] = oCookie;
-        if f0AddedCookieCallback:
-          f0AddedCookieCallback(oResponse, oURL, oCookie, bIsNewCookie);
-      elif not bIsNewCookie:
-        oCookie = doCookie_by_sbName_for_Origin[oCookie.sbName];
-        del doCookie_by_sbName_for_Origin[oCookie.sbName];
-        if f0ExpiredCookieCallback:
-          f0ExpiredCookieCallback(oURL.sbOrigin, oCookie);
-      # else: we were asked to set a new cookie that is already expired; ignore it.
-    # Save the updated cookies in the session.
-    oSelf.daoCookies_by_sbOrigin[oURL.sbOrigin] = [
-      oCookie for (sbName, oCookie) in doCookie_by_sbName_for_Origin.items()
-    ];
+      aoExistingCookies_for_sb0LowerDomainName = oSelf.daoCookies_by_sb0LowerDomainName.setdefault(oCookie.sb0Domain.lstrip(b"."), []);
+      # This can replace or remove an existing cookie with the same name:
+      # TODO: should this really be case-sensitive?
+      o0PreviousCookie = None;
+      for oExistingCookie in aoExistingCookies_for_sb0LowerDomainName:
+        if oExistingCookie.sbName == oCookie.sbName:
+          aoExistingCookies_for_sb0LowerDomainName.remove(oExistingCookie);
+          o0PreviousCookie = oExistingCookie;
+      if not oCookie.fbIsExpired():
+        aoExistingCookies_for_sb0LowerDomainName.append(oCookie);
+      if f0SetCookieCallback:
+        f0SetCookieCallback(oResponse, oURL, oCookie, o0PreviousCookie);
