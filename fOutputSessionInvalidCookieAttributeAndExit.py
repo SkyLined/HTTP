@@ -6,6 +6,7 @@ from mExitCodes import *;
 
 def fOutputSessionInvalidCookieAttributeAndExit(sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sbAttributeValue, bIsNameKnown):
   oConsole.fOutput(
+    "      ",
     COLOR_WARNING, CHAR_WARNING,
     COLOR_NORMAL, " Server response from ",
     COLOR_INFO, fsCP437FromBytesString(sbOrigin),

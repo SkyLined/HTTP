@@ -4,7 +4,7 @@ from mDateTime import cDateTime;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 
-def fOutputSessionSetCookie(sbOrigin, oCookie, bIsAddedCookie, bIsModifiedCookie):
+def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
   asAttributes = [];
   if oCookie.o0ExpirationDateTime is not None:
     oValidDuration = cDateTime.foNow().foGetDurationForEndDateTime(oCookie.o0ExpirationDateTime);
@@ -20,16 +20,18 @@ def fOutputSessionSetCookie(sbOrigin, oCookie, bIsAddedCookie, bIsModifiedCookie
     asAttributes.append("HttpOnly");
   if oCookie.sbSameSite != "Lax":
     asAttributes.append("SameSite = %s" % str(oCookie.sbSameSite, "ascii", "strict"));
+  bCookieIsNew = o0PreviousCookie is None;
+  bCookieValueWasModified = o0PreviousCookie and o0PreviousCookie.sbValue != oCookie.sbValue;
   oConsole.fOutput(
-    "  ",
+    "      ",
     [
       COLOR_ADD, CHAR_ADD,
-    ] if bIsAddedCookie else [
+    ] if bCookieIsNew else [
       COLOR_MODIFY, CHAR_MODIFY,
-    ] if bIsModifiedCookie else [
+    ] if bCookieValueWasModified else [
       CHAR_LIST,
     ],
-    COLOR_NORMAL, " Session cookie ", "added " if bIsAddedCookie else "updated " if bIsModifiedCookie else "", "for ",
+    COLOR_NORMAL, " Session cookie ", "added" if bCookieIsNew else "updated" if bCookieValueWasModified else "repeated", " for ",
     COLOR_INFO, fsCP437FromBytesString(sbOrigin),
     COLOR_NORMAL, ": ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbName),

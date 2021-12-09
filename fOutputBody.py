@@ -3,7 +3,7 @@
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromByte;
 
-def fOutputBody(sxBody, bOutputEOF):
+def fOutputBody(sxBody, bOutputEOF, xPrefix = []):
   if isinstance(sxBody, str):
     xCR = "\r";
     xLF = "\n";
@@ -35,7 +35,7 @@ def fOutputBody(sxBody, bOutputEOF):
     bEOF = uIndex == len(sxBody);
     if a0sEOL or bEOF:
       oConsole.fOutput(
-        COLOR_REQUEST_RESPONSE_BOX, "│ ", 
+        xPrefix,
         xBodyColor, sLine,
         a0sEOL if a0sEOL else [],
         [COLOR_EOF, CHAR_EOF] if bEOF else [],

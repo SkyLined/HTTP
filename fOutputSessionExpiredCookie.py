@@ -5,6 +5,7 @@ from mCP437 import fsCP437FromBytesString;
 
 def fOutputSessionExpiredCookie(sbOrigin, oCookie):
   oConsole.fOutput(
+    "      ",
     COLOR_REMOVE, CHAR_REMOVE,
     COLOR_NORMAL, " Session cookie expired for ",
     COLOR_INFO, fsCP437FromBytesString(sbOrigin),

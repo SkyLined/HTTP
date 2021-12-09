@@ -41,8 +41,8 @@ CHAR_SELECT_YES                         = "●";
 CHAR_SELECT_MAYBE                       = "•";
 CHAR_SELECT_NO                          = "·";
 
-CHAR_INPUT                              = "◄";
-CHAR_OUTPUT                             = "►";
+CHAR_INPUT                              = "►";
+CHAR_OUTPUT                             = "◄";
 
 CHAR_ADD                                = "+";
 CHAR_MODIFY                             = "±";
@@ -77,11 +77,25 @@ COLOR_BODY                              = 0xFF07;
 COLOR_CR                                = 0xFF08;
 COLOR_LF                                = 0xFF08;
 COLOR_CRLF                              = 0xFF08;
-COLOR_EOF                               = 0xFF80;
+COLOR_EOF                               = 0xFF08;
+
+COLOR_ACTIVE                            = 0xFF0F;
+COLOR_INACTIVE                          = 0xFF08;
+COLOR_NOTHING                           = 0xFF08;
+COLOR_CONNECT                           = 0xFF02;
+COLOR_CONNECTED                         = 0xFF0A;
+COLOR_DISCONNECTED                      = 0xFF0C;
+COLOR_REQUEST                           = 0xFF0E;
+COLOR_RESPONSE_1XX                      = 0xFF0F; # White
+COLOR_RESPONSE_2XX                      = 0xFF0A; # Bright green
+COLOR_RESPONSE_3XX                      = 0xFF0B; # Bright cyan
+COLOR_RESPONSE_4XX                      = 0xFF0C; # Bright red
+COLOR_RESPONSE_5XX                      = 0xFF0D; # Bright purple
+COLOR_RESPONSE_INVALID                  = 0xFF04; # Red
 
 # APPLICATION SPECIFIC CHARS
-CHAR_CR                                 = "\u2190";
-CHAR_LF                                 = "\u2193";
-CHAR_CRLF                               = "\u2190\u2518";
-CHAR_EOF                                = "\u2301";
+CHAR_CR                                 = "←";
+CHAR_LF                                 = "↓";
+CHAR_CRLF                               = "←┘";
+CHAR_EOF                                = "×";
 

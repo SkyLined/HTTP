@@ -17,7 +17,7 @@ def fOutputHostnameResolved(sbHostname, sCanonicalName, sIPAddress):
         " (",
         COLOR_INFO, sCanonicalName,
         COLOR_NORMAL, ")",
-      ] if sCanonicalName.lower() != sHostname.lower() else [],
+      ] if sCanonicalName and sCanonicalName.lower() != sHostname.lower() else [],
       ".",
     );
   elif not sCanonicalName.startswith("%s:" % sIPAddress):

@@ -27,9 +27,31 @@ try:
   from cSession import cSession;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
   from fbApplySessionJSONToSession import fbApplySessionJSONToSession;
+  from fHandleServerHostnameOrIPAddressInvalid import fHandleServerHostnameOrIPAddressInvalid;
+  from fHandleServerHostnameResolvedToIPAddress import fHandleServerHostnameResolvedToIPAddress;
+  from fHandleConnectingToServerIPAddress import fHandleConnectingToServerIPAddress;
+  from fHandleConnectingToServerIPAddressFailed import fHandleConnectingToServerIPAddressFailed;
+  from fHandleConnectionToServerCreated import fHandleConnectionToServerCreated;
+  from fHandleConnectionToServerTerminated import fHandleConnectionToServerTerminated;
+  from fHandleProxyHostnameOrIPAddressInvalid import fHandleProxyHostnameOrIPAddressInvalid;
+  from fHandleProxyHostnameResolvedToIPAddress import fHandleProxyHostnameResolvedToIPAddress;
+  from fHandleConnectingToProxyIPAddress import fHandleConnectingToProxyIPAddress;
+  from fHandleConnectingToProxyIPAddressFailed import fHandleConnectingToProxyIPAddressFailed;
+  from fHandleConnectionToProxyCreated import fHandleConnectionToProxyCreated;
+  from fHandleConnectionToProxyTerminated import fHandleConnectionToProxyTerminated;
+  from fHandleSecureConnectionToServerThroughProxyCreated import fHandleSecureConnectionToServerThroughProxyCreated;
+  from fHandleSecureConnectionToServerThroughProxyTerminated import fHandleSecureConnectionToServerThroughProxyTerminated;
+  from fHandleRequestSent import fHandleRequestSent;
+  from fHandleRequestSentAndResponseReceived import fHandleRequestSentAndResponseReceived;
+  from fHandleResolvingServerHostname import fHandleResolvingServerHostname;
+  from fHandleResolvingServerHostnameFailed import fHandleResolvingServerHostnameFailed;
+  from fHandleResolvingProxyHostname import fHandleResolvingProxyHostname;
+  from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
   from foGetResponseForURL import foGetResponseForURL;
+#  from fOutputCannotConnectToHostname import fOutputCannotConnectToHostname;
+#  from fOutputConnectedToHostname import fOutputConnectedToHostname;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
-  from fOutputHostnameResolved import fOutputHostnameResolved;
+#  from fOutputHostnameResolved import fOutputHostnameResolved;
   from fOutputRequestSent import fOutputRequestSent;
   from fOutputResponseReceived import fOutputResponseReceived;
   from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
@@ -83,6 +105,7 @@ try:
     bShowRequest = True;
     bShowResponse = True;
     bShowDetails = True;
+    bShowProxyConnects = False;
     bUseProxy = False;
     o0HTTPProxyServerURL = None;
     s0RequestData = None;
@@ -217,6 +240,8 @@ try:
         bAllowUnverifiableCertificates = fbParseBooleanArgument();
       elif s0LowerName in ["show-progress"]:
         bShowProgress = fbParseBooleanArgument();
+      elif s0LowerName in ["show-proxy"]:
+        bShowProxyConnects = fbParseBooleanArgument();
       elif s0LowerName in ["show-request"]:
         bShowRequest = fbParseBooleanArgument();
       elif s0LowerName in ["show-response"]:
@@ -288,54 +313,92 @@ try:
     # two generic functions for reporting the requests/reponses:
     if not bUseProxy:
       # Create a HTTP client instance that uses no proxy
-      oHTTPClient = cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      oClient = cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
       # Create event handlers specific to this situation that call the generic request/response reporters
-      def fRequestSentEventHandler(oHTTPClient, oConnection, oRequest):
-        fOutputRequestSent(
-          oConnection, oRequest, None, # 3rd argument == None => Did not use a proxy
-          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
-        );
-      def fResponseReceivedEventHandler(oHTTPClient, oConnection, oResponse):
-        fOutputResponseReceived(
-          oConnection, oResponse, None, # 3rd argument == None => Did not use a proxy
-          bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
-        );
       if bShowProgress:
-        def fHostnameResolvedEventHandler(oHTTPClient, sbHostname, iFamily, sCanonicalName, sIPAddress):
-          fOutputHostnameResolved(sbHostname, sCanonicalName, sIPAddress);
-        oHTTPClient.fAddCallback("hostname resolved", fHostnameResolvedEventHandler);
+        oClient.fAddCallbacks({
+          "request sent": lambda oClient, oConnection, oRequest:
+              fHandleRequestSent(oConnection, oRequest, None, False), # None, False => no proxy, no need to show CONNECT requests
+          "request sent and response received": lambda oClient, oConnection, oRequest, oResponse:
+            fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, None, False), # None, False => no proxy, no need to show CONNECT responses
+        });
+      if bShowRequest:
+        oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest:
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
+        );
+      if bShowResponse:
+        oClient.fAddCallback("response received", lambda oClient, oConnection, oResponse:
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
+        );
     elif o0HTTPProxyServerURL:
       # Create a HTTP client instance that uses a static proxy
-      oHTTPClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      oClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
       # Create event handlers specific to this situation that call the generic request/response reporters
-      def fRequestSentEventHandler(oHTTPClient, oConnection, oRequest):
-        fOutputRequestSent(
-          oConnection, oRequest, oHTTPClient.oProxyServerURL, # 3rd argument == URL => Used a proxy
-          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
+      if bShowProgress:
+        oClient.fAddCallbacks({
+          "request sent": lambda oClient, oConnection, oRequest:
+              fHandleRequestSent(oConnection, oRequest, o0HTTPProxyServerURL, bShowProxyConnects), 
+          "request sent and response received": lambda oClient, oConnection, oRequest, oResponse:
+              fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0HTTPProxyServerURL, bShowProxyConnects),
+        });
+      if bShowRequest:
+        oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest: 
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
         );
-      def fResponseReceivedEventHandler(oHTTPClient, oConnection, oResponse):
-        fOutputResponseReceived(
-         oConnection, oResponse, oHTTPClient.oProxyServerURL,# 3rd argument == URL => Used a proxy
-         bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
-       ); 
+      if bShowResponse:
+        oClient.fAddCallback("response received", lambda oClient, oConnection, oResponse:
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
+        );
     else:
       # Create a HTTP client instance that uses dynamic proxies.
-      oHTTPClient = cHTTPClientUsingAutomaticProxyServer(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
-      def fRequestSentEventHandler(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oRequest):
-        fOutputRequestSent(
-          oConnection, oRequest, o0ProxyServerURL, # 3rd argument == None/URL => May have used a proxy
-          bShowProgress, bShowRequest, bShowDetails, bDecodeBody,
+      oClient = cHTTPClientUsingAutomaticProxyServer(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      if bShowProgress:
+        oClient.fAddCallbacks({
+          "request sent": lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
+              fHandleRequestSent(oConnection, oRequest, o0HTTPProxyServerURL, bShowProxyConnects), 
+          "request sent and response received": lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest, oResponse:
+              fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0HTTPProxyServerURL, bShowProxyConnects),
+        });
+      if bShowRequest:
+        oClient.fAddCallback("request sent", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
         );
-      def fResponseReceivedEventHandler(oHTTPClient, oSecondaryHTTPClient, o0ProxyServerURL, oConnection, oResponse):
-        fOutputResponseReceived(
-          oConnection, oResponse, o0ProxyServerURL, # 3rd argument == None/URL => May have used a proxy
-          bShowProgress, bShowResponse, bShowDetails, bDecodeBody,
+      if bShowResponse:
+        oClient.fAddCallback("response received", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oResponse:
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
         );
-    # If needed, apply the event handlers specific to this situation which where created above:
-    if bShowProgress or bShowRequest:
-      oHTTPClient.fAddCallback("request sent", fRequestSentEventHandler);
-    if bShowProgress or bShowResponse:
-      oHTTPClient.fAddCallback("response received", fResponseReceivedEventHandler);
+    if bShowProgress:
+      if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
+        oClient.fAddCallbacks({
+          "server hostname or ip address invalid": fHandleServerHostnameOrIPAddressInvalid,
+          
+          "resolving server hostname": fHandleResolvingServerHostname,
+          "resolving server hostname failed": fHandleResolvingServerHostnameFailed,
+          "server hostname resolved to ip address": fHandleServerHostnameResolvedToIPAddress,
+          
+          "connecting to server ip address": fHandleConnectingToServerIPAddress,
+          "connecting to server ip address failed": fHandleConnectingToServerIPAddressFailed,
+          # We will always inform the user of this
+          # "connecting to server failed": fHandleConnectingToServerFailed,
+          "connection to server created": fHandleConnectionToServerCreated,
+          "connection to server terminated": fHandleConnectionToServerTerminated,
+        });
+      if isinstance(oClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
+        oClient.fAddCallbacks({
+          "proxy hostname or ip address invalid": fHandleProxyHostnameOrIPAddressInvalid,
+          "resolving proxy hostname": fHandleResolvingProxyHostname,
+          "resolving proxy hostname failed": fHandleResolvingProxyHostnameFailed,
+          "proxy hostname resolved to ip address": fHandleProxyHostnameResolvedToIPAddress,
+          
+          "connecting to proxy ip address": fHandleConnectingToProxyIPAddress,
+          "connecting to proxy ip address failed": fHandleConnectingToProxyIPAddressFailed,
+          # We will always inform the user of this
+          # "connecting to server failed": fHandleConnectingToServerFailed,
+          "connection to proxy created": fHandleConnectionToProxyCreated,
+          "connection to proxy terminated": fHandleConnectionToProxyTerminated,
+          "secure connection to server through proxy created": fHandleSecureConnectionToServerThroughProxyCreated,
+          "secure connection to server through proxy terminated": fHandleSecureConnectionToServerThroughProxyTerminated,
+        });
     
     ### SESSION FILE ##########################################################
     if fbIsProvided(s0zSessionPath) and s0zSessionPath is not None:
@@ -348,6 +411,7 @@ try:
         o0SessionFile = oSessionFileOrFolder;
       else:
         oConsole.fOutput(
+          "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not find session file ",
           COLOR_INFO, oSessionFileOrFolder.sPath,
@@ -360,10 +424,12 @@ try:
     if o0SessionFile and o0SessionFile.fbIsFile():
       if bShowProgress:
         oConsole.fOutput(
+          "      ",
           COLOR_INFO, CHAR_INFO,
           COLOR_NORMAL, " Session settings:",
         );
         oConsole.fStatus(
+          "      ",
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Loading session from file ",
           COLOR_INFO, o0SessionFile.sPath,
@@ -373,6 +439,7 @@ try:
         sbSessionFileJSON = o0SessionFile.fsbRead(bThrowErrors = True);
       except Exception as oException:
         oConsole.fOutput(
+          "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not read session file ",
           COLOR_INFO, o0SessionFile.sPath,
@@ -381,6 +448,7 @@ try:
         fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
       if bShowProgress:
         oConsole.fStatus(
+          "      ",
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Parsing session file ",
           COLOR_INFO, o0SessionFile.sPath,
@@ -388,7 +456,7 @@ try:
         );
       def fOutputSessionHTTPVersion(oSession, sbHTTPVersion):
         oConsole.fOutput(
-          "  ",
+          "      ",
           CHAR_LIST,
           COLOR_NORMAL, " HTTP version: ",
           COLOR_INFO, fsCP437FromBytesString(sbHTTPVersion),
@@ -397,7 +465,7 @@ try:
       def fOutputSessionMaxRedirects(oSession, u0MaxRedirects):
         if u0MaxRedirects is None:
           oConsole.fOutput(
-            "  ",
+            "      ",
             CHAR_LIST,
             COLOR_NORMAL, " Redirects: ",
             COLOR_INFO, "not followed",
@@ -405,7 +473,7 @@ try:
           );
         else:
           oConsole.fOutput(
-            "  ",
+            "      ",
             CHAR_LIST,
             COLOR_NORMAL, " Max redirects: ",
             COLOR_INFO, str(u0MaxRedirects),
@@ -413,7 +481,7 @@ try:
           );
       def fOutputSessionUserAgent(oSession, sbUserAgent):
         oConsole.fOutput(
-          "  ",
+          "      ",
           CHAR_LIST,
           COLOR_NORMAL, " User agent: ",
           COLOR_INFO, fsCP437FromBytesString(sbUserAgent),
@@ -421,7 +489,7 @@ try:
         );
       def fOutputSessionDoNotTrackHeader(oSession, bDoNotTrack):
         oConsole.fOutput(
-          "  ",
+          "      ",
           CHAR_LIST,
           COLOR_NORMAL, " Do not track: ",
           COLOR_INFO,
@@ -442,6 +510,7 @@ try:
         );
       except ValueError as oException:
         oConsole.fOutput(
+          "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not parse session file ",
           COLOR_INFO, o0SessionFile.sPath,
@@ -450,12 +519,13 @@ try:
         fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
       if bShowProgress and not bSessionJSONHasData:
         oConsole.fOutput(
-          "  (Session file has not data).",
+          "      ",
+          "(Session file has not data).",
         );
     if not bSegmentedVideo:
       # Single request
       foGetResponseForURL(
-        oHTTPClient,
+        oClient,
         o0SessionFile, oSession,
         o0URL, sbzMethod, s0RequestData,
         dsbAdditionalOrRemovedHeaders,
@@ -470,7 +540,7 @@ try:
       while 1:
         oURL = cURL.foFromBytesString(b"%s%d%s" % (sbURLSegmentHeader, uIndex, sbURLSegmentFooter));
         oResponse = foGetResponseForURL(
-          oHTTPClient,
+          oClient,
           o0SessionFile, oSession,
           oURL, sbzMethod, s0RequestData,
           dsbAdditionalOrRemovedHeaders,
@@ -484,8 +554,9 @@ try:
         uIndex += 1;
       if bShowProgress:
         oConsole.fOutput(
+          "      ",
           COLOR_OK, CHAR_OK,
-          COLOR_NORMAL, "+ Found ",
+          COLOR_NORMAL, " Found ",
           COLOR_INFO, str(uIndex - uStartIndex),
           COLOR_NORMAL, " segments.",
         );

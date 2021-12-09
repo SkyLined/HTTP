@@ -4,6 +4,7 @@ from mConsole import oConsole;
 from mFileSystemItem import cFileSystemItem;
 from mHumanReadable import fsBytesToHumanReadableString;
 from mNotProvided import *;
+from mHTTPProtocol import cURL;
 
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
@@ -53,6 +54,7 @@ def foGetResponseForURL(
       oRequest.fSetFormValue(sName, sValue);
   # Send the request and get the response.
   oConsole.fStatus(
+    "      ",
     COLOR_BUSY, CHAR_BUSY,
     COLOR_NORMAL, " Sending request ",
     COLOR_INFO, fsCP437FromBytesString(oRequest.sbVersion),
@@ -65,6 +67,7 @@ def foGetResponseForURL(
   except Exception as oException:
     if isinstance(oException, oHTTPClient.cTCPIPConnectTimeoutException):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Connecting to server timed out:",
       );
@@ -74,6 +77,7 @@ def foGetResponseForURL(
       oHTTPClient.cDNSUnknownHostnameException,
     )):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server:",
       );
@@ -82,11 +86,13 @@ def foGetResponseForURL(
       oHTTPClient.cTCPIPConnectionShutdownException,
     )):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server did not respond to our request:",
       );
     elif isinstance(oException, oHTTPClient.cHTTPFailedToConnectToProxyException):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to proxy server:",
       );
@@ -94,11 +100,13 @@ def foGetResponseForURL(
       oHTTPClient.cMaxConnectionsReachedException,
     )):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server:",
       );
     elif isinstance(oException, oHTTPClient.cTCPIPDataTimeoutException):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server was unable to respond in a timely manner.",
       );
@@ -107,11 +115,13 @@ def foGetResponseForURL(
       oHTTPClient.cHTTPInvalidMessageException,
     )):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " There was a protocol error while talking to the server:",
       );
-    elif oHTTPClient.bSSLIsSupported and isinstance(oException, cSSLSecureTimeoutException):
+    elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLSecureTimeoutException):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Securing the connection to the server timed out:",
       );
@@ -122,6 +132,7 @@ def foGetResponseForURL(
       oHTTPClient.cSSLIncorrectHostnameException,
     )):
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Securing the connection to the server failed:",
       );
@@ -131,6 +142,7 @@ def foGetResponseForURL(
   oConsole.fStatus();
   if not o0Response:
     oConsole.fOutput(
+      "      ",
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " No response received.",
     );
@@ -139,19 +151,22 @@ def foGetResponseForURL(
   # Apply response to session and save session to file if needed
   def fSessionInvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbAttributeName, sbAttributeValue, bIsNameKnown):
     fOutputSessionInvalidCookieAttributeAndExit(oURL.sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sbAttributeValue, bIsNameKnown);
-  def fSessionAddedCookieCallback(oResponse, oURL, oCookie, bIsNewCookie):
-    fOutputSessionSetCookie(oURL.sbOrigin, oCookie, bIsNewCookie, not bIsNewCookie); # 3rd argument: cookie is added, 4rth argument: cookie is modified.
+  def fSessionSetCookieCallback(oResponse, oURL, oCookie, o0PreviousCookie):
+    if oCookie.fbIsExpired():
+      fOutputSessionExpiredCookie(oURL.sbOrigin, oCookie);
+    else:
+      fOutputSessionSetCookie(oURL.sbOrigin, oCookie, o0PreviousCookie);
   oSession.fUpdateFromResponse(
     oResponse,
     oURL,
     f0InvalidCookieAttributeCallback = fSessionInvalidCookieAttributeCallback,
-    f0AddedCookieCallback = fSessionAddedCookieCallback if bShowProgress else None,
-    f0ExpiredCookieCallback = fOutputSessionExpiredCookie if bShowProgress else None,
+    f0SetCookieCallback = fSessionSetCookieCallback if bShowProgress else None,
   );
   if o0SessionFile is not None:
     sbSessionJSON = fsbGetSessionJSONFromSession(oSession);
     if bShowProgress:
       oConsole.fStatus(
+        "      ",
         COLOR_BUSY, CHAR_BUSY,
         COLOR_NORMAL, " Saving session to file ",
         COLOR_INFO, o0SessionFile.sPath,
@@ -162,6 +177,7 @@ def foGetResponseForURL(
     except Exception as oException:
       oConsole.fStatus();
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not write session file ",
         COLOR_INFO, o0SessionFile.sPath,
@@ -174,6 +190,7 @@ def foGetResponseForURL(
     oLocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
     if not oLocationHeader:
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Redirected without a \"",
         COLOR_INFO, "Location",
@@ -185,24 +202,33 @@ def foGetResponseForURL(
       oURL = cURL.foFromBytesString(sbRedirectToURL);
     except cURL.cInvalidURLException as oException:
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Redirect to invalid URL ",
         COLOR_INFO, sbRedirectToURL,
         COLOR_NORMAL, ":",
       );
     if bShowProgress:
-      oConsole.fOutput(">>> Redirected to URL: ", COLOR_INFO, fsCP437FromBytesString(oURL.sbAbsolute), COLOR_NORMAL, ".");
+      oConsole.fOutput(
+        "      ",
+        COLOR_INFO, ">",
+        COLOR_NORMAL, " Redirected to URL: ",
+        COLOR_INFO, fsCP437FromBytesString(oURL.sbAbsolute),
+        COLOR_NORMAL, ".",
+      );
     if u0MaxRedirects == 0:
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Too many sequential redirects.",
       );
       sys.exit(guExitCodeTooManyRedirects);
     return foGetResponseForURL(
       oHTTPClient,
-      o0SessionFile, oSession,
+      o0SessionFile, oSession, 
       oURL, sbzMethod, s0RequestData,
       dsbAdditionalOrRemovedHeaders,
+      d0Form_sValue_by_sName,
       u0MaxRedirects - 1,
       s0zDownloadToFilePath, bFirstDownload,
       bShowProgress,
@@ -213,6 +239,7 @@ def foGetResponseForURL(
       s0zDownloadToFilePath = oURL.asURLDecodedPath[-1];
     oDownloadToFile = cFileSystemItem(s0zDownloadToFilePath);
     oConsole.fStatus(
+      "      ",
       COLOR_BUSY, CHAR_BUSY,
       COLOR_NORMAL, " Saving response to file ",
       COLOR_INFO, oDownloadToFile.sPath,
@@ -226,8 +253,9 @@ def foGetResponseForURL(
     except Exception as oException:
       oConsole.fStatus();
       oConsole.fOutput(
+        "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, "Cannot write ",
+        COLOR_NORMAL, " Cannot write ",
         COLOR_INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)),
         COLOR_NORMAL, "to file ",
         COLOR_INFO, oDownloadToFile.sPath,
@@ -239,6 +267,7 @@ def foGetResponseForURL(
     oConsole.fStatus();
     if bShowProgress:
       oConsole.fOutput(
+        "      ",
         COLOR_OK, CHAR_OK,
         COLOR_NORMAL, " Saved ",
         COLOR_INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)),
