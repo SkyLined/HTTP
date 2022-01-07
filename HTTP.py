@@ -169,7 +169,7 @@ try:
           );
           sys.exit(guExitCodeBadArgument);
         try:
-          sbRequestData = oDataFileSystemItem.fsbRead(bParseZipFiles = True, bThrowErrors = true);
+          sbRequestData = oDataFileSystemItem.fsbRead(bParseZipFiles = True);
           s0RequestData = str(sbRequestData, "utf-8", "strict");
         except Exception as oException:
           oConsole.fOutput(
@@ -436,7 +436,7 @@ try:
           COLOR_NORMAL, "...",
         );
       try:
-        sbSessionFileJSON = o0SessionFile.fsbRead(bThrowErrors = True);
+        sbSessionFileJSON = o0SessionFile.fsbRead();
       except Exception as oException:
         oConsole.fOutput(
           "      ",
