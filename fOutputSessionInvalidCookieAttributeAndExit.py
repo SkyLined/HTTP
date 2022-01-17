@@ -1,3 +1,5 @@
+import sys;
+
 from mConsole import oConsole;
 
 from mColorsAndChars import *;
