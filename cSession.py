@@ -134,15 +134,18 @@ class cSession(object):
           # For now we use the last valid value. TODO: find out if there is a standard.
           try:
             uNumberOfSeconds = int(sbValue);
-            oMaxAgeDateTimeDuration = cDateTimeDuration.foFromString("%+ds" % uNumberOfSeconds);
-          except:
+            if uNumberOfSeconds < 0:
+              raise ValueError();
+          except ValueError:
             # What should we do if the client provides an invalid "Max-Age" value?
             if f0InvalidCookieAttributeCallback:
               f0InvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbName, sbValue, True);
           else:
             # expires header takes precedent.
             if not bExpiresHeaderFound:
-              dxCookieAttributeArguments["o0ExpirationDateTime"] = cDateTime.foNow().foGetEndDateTimeForDuration(oMaxAgeDateTimeDuration);
+              oMaxAgeDateTimeDuration = cDateTimeDuration.fo0FromString("%+ds" % uNumberOfSeconds);
+              oExpirationDateTime = cDateTime.foNow().foGetEndDateTimeForDuration(oMaxAgeDateTimeDuration);
+              dxCookieAttributeArguments["o0ExpirationDateTime"] = oExpirationDateTime;
         elif sbLowerName == b"domain":
           # What should we do if the server provides multiple "Domain" values?
           # For now we use the last valid value. TODO: find out if there is a standard.
