@@ -10,9 +10,9 @@ def fHandleConnectionToServerTerminated(oClient, oConnection, sbHostnameOrIPAddr
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
   
   oConsole.fOutput(
-    COLOR_ACTIVE,     "C",
-    COLOR_DISCONNECT, "-×→",
-    COLOR_ACTIVE,     "S",
+    COLOR_ACTIVE,       "C",
+    COLOR_DISCONNECTED, "-×→",
+    COLOR_ACTIVE,       "S",
     COLOR_NORMAL, " Connection to server ",
     COLOR_INFO, ("[%s]" if ":" in sHostnameOrIPAddress else "%s") % sHostnameOrIPAddress,
     COLOR_NORMAL, ":",
