@@ -29,6 +29,7 @@ def fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0Pr
     COLOR_RESPONSE = COLOR_RESPONSE_INVALID;
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_INVALID;
   
+  sb0MediaType = oResponse.sb0MediaType; # Getter; this takes time, so cache it.
   oConsole.fOutput(
     [
       COLOR_ACTIVE,       "C",
@@ -53,8 +54,8 @@ def fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0Pr
     COLOR_INFO, fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
     COLOR_NORMAL,
     [
-      " ", fsCP437FromBytesString(oResponse.sb0MediaType),
-    ] if oResponse.sb0MediaType else [],
+      " ", fsCP437FromBytesString(sb0MediaType),
+    ] if sb0MediaType else [],
     ") ",
     [
       COLOR_INFO, "securely ",
