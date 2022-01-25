@@ -327,7 +327,8 @@ try:
           fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
         );
       if bShowResponse:
-        oClient.fAddCallback("response received", lambda oClient, oConnection, oResponse:
+        # If we do this with "response received" event, it will fire before we have shown progress (above)
+        oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
           fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
         );
     elif o0HTTPProxyServerURL:
@@ -346,7 +347,8 @@ try:
           fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
         );
       if bShowResponse:
-        oClient.fAddCallback("response received", lambda oClient, oConnection, oResponse:
+        # If we do this with "response received" event, it will fire before we have shown progress (above)
+        oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
           fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
         );
     else:
@@ -364,7 +366,8 @@ try:
           fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
         );
       if bShowResponse:
-        oClient.fAddCallback("response received", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oResponse:
+        # If we do this with "response received" event, it will fire before we have shown progress (above)
+        oClient.fAddCallback("request sent and response received", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest, oResponse:
           fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
         );
     if bShowProgress:
