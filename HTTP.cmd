@@ -27,5 +27,5 @@ EXIT /B 1
   EXIT /B 0
 
 :RUN_PYTHON
-  CALL %PYTHON% "%~dpn0.py" %*
+  %PYTHON% "%~dpn0.py" %*
   ENDLOCAL & EXIT /B %ERRORLEVEL%
