@@ -235,7 +235,19 @@ def foGetResponseForURL(
   # Download response to file if needed
   if fbIsProvided(s0zDownloadToFilePath) and oResponse.uStatusCode == 200:
     if s0zDownloadToFilePath is None:
-      s0zDownloadToFilePath = oURL.asURLDecodedPath[-1];
+      # Create a file name that makes sense, given the media type, URL path, and/or hostname
+      sb0MediaType = oResponse.sb0MediaType;
+      s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
+      # No download file name provided; generate one from the URL path if one is provided:
+      if oURL.asURLDecodedPath:
+        s0zDownloadToFilePath = oURL.asURLDecodedPath[-1];
+        if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(s0zDownloadToFilePath):
+          s0zDownloadToFilePath += "." + s0Extension;
+      else:
+        s0zDownloadToFilePath = "download from %s%s" % (
+          fsCP437FromBytesString(oURL.sbHostname),
+          ".%s" % s0Extension if s0Extension else "",
+        );
     oDownloadToFile = cFileSystemItem(s0zDownloadToFilePath);
     oConsole.fStatus(
       "      ",
