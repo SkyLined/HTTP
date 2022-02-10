@@ -10,7 +10,6 @@ from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
 from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
 from fOutputSessionSetCookie import fOutputSessionSetCookie;
-from fsbGetSessionJSONFromSession import fsbGetSessionJSONFromSession;
 
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
@@ -163,7 +162,7 @@ def foGetResponseForURL(
     f0SetCookieCallback = fSessionSetCookieCallback if bShowProgress else None,
   );
   if o0SessionFile is not None:
-    sbSessionJSON = fsbGetSessionJSONFromSession(oSession);
+    sbSessionJSON = oSession.fsbExportToJSON();
     if bShowProgress:
       oConsole.fStatus(
         "      ",

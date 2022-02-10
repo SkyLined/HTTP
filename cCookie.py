@@ -23,37 +23,51 @@ rPathFormat = re.compile(
   rb"\Z"
 );
 
-class cSessionCookie(object):
-  def __init__(oSelf, sbName, sbValue, o0ExpirationDateTime = None, sb0Domain = None, sb0Path = None, bSecure = False, bHttpOnly = False, sbSameSite = b"Lax"):
+class cCookie(object):
+  class cInvalidDomainException(Exception):
+    pass;
+  class cInvalidPathException(Exception):
+    pass;
+  class cInvalidSameSiteException(Exception):
+    pass;
+  @staticmethod
+  def fbIsValidPath(sbPath):
+    return rPathFormat.match(sbPath) is not None;
+    
+  def __init__(oSelf, sbName, sbValue, sbDomain, o0ExpirationDateTime = None, sb0Path = None, bSecure = False, bHttpOnly = False, sbSameSite = b"Lax"):
     fAssertTypes({
       "sbName": (sbName, bytes),
       "sbValue": (sbValue, bytes),
+      "sbDomain": (sbDomain, bytes),
       "o0ExpirationDateTime": (o0ExpirationDateTime, cDateTime, None),
-      "sb0Domain": (sb0Domain, bytes, None),
       "sb0Path": (sb0Path, bytes, None),
       "bSecure": (bSecure, bool),
       "bHttpOnly": (bHttpOnly, bool),
       "sbSameSite": (sbSameSite, bytes),
     });
-    assert sbSameSite in [b"Strict", b"Lax", b"None"], \
-      "sbSameSite must be \"Strict\",  \"Lax\", or \"None\", not %s" % repr(sbSameSite);
-    assert sb0Domain is None or rDomainFormat.match(sb0Domain), \
-      "sb0Domain must be None or a valid domain, not %s" % repr(sb0Domain);
-    assert sb0Path is None or rPathFormat.match(sb0Path), \
-      "sb0Path must be a None or valid path, not %s" % repr(sb0Path);
+    if not rDomainFormat.match(sbDomain):
+      raise oSelf.cInvalidDomainException(
+        "sbDomain must be None or a valid domain, not %s" % repr(sbDomain)
+      );
+    if not sbSameSite in [b"Strict", b"Lax", b"None"]:
+      raise oSelf.cInvalidSameSiteException(
+        "sbSameSite must be \"Strict\",  \"Lax\", or \"None\", not %s" % repr(sbSameSite)
+      );
+    if sb0Path is not None and not oSelf.fbIsValidPath(sb0Path):
+      raise cInvalidPathException(
+        "sb0Path must be None or a valid path, not %s" % repr(sb0Path)
+      );
     oSelf.sbName = sbName;
     oSelf.sbValue = sbValue;
     oSelf.o0ExpirationDateTime = o0ExpirationDateTime;
-    oSelf.sb0Domain = sb0Domain;
+    oSelf.sbDomain = sbDomain;
     oSelf.sb0Path = sb0Path;
     oSelf.bSecure = bSecure;
     oSelf.bHttpOnly = bHttpOnly;
     oSelf.sbSameSite = sbSameSite;
   
   def fbAppliesToDomain(oSelf, sbDomain):
-    if oSelf.sb0Domain is None:
-      return True; # Applies to all domains
-    sbLowerCookieDomainWithLeadingDot = b".%s" % oSelf.sb0Domain.lstrip(b".").lower();
+    sbLowerCookieDomainWithLeadingDot = b".%s" % oSelf.sbDomain.lstrip(b".").lower();
     sbLowerDomainWithLeadingDot = b".%s" % sbDomain.lower();
     if not sbLowerDomainWithLeadingDot.endswith(sbLowerCookieDomainWithLeadingDot):
       return False;
@@ -73,19 +87,21 @@ class cSessionCookie(object):
       return False; # different path altogether
     return True;
   
+  def fbIsSessionCookie(oSelf):
+    return oSelf.o0ExpirationDateTime is None;
+  
   def fbIsExpired(oSelf):
     return False if oSelf.o0ExpirationDateTime is None else oSelf.o0ExpirationDateTime.fbIsBefore(cDateTime.foNow());
   
   def __str__(oSelf):
     asDetails = [
       fsCP437FromBytesString(b"%s=%s" % (oSelf.sbName, oSelf.sbValue)),
+      "Domain = %s" % fsCP437FromBytesString(oSelf.sbDomain),
     ];
     if oSelf.o0ExpirationDateTime is not None:
       oValidDuration = cDateTime.foNow().foGetDurationForEndDateTime(oSelf.o0ExpirationDateTime);
       oValidDuration.fNormalize();
       asDetails.append("Expires in %s" % oValidDuration.fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2));
-    if oSelf.sb0Domain is not None:
-      asDetails.append("Domain = %s" % fsCP437FromBytesString(oSelf.sb0Domain));
     if oSelf.sb0Path is not None:
       asDetails.append("Path = %s" % fsCP437FromBytesString(oSelf.sb0Path));
     if oSelf.bSecure:
@@ -95,3 +111,10 @@ class cSessionCookie(object):
     if oSelf.sbSameSite != "Lax":
       asDetails.append("SameSite = %s" % fsCP437FromBytesString(oSelf.sbSameSite));
     return "; ".join(asDetails);
+  
+  def __repr__(oSelf):
+    return "<%s.%s %s>" % (
+      oSelf.__class__.__module__,
+      oSelf.__class__.__name__,
+      str(oSelf),
+    );

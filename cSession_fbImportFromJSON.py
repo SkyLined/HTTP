@@ -4,7 +4,7 @@ from mDateTime import cDateTime;
 from mFileSystemItem import cFileSystemItem;
 from mNotProvided import *;
 
-from cSessionCookie import cSessionCookie;
+from cCookie import cCookie;
 
 def fxProcessType(sName, xValue, xAcceptedType):
   if not isinstance(xValue, str if xAcceptedType in (bytes, cDateTime) else xAcceptedType):
@@ -33,9 +33,9 @@ def fxProcessType(sName, xValue, xAcceptedType):
       );
   return xValue;
 
-def fbApplySessionJSONToSession(
+def cSession_fbImportFromJSON(
+  oSelf,
   sbSessionJSON,
-  oSession,
   bApplyHTTPVersion = True,
   bApplyMaxRedirects = True,
   bApplyUserAgent = True,
@@ -44,7 +44,7 @@ def fbApplySessionJSONToSession(
   f0SetMaxRedirectsCallback = None, # (oSession, u0MaxRedirects)
   f0SetUserAgentCallback = None, # (oSession, sbUserAgent)
   f0SetAddDoNotTrackHeaderCallback = None, # (oSession, bAddDoNotTrackHeader)
-  f0AddCookieCallback = None, # (oSession, sbOrigin, oCookie)
+  f0AddCookieCallback = None, # (oSession, sLowerDomainName, oCookie)
 ):
   bJSONHasData = False;
   # Parse JSON
@@ -56,55 +56,58 @@ def fbApplySessionJSONToSession(
   for (sSessionPropertyName, xSessionPropertyValue) in dxSessionProperties.items():
     if sSessionPropertyName == "sHTTPVersion":
       if bApplyUserAgent:
-        oSession.sbzHTTPVersion = fxProcessType("sHTTPVersion", xSessionPropertyValue, bytes);
+        oSelf.sbzHTTPVersion = fxProcessType("sHTTPVersion", xSessionPropertyValue, bytes);
         if f0SetHTTPVersionCallback:
-          f0SetHTTPVersionCallback(oSession, oSession.sbzHTTPVersion);
+          f0SetHTTPVersionCallback(oSelf, oSelf.sbzHTTPVersion);
         bJSONHasData = True;
     elif sSessionPropertyName == "u0MaxRedirects":
       if bApplyMaxRedirects:
         if xSessionPropertyValue is None:
-          oSession.u0MaxRedirects = None;
+          oSelf.u0MaxRedirects = None;
         else:
-          oSession.u0MaxRedirects = fxProcessType("u0MaxRedirects", xSessionPropertyValue, int);
-          if oSession.u0MaxRedirects < 0:
+          oSelf.u0MaxRedirects = fxProcessType("u0MaxRedirects", xSessionPropertyValue, int);
+          if oSelf.u0MaxRedirects < 0:
             raise ValueError(
               "Invalid JSON data: u0MaxRedirects (%s) should be a positive integer number or zero." % (
                 repr(xValue),
               ),
             );
         if f0SetMaxRedirectsCallback:
-         f0SetMaxRedirectsCallback(oSession, oSession.u0MaxRedirects);
+         f0SetMaxRedirectsCallback(oSelf, oSelf.u0MaxRedirects);
         bJSONHasData = True;
     elif sSessionPropertyName == "sUserAgent":
       if bApplyUserAgent:
-        oSession.sbzUserAgent = fxProcessType("sUserAgent", xSessionPropertyValue, bytes);
+        oSelf.sbzUserAgent = fxProcessType("sUserAgent", xSessionPropertyValue, bytes);
         if f0SetUserAgentCallback:
-          f0SetUserAgentCallback(oSession, oSession.sbzUserAgent);
+          f0SetUserAgentCallback(oSelf, oSelf.sbzUserAgent);
         bJSONHasData = True;
     elif sSessionPropertyName == "bAddDoNotTrackHeader":
       if bApplyDoNotTrackHeader:
-        oSession.bAddDoNotTrackHeader = fxProcessType("Session.bAddDoNotTrackHeader", xSessionPropertyValue, bool);
+        oSelf.bAddDoNotTrackHeader = fxProcessType("Session.bAddDoNotTrackHeader", xSessionPropertyValue, bool);
         if f0SetAddDoNotTrackHeaderCallback:
-          f0SetAddDoNotTrackHeaderCallback(oSession, oSession.bAddDoNotTrackHeader);
+          f0SetAddDoNotTrackHeaderCallback(oSelf, oSelf.bAddDoNotTrackHeader);
         bJSONHasData = True;
-    elif sSessionPropertyName == "ddxCookie_by_sName_by_sOrigin":
-      for (sOrigin, dxCookie_by_sName) in fxProcessType("Session.ddxCookie_by_sName_by_sOrigin", xSessionPropertyValue, dict).items():
-        sbOrigin = fxProcessType("Session.ddxCookie_by_sName_by_sOrigin[sOrigin = %s]" % repr(sOrigin), sOrigin, bytes);
-        sCookiesCheckTypeName = "Session.ddxCookie_by_sName_by_sOrigin[%s]" % json.dumps(sOrigin);
-        oSession.daoCookies_by_sbOrigin[sbOrigin] = [];
+    elif sSessionPropertyName == "ddxCookie_by_sName_by_sLowerDomainName":
+      ddxCookie_by_sName_by_sLowerDomainName = \
+          fxProcessType("Session.ddxCookie_by_sName_by_sLowerDomainName", xSessionPropertyValue, dict);
+      for (sLowerDomainName, dxCookie_by_sName) in ddxCookie_by_sName_by_sLowerDomainName.items():
+        sbLowerDomainName = fxProcessType("Session.ddxCookie_by_sName_by_sLowerDomainName[sLowerDomainName = %s]" % repr(sLowerDomainName), sLowerDomainName, bytes);
+        sCookiesCheckTypeName = "Session.ddxCookie_by_sName_by_sLowerDomainName[%s]" % json.dumps(sLowerDomainName);
+        oSelf.daoCookies_by_sbLowerDomainName[sbLowerDomainName] = [];
         for (sCookieName, dxCookieProperties) in fxProcessType(sCookiesCheckTypeName, dxCookie_by_sName, dict).items():
           sbCookieName = fxProcessType("%s[sName = %s]" % (sCookiesCheckTypeName, repr(sCookieName)), sCookieName, bytes);
           sCookieCheckTypeName = "%s[%s]" % (sCookiesCheckTypeName, json.dumps(sCookieName));
           sbzCookieValue = zNotProvided;
+          sbzCookieDomain = zNotProvided;
           dxCookieAttributeArguments = {};
           for (sCookiePropertyName, xCookiePropertyValue) in fxProcessType(sCookieCheckTypeName, dxCookieProperties, dict).items():
             sCookiePropertyCheckTypeName = "%s.%s" % (sCookieCheckTypeName, sCookiePropertyName);
             if sCookiePropertyName == "sValue":
               sbzCookieValue = fxProcessType(sCookiePropertyCheckTypeName, xCookiePropertyValue, bytes);
+            elif sCookiePropertyName == "sDomain":
+              sbzCookieDomain = fxProcessType(sCookiePropertyCheckTypeName, xCookiePropertyValue, bytes);
             elif sCookiePropertyName == "sExpirationDateTime":
               dxCookieAttributeArguments["o0ExpirationDateTime"] = fxProcessType(sCookiePropertyCheckTypeName, xCookiePropertyValue, cDateTime);
-            elif sCookiePropertyName == "sDomain":
-              dxCookieAttributeArguments["sb0Domain"] = fxProcessType(sCookiePropertyCheckTypeName, xCookiePropertyValue, bytes);
             elif sCookiePropertyName == "sPath":
               dxCookieAttributeArguments["sb0Path"] = fxProcessType(sCookiePropertyCheckTypeName, xCookiePropertyValue, bytes);
             elif sCookiePropertyName == "bSecure":
@@ -125,9 +128,15 @@ def fbApplySessionJSONToSession(
                 sCookieCheckTypeName, repr(dxCookieProperties),
               ),
             );
-          oCookie = cSessionCookie(sbCookieName, sbzCookieValue, **dxCookieAttributeArguments);
-          oSession.daoCookies_by_sbOrigin[sbOrigin].append(oCookie);
+          if not fbIsProvided(sbzCookieDomain):
+            raise ValueError(
+              "Invalid JSON data: Cookie %s properties (%s) is missing a \"sDomain\" property." % (
+                sCookieCheckTypeName, repr(dxCookieProperties),
+              ),
+            );
+          oCookie = cCookie(sbCookieName, sbzCookieValue, sbzCookieDomain, **dxCookieAttributeArguments);
+          oSelf.daoCookies_by_sbLowerDomainName[sbLowerDomainName].append(oCookie);
           if f0AddCookieCallback:
-            f0AddCookieCallback(oSession, sbOrigin, oCookie);
+            f0AddCookieCallback(oSelf, sbLowerDomainName, oCookie);
           bJSONHasData = True;
   return bJSONHasData;

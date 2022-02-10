@@ -9,17 +9,9 @@ def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
   if oCookie.o0ExpirationDateTime is not None:
     oValidDuration = cDateTime.foNow().foGetDurationForEndDateTime(oCookie.o0ExpirationDateTime);
     oValidDuration.fNormalize();
-    asAttributes.append("Expires in %s" % oValidDuration.fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2));
-  if oCookie.sb0Domain is not None:
-    asAttributes.append("Domain = %s" % str(oCookie.sb0Domain, "ascii", "strict"));
-  if oCookie.sb0Path is not None:
-    asAttributes.append("Path = %s" % str(oCookie.sb0Path, "ascii", "strict"));
-  if oCookie.bSecure:
-    asAttributes.append("Secure");
-  if oCookie.bHttpOnly:
-    asAttributes.append("HttpOnly");
-  if oCookie.sbSameSite != "Lax":
-    asAttributes.append("SameSite = %s" % str(oCookie.sbSameSite, "ascii", "strict"));
+    s0Expires = oValidDuration.fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
+  else:
+    s0Expires = None;
   bCookieIsNew = o0PreviousCookie is None;
   bCookieValueWasModified = o0PreviousCookie and o0PreviousCookie.sbValue != oCookie.sbValue;
   oConsole.fOutput(
@@ -31,15 +23,40 @@ def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
     ] if bCookieValueWasModified else [
       CHAR_LIST,
     ],
-    COLOR_NORMAL, " Session cookie ", "added" if bCookieIsNew else "updated" if bCookieValueWasModified else "repeated", " for ",
+    COLOR_NORMAL, (
+      " Session cookie " if oCookie.o0ExpirationDateTime is None else
+      " Cookie "
+    ), (
+      "added" if bCookieIsNew else
+      "updated" if bCookieValueWasModified else
+      "repeated"
+    ), " for ",
     COLOR_INFO, fsCP437FromBytesString(sbOrigin),
     COLOR_NORMAL, ": ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbName),
     COLOR_NORMAL, " = ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue),
-    COLOR_NORMAL, 
+    COLOR_NORMAL, " (Domain = ",
+    COLOR_INFO, fsCP437FromBytesString(oCookie.sbDomain),
     [
-      " (", ", ".join(asAttributes), ")",
-    ] if asAttributes else [],
-    ".",
+      COLOR_NORMAL, ", Expires in ",
+      COLOR_INFO, s0Expires,
+    ] if s0Expires is not None else [],
+    [
+      COLOR_NORMAL, ", Path = ",
+      COLOR_INFO, fsCP437FromBytesString(oCookie.sb0Path),
+    ] if oCookie.sb0Path is not None else [],
+    [
+      COLOR_NORMAL, ", ",
+      COLOR_INFO, "Secure",
+    ] if oCookie.bSecure else [],
+    [
+      COLOR_NORMAL, ", ",
+      COLOR_INFO, "HttpOnly",
+    ] if oCookie.bHttpOnly else [],
+    [
+      COLOR_NORMAL, ", SameSite = ",
+      COLOR_INFO, fsCP437FromBytesString(oCookie.sbSameSite),
+    ] if oCookie.sbSameSite != "Lax" else [],
+    COLOR_NORMAL, ").",
   );

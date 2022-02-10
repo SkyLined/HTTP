@@ -404,13 +404,14 @@ try:
         });
     
     ### SESSION FILE ##########################################################
-    if fbIsProvided(s0zSessionPath) and s0zSessionPath is not None:
+    if fbIsProvided(s0zSessionPath):
+      s0zSessionPath  = s0zSessionPath or "HTTP session.json";
       oSessionFileOrFolder = cFileSystemItem(s0zSessionPath);
       if oSessionFileOrFolder.fbIsFolder():
         o0SessionFile = oSessionFileOrFolder.foGetChild("http-session.json");
       elif oSessionFileOrFolder.fbIsFile():
         o0SessionFile = oSessionFileOrFolder;
-      elif oSessionFileOrFolder.oParent.fbIsFolder():
+      elif oSessionFileOrFolder.o0Parent and oSessionFileOrFolder.o0Parent.fbIsFolder():
         o0SessionFile = oSessionFileOrFolder;
       else:
         oConsole.fOutput(
@@ -500,11 +501,10 @@ try:
           COLOR_NORMAL, ".",
         );
       def fApplySessionJSONAddCookieEventHandler(oSession, sbOrigin, oCookie):
-        fOutputSessionSetCookie(sbOrigin, oCookie, False, False); # 3rd argument: cookie is added, 4rth argument, cookie is modified.
+        fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie = None);
       try:
-        bSessionJSONHasData = fbApplySessionJSONToSession(
+        bSessionJSONHasData = oSession.fbImportFromJSON(
           sbSessionFileJSON,
-          oSession,
           f0SetHTTPVersionCallback = fOutputSessionHTTPVersion if bShowProgress else None,
           f0SetMaxRedirectsCallback = fOutputSessionMaxRedirects if bShowProgress else None,
           f0SetUserAgentCallback = fOutputSessionUserAgent if bShowProgress else None,
@@ -512,6 +512,7 @@ try:
           f0AddCookieCallback = fApplySessionJSONAddCookieEventHandler if bShowProgress else None,
         );
       except ValueError as oException:
+        raise;
         oConsole.fOutput(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
