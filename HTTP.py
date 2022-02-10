@@ -100,10 +100,10 @@ try:
     bSegmentedVideo = None;
     uStartIndex = None;
     oSession = cSession();
-    bShowProgress = True;
-    bShowRequest = True;
-    bShowResponse = True;
-    bShowDetails = True;
+    bzShowProgress = zNotProvided;
+    bzShowRequest = zNotProvided;
+    bzShowResponse = zNotProvided;
+    bzShowDetails = zNotProvided;
     bShowProxyConnects = False;
     bUseProxy = False;
     o0HTTPProxyServerURL = None;
@@ -238,15 +238,15 @@ try:
       elif s0LowerName in ["s", "secure"]:
         bAllowUnverifiableCertificates = fbParseBooleanArgument();
       elif s0LowerName in ["show-progress"]:
-        bShowProgress = fbParseBooleanArgument();
+        bzShowProgress = fbParseBooleanArgument();
       elif s0LowerName in ["show-proxy"]:
-        bShowProxyConnects = fbParseBooleanArgument();
+        bzShowProxyConnects = fbParseBooleanArgument();
       elif s0LowerName in ["show-request"]:
-        bShowRequest = fbParseBooleanArgument();
+        bzShowRequest = fbParseBooleanArgument();
       elif s0LowerName in ["show-response"]:
-        bShowResponse = fbParseBooleanArgument();
+        bzShowResponse = fbParseBooleanArgument();
       elif s0LowerName in ["show-details"]:
-        bShowDetails = fbParseBooleanArgument();
+        bzShowDetails = fbParseBooleanArgument();
       elif s0LowerName:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -273,6 +273,14 @@ try:
     if o0URL is None:
       fOutputUsageInformation();
       sys.exit(guExitCodeSuccess);
+    # If not explicitly set, show progress
+    bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
+    # If not explicitly set, only show requests and responses when we are not downloading.
+    bShowStuffDefault = not fbIsProvided(s0zDownloadToFilePath);
+    bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowStuffDefault;
+    bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowStuffDefault;
+    bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else bShowStuffDefault;
+    
     if bSegmentedVideo:
       for rbSegmentedVideo in arbSegmentedVideos:
         obURLSegmentMatch = rbSegmentedVideo.match(o0URL.sbAbsolute);
