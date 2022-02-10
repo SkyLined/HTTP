@@ -4,7 +4,7 @@ from mConsole import oConsole;
 from mFileSystemItem import cFileSystemItem;
 from mHumanReadable import fsBytesToHumanReadableString;
 from mNotProvided import *;
-from mHTTPProtocol import cURL;
+from mHTTPProtocol import cURL, fs0GetExtensionForMediaType, fsb0GetMediaTypeForExtension;
 
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
@@ -73,7 +73,7 @@ def foGetResponseForURL(
     elif isinstance(oException, (
       oHTTPClient.cTCPIPConnectionRefusedException,
       oHTTPClient.cTCPIPInvalidAddressException,
-      oHTTPClient.cDNSUnknownHostnameException,
+      oHTTPClient.cTCPIPDNSUnknownHostnameException,
     )):
       oConsole.fOutput(
         "      ",
@@ -89,14 +89,14 @@ def foGetResponseForURL(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server did not respond to our request:",
       );
-    elif isinstance(oException, oHTTPClient.cHTTPFailedToConnectToProxyException):
+    elif isinstance(oException, oHTTPClient.cHTTPClientFailedToConnectToServerThroughProxyException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not connect to proxy server:",
+        COLOR_NORMAL, " Could not connect to server through proxy:",
       );
     elif isinstance(oException, (
-      oHTTPClient.cMaxConnectionsReachedException,
+      oHTTPClient.cHTTPMaxConnectionsToServerReachedException,
     )):
       oConsole.fOutput(
         "      ",
@@ -148,8 +148,8 @@ def foGetResponseForURL(
     sys.exit(guExitCodeNoValidResponseReceived);
   oResponse = o0Response;
   # Apply response to session and save session to file if needed
-  def fSessionInvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbAttributeName, sbAttributeValue, bIsNameKnown):
-    fOutputSessionInvalidCookieAttributeAndExit(oURL.sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sbAttributeValue, bIsNameKnown);
+  def fSessionInvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown):
+    fOutputSessionInvalidCookieAttributeAndExit(oURL.sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown);
   def fSessionSetCookieCallback(oResponse, oURL, oCookie, o0PreviousCookie):
     if oCookie.fbIsExpired():
       fOutputSessionExpiredCookie(oURL.sbOrigin, oCookie);
@@ -199,7 +199,7 @@ def foGetResponseForURL(
     sbRedirectToURL = oLocationHeader.sbValue;
     try:
       oURL = cURL.foFromBytesString(sbRedirectToURL);
-    except cURL.cInvalidURLException as oException:
+    except cURL.cHTTPInvalidURLException as oException:
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
