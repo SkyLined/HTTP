@@ -290,7 +290,7 @@ try:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not identify segmentation from URL \"",
-          COLOR_INFO, sURL,
+          COLOR_INFO, o0URL.sbAbsolute,
           COLOR_NORMAL, "\"",
         );
         sys.exit(guExitCodeBadArgument);
