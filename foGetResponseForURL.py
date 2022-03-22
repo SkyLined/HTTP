@@ -256,11 +256,13 @@ def foGetResponseForURL(
       COLOR_INFO, oDownloadToFile.sPath,
       COLOR_NORMAL, "...",
     );
-    if not bFirstDownload:
-      oDownloadToFile.fbOpenAsFile(bWritable = True, bAppend = True);
     sb0DecompressedBody = oResponse.sb0DecompressedBody or "";
     try:
-      oDownloadToFile.fbWrite(sb0DecompressedBody, bThrowErrors = True);
+      oDownloadToFile.fbWrite(
+        sbData = sb0DecompressedBody,
+        bAppend = not bFirstDownload,
+        bThrowErrors = True,
+      );
     except Exception as oException:
       oConsole.fStatus();
       oConsole.fOutput(
@@ -273,8 +275,6 @@ def foGetResponseForURL(
         COLOR_NORMAL, ":",
       );
       fOutputExceptionAndExit(oException, guExitCodeCannotWriteResponseBodyToFile);
-    if oDownloadToFile.fbIsOpenAsFile():
-      oDownloadToFile.fbClose();
     oConsole.fStatus();
     if bShowProgress:
       oConsole.fOutput(

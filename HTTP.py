@@ -159,7 +159,7 @@ try:
         s0RequestData = fsRequireArgumentValue();
       elif s0LowerName in ["df", "data-file"]:
         oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
-        if not oDataFileSystemItem.fbIsFile(bParseZipFiles = True):
+        if not oDataFileSystemItem.fbIsFile():
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Cannot find file \"",
@@ -168,7 +168,7 @@ try:
           );
           sys.exit(guExitCodeBadArgument);
         try:
-          sbRequestData = oDataFileSystemItem.fsbRead(bParseZipFiles = True);
+          sbRequestData = oDataFileSystemItem.fsbRead();
           s0RequestData = str(sbRequestData, "utf-8", "strict");
         except Exception as oException:
           oConsole.fOutput(
