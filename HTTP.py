@@ -17,6 +17,23 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
+def fbParseBooleanArgument(s0Value):
+  if s0Value is None or s0Value.lower() == "true":
+    return True;
+  if s0Value.lower() == "false":
+    return False;
+  oConsole.fOutput(
+    COLOR_ERROR, CHAR_ERROR,
+    COLOR_NORMAL, " The value for \"",
+    COLOR_INFO, sArgument,
+    COLOR_NORMAL, "\" must be \"",
+    COLOR_INFO, "true",
+    COLOR_NORMAL, "\" (default) or \"",
+    COLOR_INFO, "false",
+    COLOR_NORMAL, "\".",
+  );
+  sys.exit(guExitCodeBadArgument);
+
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   from mConsole import oConsole;
@@ -110,26 +127,10 @@ try:
     s0RequestData = None;
     bDecodeBody = False;
     u0MaxRedirects = None;
-    bAllowUnverifiableCertificates = False;
+    bVerifyCertificates = True;
     s0zDownloadToFilePath = zNotProvided;
     s0zSessionPath = zNotProvided;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
-      def fbParseBooleanArgument():
-        if s0Value is None or s0Value.lower() == "true":
-          return True;
-        if s0Value.lower() == "false":
-          return False;
-        oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " The value for \"",
-          COLOR_INFO, sArgument,
-          COLOR_NORMAL, "\" must be \"",
-          COLOR_INFO, "true",
-          COLOR_NORMAL, "\" (default) or \"",
-          COLOR_INFO, "false",
-          COLOR_NORMAL, "\".",
-        );
-        sys.exit(guExitCodeBadArgument);
       def fsRequireArgumentValue():
         if s0Value:
           return "".join([
@@ -145,7 +146,7 @@ try:
         );
         sys.exit(guExitCodeBadArgument);
       if s0LowerName in ["debug"]:
-        if fbParseBooleanArgument():
+        if fbParseBooleanArgument(s0Value):
           if not m0DebugOutput:
             oConsole.fOutput(
               COLOR_ERROR, CHAR_ERROR,
@@ -179,7 +180,7 @@ try:
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
       elif s0LowerName in ["db", "decode", "decode-body"]:
-        bDecodeBody = fbParseBooleanArgument();
+        bDecodeBody = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["dl", "download"]:
         s0zDownloadToFilePath = s0Value;
       elif s0LowerName in ["s", "session"]:
@@ -235,18 +236,18 @@ try:
         # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
         if s0Value is not None or not fbIsProvided(s0zDownloadToFilePath):
           s0zDownloadToFilePath = s0Value;
-      elif s0LowerName in ["s", "secure"]:
-        bAllowUnverifiableCertificates = fbParseBooleanArgument();
+      elif s0LowerName in ["secure"]:
+        bVerifyCertificates = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-progress"]:
-        bzShowProgress = fbParseBooleanArgument();
+        bzShowProgress = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-proxy"]:
-        bzShowProxyConnects = fbParseBooleanArgument();
+        bzShowProxyConnects = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-request"]:
-        bzShowRequest = fbParseBooleanArgument();
+        bzShowRequest = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-response"]:
-        bzShowResponse = fbParseBooleanArgument();
+        bzShowResponse = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-details"]:
-        bzShowDetails = fbParseBooleanArgument();
+        bzShowDetails = fbParseBooleanArgument(s0Value);
       elif s0LowerName:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -320,7 +321,7 @@ try:
     # two generic functions for reporting the requests/reponses:
     if not bUseProxy:
       # Create a HTTP client instance that uses no proxy
-      oClient = cHTTPClient(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      oClient = cHTTPClient(bVerifyCertificates = bVerifyCertificates);
       # Create event handlers specific to this situation that call the generic request/response reporters
       if bShowProgress:
         oClient.fAddCallbacks({
@@ -340,7 +341,7 @@ try:
         );
     elif o0HTTPProxyServerURL:
       # Create a HTTP client instance that uses a static proxy
-      oClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      oClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bVerifyCertificates = bVerifyCertificates);
       # Create event handlers specific to this situation that call the generic request/response reporters
       if bShowProgress:
         oClient.fAddCallbacks({
@@ -360,7 +361,7 @@ try:
         );
     else:
       # Create a HTTP client instance that uses dynamic proxies.
-      oClient = cHTTPClientUsingAutomaticProxyServer(bAllowUnverifiableCertificates = bAllowUnverifiableCertificates);
+      oClient = cHTTPClientUsingAutomaticProxyServer(bVerifyCertificates = bVerifyCertificates);
       if bShowProgress:
         oClient.fAddCallbacks({
           "request sent": lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
