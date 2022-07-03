@@ -42,6 +42,7 @@ try:
   from mNotProvided import *;
   
   from cSession import cSession;
+  from faoGetURLsFromM3U import faoGetURLsFromM3U;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
   from fHandleServerHostnameOrIPAddressInvalid import fHandleServerHostnameOrIPAddressInvalid;
   from fHandleServerHostnameResolvedToIPAddress import fHandleServerHostnameResolvedToIPAddress;
@@ -114,6 +115,7 @@ try:
     d0Form_sValue_by_sName = {};
     sbzMethod = zNotProvided;
     o0URL = None;
+    bM3U = False;
     bSegmentedVideo = None;
     uStartIndex = None;
     oSession = cSession();
@@ -231,6 +233,11 @@ try:
             COLOR_NORMAL, "\" must be a positive integer number or zero.",
           );
           sys.exit(guExitCodeBadArgument);
+      elif s0LowerName in ["m3u"]:
+        bM3U = True;
+        # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
+        if s0Value is not None or not fbIsProvided(s0zDownloadToFilePath):
+          s0zDownloadToFilePath = s0Value;
       elif s0LowerName in ["sv", "segmented-video"]:
         bSegmentedVideo = True;
         # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
@@ -274,6 +281,7 @@ try:
     if o0URL is None:
       fOutputUsageInformation();
       sys.exit(guExitCodeSuccess);
+    oURL = o0URL;
     # If not explicitly set, show progress
     bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
     # If not explicitly set, only show requests and responses when we are not downloading.
@@ -282,16 +290,16 @@ try:
     bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowStuffDefault;
     bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else bShowStuffDefault;
     
-    if bSegmentedVideo:
+    if bSegmentedVideo and not bM3U:
       for rbSegmentedVideo in arbSegmentedVideos:
-        obURLSegmentMatch = rbSegmentedVideo.match(o0URL.sbAbsolute);
+        obURLSegmentMatch = rbSegmentedVideo.match(oURL.sbAbsolute);
         if obURLSegmentMatch:
           break;
       else:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not identify segmentation from URL \"",
-          COLOR_INFO, o0URL.sbAbsolute,
+          COLOR_INFO, oURL.sbAbsolute,
           COLOR_NORMAL, "\"",
         );
         sys.exit(guExitCodeBadArgument);
@@ -520,7 +528,6 @@ try:
           f0AddCookieCallback = fApplySessionJSONAddCookieEventHandler if bShowProgress else None,
         );
       except ValueError as oException:
-        raise;
         oConsole.fOutput(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
@@ -534,19 +541,80 @@ try:
           "      ",
           "(Session file has not data).",
         );
-    if not bSegmentedVideo:
-      # Single request
-      foGetResponseForURL(
+    if bM3U:
+      oResponse = foGetResponseForURL(
         oClient,
         o0SessionFile, oSession,
-        o0URL, sbzMethod, s0RequestData,
+        oURL, sbzMethod, s0RequestData,
         dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName,
         u0MaxRedirects,
-        s0zDownloadToFilePath, True, # bIsFirstDownload
+        None, True, # bIsFirstDownload
         bShowProgress,
       );
-    else:
+      if oResponse.uStatusCode != 200:
+        oConsole.fOutput(
+          "      ",
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot download M3U file.",
+        );
+        sys.exit(guExitCodeNoValidResponseReceived);
+      s0M3UContents = oResponse.fs0GetData();
+      if s0M3UContents is None:
+        oConsole.fOutput(
+          "      ",
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Provided URL does not contain an M3U file.",
+        );
+        sys.exit(guExitCodeNoValidResponseReceived);
+      aoURLs = faoGetURLsFromM3U(s0M3UContents);
+      if not aoURLs:
+        oConsole.fOutput(
+          "      ",
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Provided M3U file URL does not contain any links.",
+        );
+        sys.exit(guExitCodeNoValidResponseReceived);
+      uIndex = 0;
+      if bSegmentedVideo:
+        asPathSegments = oURL.asURLDecodedPath;
+        if asPathSegments:
+          s0zDownloadToFilePath = asPathSegments[-1] + ".mp4";
+        else:
+          s0zDownloadToFilePath = "video.mp4";
+      for oURL in aoURLs:
+        oResponse = foGetResponseForURL(
+          oClient,
+          o0SessionFile, oSession,
+          oURL, sbzMethod, s0RequestData,
+          dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName,
+          u0MaxRedirects,
+          s0zDownloadToFilePath,
+          uIndex == 0 if bSegmentedVideo else True, # bIsFirstDownload
+          bShowProgress,
+        );
+        if oResponse.uStatusCode != 200 and s0zDownloadToFilePath:
+          # We are missing a piece of the video, stop.
+          break;
+        uIndex += 1;
+      if s0zDownloadToFilePath:
+        oConsole.fOutput(
+          "      ",
+          COLOR_OK, CHAR_OK,
+          COLOR_NORMAL, " Downloaded ",
+          COLOR_INFO, str(uIndex),
+          COLOR_NORMAL, " segments.",
+        );
+      else:
+        oConsole.fOutput(
+          "      ",
+          COLOR_OK, CHAR_OK,
+          COLOR_NORMAL, " Downloaded ",
+          COLOR_INFO, str(uIndex),
+          COLOR_NORMAL, " files.",
+        );
+    elif bSegmentedVideo:
       # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
       uIndex = uStartIndex;
       while 1:
@@ -572,6 +640,18 @@ try:
           COLOR_INFO, str(uIndex - uStartIndex),
           COLOR_NORMAL, " segments.",
         );
+    else:
+      # Single request
+      foGetResponseForURL(
+        oClient,
+        o0SessionFile, oSession,
+        oURL, sbzMethod, s0RequestData,
+        dsbAdditionalOrRemovedHeaders,
+        d0Form_sValue_by_sName,
+        u0MaxRedirects,
+        s0zDownloadToFilePath, True, # bIsFirstDownload
+        bShowProgress,
+      );
 except Exception as oException:
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
