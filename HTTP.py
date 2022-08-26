@@ -80,7 +80,7 @@ try:
   from mExitCodes import *;
   
   if __name__ == "__main__":
-    rURL = re.compile(r"^https?://.*$", re.I);
+    rShouldBeAURL = re.compile(r"^https?://.*$", re.I);
     rMethod = re.compile(r"^[A-Z]+$", re.I);
     rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
     rCharEncoding = re.compile(r"([^\\]+)|\\(?:x([0-9a-f]{2}))?", re.I);
@@ -264,8 +264,17 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      elif o0URL is None and rURL.match(sArgument):
-        o0URL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
+      elif o0URL is None and rShouldBeAURL.match(sArgument):
+        try:
+          o0URL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
+        except cURL.cHTTPInvalidURLException:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " The value \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\" is not a valid URL.",
+          );
+          sys.exit(guExitCodeBadArgument);
       elif not fbIsProvided(sbzMethod) and rMethod.match(sArgument):
         sbzMethod = bytes(ord(s) for s in sArgument);
       elif not fbIsProvided(oSession.sbzHTTPVersion) and rHTTPVersion.match(sArgument):
@@ -568,7 +577,7 @@ try:
           COLOR_NORMAL, " Provided URL does not contain an M3U file.",
         );
         sys.exit(guExitCodeNoValidResponseReceived);
-      aoURLs = faoGetURLsFromM3U(s0M3UContents);
+      aoURLs = faoGetURLsFromM3U(s0M3UContents, oURL);
       if not aoURLs:
         oConsole.fOutput(
           "      ",
@@ -576,7 +585,8 @@ try:
           COLOR_NORMAL, " Provided M3U file URL does not contain any links.",
         );
         sys.exit(guExitCodeNoValidResponseReceived);
-      uIndex = 0;
+      uProcessedURLs = 0;
+      uDownloadedURLs = 0;
       if bSegmentedVideo:
         asPathSegments = oURL.asURLDecodedPath;
         if asPathSegments:
@@ -592,29 +602,35 @@ try:
           d0Form_sValue_by_sName,
           u0MaxRedirects,
           s0zDownloadToFilePath,
-          uIndex == 0 if bSegmentedVideo else True, # bIsFirstDownload
+          uProcessedURLs == 0 if bSegmentedVideo else True, # bIsFirstDownload
           bShowProgress,
         );
         if oResponse.uStatusCode != 200 and s0zDownloadToFilePath:
           # We are missing a piece of the video, stop.
           break;
-        uIndex += 1;
-      if s0zDownloadToFilePath:
-        oConsole.fOutput(
-          "      ",
-          COLOR_OK, CHAR_OK,
-          COLOR_NORMAL, " Downloaded ",
-          COLOR_INFO, str(uIndex),
-          COLOR_NORMAL, " segments.",
-        );
-      else:
-        oConsole.fOutput(
-          "      ",
-          COLOR_OK, CHAR_OK,
-          COLOR_NORMAL, " Downloaded ",
-          COLOR_INFO, str(uIndex),
-          COLOR_NORMAL, " files.",
-        );
+        else:
+          uDownloadedURLs += 1;
+        uProcessedURLs += 1;
+
+      oConsole.fOutput(
+        "      ",
+        [COLOR_ERROR, CHAR_ERROR] if uDownloadedURLs == 0 else
+            [COLOR_WARNING, CHAR_WARNING] if uDownloadedURLs != uProcessedURLs else
+            [COLOR_OK, CHAR_OK],
+        COLOR_NORMAL, [" Unable to downloaded any "] if uProcessedURLs == 0 else
+            [
+              " Downloaded all ",
+              COLOR_INFO, str(uDownloadedURLs),
+            ] if uProcessedURLs == uDownloadedURLs else [
+              " Downloaded ",
+              COLOR_INFO, str(uDownloadedURLs),
+              COLOR_NORMAL, "/",
+              COLOR_INFO, str(uProcessedURLs),
+            ],
+        COLOR_NORMAL, " ",
+            ["segments"] if s0zDownloadToFilePath else ["files"],
+        COLOR_NORMAL, ".",
+      );
     elif bSegmentedVideo:
       # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
       uIndex = uStartIndex;

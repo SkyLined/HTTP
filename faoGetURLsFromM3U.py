@@ -1,8 +1,8 @@
-import re;
-
 from mHTTPProtocol import cURL;
 
-def faoGetURLsFromM3U(sM3UContents):
+gbDebugOutput = True;
+
+def faoGetURLsFromM3U(sM3UContents, oBaseURL):
   # This is as tolerant and simple as possible:
   # - ignores all lines starting with "#"
   #   - does not check for Extended M3U "#M3UEXT" header
@@ -15,9 +15,12 @@ def faoGetURLsFromM3U(sM3UContents):
       # URLs are always ASCII, so encode whatever Unicode there may be in the URL as UTF-8:
       sbPossibleURL = bytes(sLine, "utf-8", "strict");
       try:
-        oURL = cURL.foFromBytesString(sbPossibleURL);
+        oURL = oBaseURL.foFromRelativeBytesString(sbPossibleURL);
       except cURL.cHTTPInvalidURLException:
-        pass;
+        if gbDebugOutput: print("- Invalid URL: %s" % repr(sbPossibleURL));
       else:
+        if gbDebugOutput: print("+ Valid URL:   %s" % repr(sbPossibleURL));
         aoURLs.append(oURL);
+    else:
+      if gbDebugOutput: print("- Comment:    %s" % repr(sLine));
   return aoURLs;

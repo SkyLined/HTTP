@@ -38,6 +38,9 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Save session properties such as cookies from each response and apply them to each request.");
     oConsole.fOutput("    If \"<path>\" is specified the session properties are loaded from file before the first");
     oConsole.fOutput("    request (if the file exists) and saved to the file after each request.");
+    oConsole.fOutput("  ", COLOR_INFO, "-m3u");
+    oConsole.fOutput("    The URL provided represents a playlist and you want to download all files in the playlist");
+    oConsole.fOutput("    instead of the playlist itself. Can be combined with ", COLOR_INFO, "-sv[=<path>]", COLOR_NORMAL, " to concatinate the files in the playlist in to a single file.");
     oConsole.fOutput("  ", COLOR_INFO, "-sv[=<path>]", COLOR_NORMAL, ", ", COLOR_INFO, "--segmented-video[=<path>]");
     oConsole.fOutput("    The URL provided represents one of many URLs used for a video that is");
     oConsole.fOutput("    available in multiple segments. HTTP.py will attempt to guess the names");
