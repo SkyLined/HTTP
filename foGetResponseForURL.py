@@ -1,19 +1,19 @@
 import sys;
 
-from mConsole import oConsole;
 from mFileSystemItem import cFileSystemItem;
 from mHumanReadable import fsBytesToHumanReadableString;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided, zNotProvided;
 from mHTTPProtocol import cURL, fs0GetExtensionForMediaType, fsb0GetMediaTypeForExtension;
 
+from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
 from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
 from fOutputSessionSetCookie import fOutputSessionSetCookie;
-
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 from mExitCodes import *;
+oConsole = foConsoleLoader();
 
 def foGetResponseForURL(
   oHTTPClient,

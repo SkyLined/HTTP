@@ -1,10 +1,11 @@
-﻿from mConsole import oConsole;
-from mHumanReadable import fsBytesToHumanReadableString;
+﻿from mHumanReadable import fsBytesToHumanReadableString;
 
+from foConsoleLoader import foConsoleLoader;
 from fOutputBody import fOutputBody;
 from fOutputHeaders import fOutputHeaders;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
+oConsole = foConsoleLoader();
 
 def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = []):
   oConsole.fOutput(

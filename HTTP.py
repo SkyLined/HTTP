@@ -36,7 +36,6 @@ def fbParseBooleanArgument(s0Value):
 
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
-  from mConsole import oConsole;
   from mFileSystemItem import cFileSystemItem;
   from mHTTPClient import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cURL;
   from mNotProvided import fbIsProvided, zNotProvided;
@@ -64,6 +63,7 @@ try:
   from fHandleResolvingServerHostnameFailed import fHandleResolvingServerHostnameFailed;
   from fHandleResolvingProxyHostname import fHandleResolvingProxyHostname;
   from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
+  from foConsoleLoader import foConsoleLoader;
   from foGetResponseForURL import foGetResponseForURL;
 #  from fOutputCannotConnectToHostname import fOutputCannotConnectToHostname;
 #  from fOutputConnectedToHostname import fOutputConnectedToHostname;
@@ -78,6 +78,7 @@ try:
   from mCP437 import fsCP437FromBytesString;
   from mColorsAndChars import *;
   from mExitCodes import *;
+  oConsole = foConsoleLoader();
   
   if __name__ == "__main__":
     rShouldBeAURL = re.compile(r"^https?://.*$", re.I);

@@ -1,13 +1,8 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
-from mCP437 import fsCP437FromBytesString;
-from mNotProvided import *;
+oConsole = foConsoleLoader();
 
 def fHandleSecureConnectionToServerThroughProxyTerminated(oClient, oConnection, oProxyServerURL, oServerURL):
-  sHostnameOrIPAddress = fsCP437FromBytesString(sbHostnameOrIPAddress);
-  (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
-  
   oConsole.fOutput(
     COLOR_ACTIVE,       "C",
     COLOR_DISCONNECTED, "×",

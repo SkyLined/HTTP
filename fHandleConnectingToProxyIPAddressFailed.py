@@ -1,8 +1,7 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
-from mCP437 import fsCP437FromBytesString;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided;
+oConsole = foConsoleLoader();
 
 def fHandleConnectingToProxyIPAddressFailed(oHTTPClient, oException, oProxyServerURL, sIPAddress, sbzHostname):
   # We only show this message if the user provided a hostname instead of an IP address.

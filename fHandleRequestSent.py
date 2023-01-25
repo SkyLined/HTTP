@@ -1,10 +1,9 @@
-﻿from mConsole import oConsole;
-from mHumanReadable import fsBytesToHumanReadableString;
+﻿from mHumanReadable import fsBytesToHumanReadableString;
 
-from fOutputBody import fOutputBody;
-from fOutputHeaders import fOutputHeaders;
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
+oConsole = foConsoleLoader();
 
 def fHandleRequestSent(oConnection, oRequest, o0ProxyServerURL, bShowProxyConnects):
   bIsConnectRequest = oRequest.sbMethod.upper() == b"CONNECT";

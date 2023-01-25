@@ -1,8 +1,8 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 from mNotProvided import *;
+oConsole = foConsoleLoader();
 
 def fHandleConnectionToServerCreated(oClient, oConnection, sbHostnameOrIPAddress):
   sHostnameOrIPAddress = fsCP437FromBytesString(sbHostnameOrIPAddress);

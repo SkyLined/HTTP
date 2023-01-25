@@ -1,8 +1,7 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
-from mNotProvided import *;
+oConsole = foConsoleLoader();
 
 def fHandleConnectionToProxyTerminated(oClient, oConnection, oProxyServerURL):
   sHostnameOrIPAddress = fsCP437FromBytesString(oProxyServerURL.sbHostname);

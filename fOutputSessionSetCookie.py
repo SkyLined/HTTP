@@ -1,11 +1,11 @@
-from mConsole import oConsole;
 from mDateTime import cDateTime;
 
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
+oConsole = foConsoleLoader();
 
 def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
-  asAttributes = [];
   if oCookie.o0ExpirationDateTime is not None:
     oValidDuration = cDateTime.foNow().foGetDurationForEndDateTime(oCookie.o0ExpirationDateTime);
     oValidDuration.fNormalize();

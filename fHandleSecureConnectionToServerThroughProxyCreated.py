@@ -1,8 +1,6 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
-from mCP437 import fsCP437FromBytesString;
-from mNotProvided import *;
+oConsole = foConsoleLoader();
 
 def fHandleSecureConnectionToServerThroughProxyCreated(oClient, oConnection, oProxyServerURL, oServerURL):
   oConsole.fOutput(

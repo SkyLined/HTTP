@@ -1,7 +1,7 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
+oConsole = foConsoleLoader();
 
 def fHandleServerHostnameResolvedToIPAddress(oHTTPClient, sbHostname, sIPAddress, sCanonicalName):
   sHostname = fsCP437FromBytesString(sbHostname);

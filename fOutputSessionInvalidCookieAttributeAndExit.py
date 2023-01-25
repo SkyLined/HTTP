@@ -1,10 +1,10 @@
 import sys;
 
-from mConsole import oConsole;
-
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 from mExitCodes import *;
+oConsole = foConsoleLoader();
 
 def fOutputSessionInvalidCookieAttributeAndExit(sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown):
   oConsole.fOutput(

@@ -1,11 +1,9 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
-from mCP437 import fsCP437FromBytesString;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided;
+oConsole = foConsoleLoader();
 
 def fHandleConnectingToProxyIPAddress(oHTTPClient, oProxyServerURL, sIPAddress, sbzHostname):
-  sHostnameOrIPAddress = fsCP437FromBytesString(oProxyServerURL.sbHostname);
   oConsole.fStatus(
     COLOR_ACTIVE,     "C",
     COLOR_CONNECT,    "→",

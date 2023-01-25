@@ -1,8 +1,8 @@
 import sys;
 
-from mConsole import oConsole;
-
+from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+oConsole = foConsoleLoader();
 
 def fOutputExceptionAndExit(oException, uExitCode):
   if hasattr(oException, "sMessage"):

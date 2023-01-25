@@ -1,7 +1,7 @@
-﻿from mConsole import oConsole;
-
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromByte;
+oConsole = foConsoleLoader();
 
 def fOutputBody(sxBody, bOutputEOF, xPrefix = []):
   if isinstance(sxBody, str):
