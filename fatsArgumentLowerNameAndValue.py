@@ -1,11 +1,24 @@
-import sys;
+import os, sys;
 
+import mProductDetails;
+from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
+from mFileSystemItem import cFileSystemItem;
+
+from foConsoleLoader import foConsoleLoader;
 from fOutputUsageInformation import fOutputUsageInformation;
 from fOutputVersionInformation import fOutputVersionInformation;
 from fOutputLicenseInformation import fOutputLicenseInformation;
-from mColorsAndChars import *;
-from mExitCodes import *;
-from mProductDetails import faoGetLicensesFromRegistry, faoGetLicensesFromFile;
+from mColorsAndChars import \
+    COLOR_ADD, CHAR_ADD, \
+    COLOR_BUSY, CHAR_BUSY,\
+    COLOR_ERROR, CHAR_ERROR, \
+    COLOR_REMOVE, CHAR_REMOVE,\
+    COLOR_WARNING, CHAR_WARNING, \
+    COLOR_INFO, COLOR_NORMAL;
+from mExitCodes import \
+    guExitCodeBadArgument, \
+    guExitCodeSuccess;
+oConsole = foConsoleLoader();
 
 def fExitWithBadArgumentValue(sArgumentName, sMessage):
   oConsole.fOutput(
@@ -26,7 +39,7 @@ def fatsArgumentLowerNameAndValue(f0dsGetAdditionalVersionByName = None):
     sArgument = asArguments.pop(0);
     if sArgument == "--":
       break;
-    if len(sArgument) >= 2 and sArgument.startswith("-") or sArgument.startswith("/"):
+    if len(sArgument) >= 2 and sArgument.startswith("-"):
       if "=" in sArgument:
         (sNameWithPrefix, s0Value) = sArgument.split("=", 1);
       else:
