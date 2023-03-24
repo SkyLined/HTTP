@@ -34,6 +34,10 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Save the response body in the file specified by \"<path>\". If no path");
     oConsole.fOutput("    is provided, it is save in the current folder in a file named based on");
     oConsole.fOutput("    the request URL.");
+    oConsole.fOutput("  ", COLOR_INFO, "-save[=<path>]");
+    oConsole.fOutput("    Save the entire response in the file specified by \"<path>\". If no path");
+    oConsole.fOutput("    is provided, it is savde in the current folder in a file named based on");
+    oConsole.fOutput("    the request URL.");
     oConsole.fOutput("  ", COLOR_INFO, "-s[=<path>]", COLOR_NORMAL, ",  ", COLOR_INFO, "--session[=<path>]");
     oConsole.fOutput("    Save session properties such as cookies from each response and apply them to each request.");
     oConsole.fOutput("    If \"<path>\" is specified the session properties are loaded from file before the first");

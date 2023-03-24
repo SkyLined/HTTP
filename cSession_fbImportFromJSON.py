@@ -1,8 +1,7 @@
 import json;
 
 from mDateTime import cDateTime;
-from mFileSystemItem import cFileSystemItem;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided, zNotProvided;
 
 from cCookie import cCookie;
 
@@ -69,7 +68,7 @@ def cSession_fbImportFromJSON(
           if oSelf.u0MaxRedirects < 0:
             raise ValueError(
               "Invalid JSON data: u0MaxRedirects (%s) should be a positive integer number or zero." % (
-                repr(xValue),
+                repr(xSessionPropertyValue),
               ),
             );
         if f0SetMaxRedirectsCallback:

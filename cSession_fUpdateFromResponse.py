@@ -1,6 +1,6 @@
 import re;
 
-from mDateTime import cDateTime;
+from mDateTime import cDateTime, cDateTimeDuration;
 
 from cCookie import cCookie;
 from mCP437 import fsCP437FromBytesString;

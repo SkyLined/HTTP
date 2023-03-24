@@ -16,13 +16,20 @@ from mExitCodes import *;
 oConsole = foConsoleLoader();
 
 def foGetResponseForURL(
+  *, 
   oHTTPClient,
-  o0SessionFile, oSession, 
-  oURL, sbzMethod, s0RequestData,
+  o0SessionFile,
+  oSession, 
+  oURL,
+  sbzMethod,
+  s0RequestData,
   dsbAdditionalOrRemovedHeaders,
   d0Form_sValue_by_sName,
   u0MaxRedirects,
-  s0zDownloadToFilePath, bFirstDownload,
+  bDownloadToFile,
+  bSaveToFile,
+  s0TargetFilePath,
+  bIsFirstDownload,
   bShowProgress,
 ):
   if d0Form_sValue_by_sName is not None and not fbIsProvided(sbzMethod):
@@ -223,67 +230,87 @@ def foGetResponseForURL(
       );
       sys.exit(guExitCodeTooManyRedirects);
     return foGetResponseForURL(
-      oHTTPClient,
-      o0SessionFile, oSession, 
-      oURL, sbzMethod, s0RequestData,
-      dsbAdditionalOrRemovedHeaders,
-      d0Form_sValue_by_sName,
-      u0MaxRedirects - 1,
-      s0zDownloadToFilePath, bFirstDownload,
-      bShowProgress,
+      oHTTPClient = oHTTPClient,
+      o0SessionFile = o0SessionFile,
+      oSession = oSession, 
+      oURL = oURL,
+      sbzMethod = sbzMethod,
+      s0RequestData = s0RequestData,
+      dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+      d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+      u0MaxRedirects = u0MaxRedirects - 1,
+      bDownloadToFile = bDownloadToFile,
+      bSaveToFile = bSaveToFile,
+      s0TargetFilePath = s0TargetFilePath,
+      bIsFirstDownload = bIsFirstDownload,
+      bShowProgress = bShowProgress,
     );
+  if not (bSaveToFile or (bDownloadToFile and oResponse.uStatusCode == 200)):
+    return oResponse;
+  # Determine target file for download/save
+  if s0TargetFilePath is None:
+    # Create a file name that makes sense, given the media type, URL path, and/or hostname
+    sb0MediaType = oResponse.sb0MediaType;
+    s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
+    # No download file name provided; generate one from the URL path if one is provided:
+    if oURL.asURLDecodedPath:
+      sTargetFilePath = oURL.asURLDecodedPath[-1];
+      if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(s0TargetFilePath):
+        s0TargetFilePath += "." + s0Extension;
+    else:
+      sTargetFilePath = "download from %s%s" % (
+        fsCP437FromBytesString(oURL.sbHostname),
+        ".%s" % s0Extension if s0Extension else "",
+      );
+  else:
+    sTargetFilePath = s0TargetFilePath;
+  oTargetFile = cFileSystemItem(sTargetFilePath);
   # Download response to file if needed
-  if fbIsProvided(s0zDownloadToFilePath) and oResponse.uStatusCode == 200:
-    if s0zDownloadToFilePath is None:
-      # Create a file name that makes sense, given the media type, URL path, and/or hostname
-      sb0MediaType = oResponse.sb0MediaType;
-      s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
-      # No download file name provided; generate one from the URL path if one is provided:
-      if oURL.asURLDecodedPath:
-        s0zDownloadToFilePath = oURL.asURLDecodedPath[-1];
-        if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(s0zDownloadToFilePath):
-          s0zDownloadToFilePath += "." + s0Extension;
-      else:
-        s0zDownloadToFilePath = "download from %s%s" % (
-          fsCP437FromBytesString(oURL.sbHostname),
-          ".%s" % s0Extension if s0Extension else "",
-        );
-    oDownloadToFile = cFileSystemItem(s0zDownloadToFilePath);
+  if bSaveToFile:
     oConsole.fStatus(
       "      ",
       COLOR_BUSY, CHAR_BUSY,
       COLOR_NORMAL, " Saving response to file ",
-      COLOR_INFO, oDownloadToFile.sPath,
+      COLOR_INFO, oTargetFile.sPath,
       COLOR_NORMAL, "...",
     );
-    sb0DecompressedBody = oResponse.sb0DecompressedBody or "";
-    try:
-      oDownloadToFile.fbWrite(
-        sbData = sb0DecompressedBody,
-        bAppend = not bFirstDownload,
-        bThrowErrors = True,
-      );
-    except Exception as oException:
-      oConsole.fStatus();
-      oConsole.fOutput(
-        "      ",
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Cannot write ",
-        COLOR_INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)),
-        COLOR_NORMAL, "to file ",
-        COLOR_INFO, oDownloadToFile.sPath,
-        COLOR_NORMAL, ":",
-      );
-      fOutputExceptionAndExit(oException, guExitCodeCannotWriteResponseBodyToFile);
+    sbData = oResponse.fsbSerialize();
+  else:
+    oConsole.fStatus(
+      "      ",
+      COLOR_BUSY, CHAR_BUSY,
+      COLOR_NORMAL, " Downloading to file ",
+      COLOR_INFO, oTargetFile.sPath,
+      COLOR_NORMAL, "...",
+    );
+    sbData = oResponse.sb0DecompressedBody or b"";
+  try:
+    oTargetFile.fbWrite(
+      sbData = sbData,
+      bAppend = not bIsFirstDownload,
+      bThrowErrors = True,
+    );
+  except Exception as oException:
     oConsole.fStatus();
-    if bShowProgress:
-      oConsole.fOutput(
-        "      ",
-        COLOR_OK, CHAR_OK,
-        COLOR_NORMAL, " Saved ",
-        COLOR_INFO, fsBytesToHumanReadableString(len(sb0DecompressedBody)),
-        COLOR_NORMAL, " to ",
-        COLOR_INFO, oDownloadToFile.sPath,
-        COLOR_NORMAL, "."
-      );
+    oConsole.fOutput(
+      "      ",
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " Cannot write ",
+      COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
+      COLOR_NORMAL, "to file ",
+      COLOR_INFO, oTargetFile.sPath,
+      COLOR_NORMAL, ":",
+    );
+    fOutputExceptionAndExit(oException, guExitCodeCannotWriteResponseBodyToFile);
+  oConsole.fStatus();
+  if bShowProgress:
+    oConsole.fOutput(
+      "      ",
+      COLOR_OK, CHAR_OK,
+      COLOR_NORMAL, " Saved ",
+      COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
+      COLOR_NORMAL, " to ",
+      COLOR_INFO, oTargetFile.sPath,
+      COLOR_NORMAL, "."
+    );
   return oResponse;

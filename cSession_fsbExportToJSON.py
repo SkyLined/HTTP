@@ -1,14 +1,13 @@
 import json;
 
-from mFileSystemItem import cFileSystemItem;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided;
 
 def cSession_fsbExportToJSON(oSelf):
   # Create Cookies JSON data:
   ddxCookie_by_sName_by_sLowerDomainName = {};
   for (sbLowerDomainName, aoCookies) in oSelf.daoCookies_by_sbLowerDomainName.items():
     sLowerDomainName = str(sbLowerDomainName, "ascii", "strict");
-    dxCookie_by_sName_for_sLowerDomainName = ddxCookie_by_sName_by_sLowerDomainName[sLowerDomainName] = {};
+    ddxCookie_by_sName_by_sLowerDomainName[sLowerDomainName] = {};
     for oCookie in aoCookies:
       sName = str(oCookie.sbName, "ascii", "strict");
       dxCookie = {
@@ -35,7 +34,7 @@ def cSession_fsbExportToJSON(oSelf):
   if fbIsProvided(oSelf.sbzUserAgent):
     dxSessionProperties["sUserAgent"] = str(oSelf.sbzUserAgent, "ascii", "strict");
   if oSelf.bAddDoNotTrackHeader:
-    dxSessionProperties["bAddDoNotTrackHeader"] = bAddDoNotTrackHeader;
+    dxSessionProperties["bAddDoNotTrackHeader"] = True;
   if ddxCookie_by_sName_by_sLowerDomainName:
     dxSessionProperties["ddxCookie_by_sName_by_sLowerDomainName"] = ddxCookie_by_sName_by_sLowerDomainName;
   # Save JSON data to file.

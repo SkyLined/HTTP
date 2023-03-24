@@ -1,7 +1,7 @@
 import re;
 
 from mDateTime import cDateTime;
-from mNotProvided import *;
+from mNotProvided import fAssertTypes;
 
 from mCP437 import fsCP437FromBytesString;
 
@@ -31,10 +31,68 @@ class cCookie(object):
   class cInvalidSameSiteException(Exception):
     pass;
   @staticmethod
+  def fbIsValidDomain(sbDomain):
+    return rDomainFormat.match(sbDomain) is not None;
+  @staticmethod
   def fbIsValidPath(sbPath):
     return rPathFormat.match(sbPath) is not None;
+
+  @staticmethod
+  def foFromNetscapeFileFormat(cClass, sbLine):
+    asbLine = sbLine.split("b");
+    if len(asbLine) != 7:
+      raise ValueError("Cookie does not adhere to Netscape File Format: %s" % repr(sbLine)[1:]);
+    (
+      sbHttpOnlyAndDomain,
+      sbIncludeSubdomain,
+      sbPath,
+      sbSecure,
+      sbExpirationTimeStamp,
+      sbName,
+      sbValue,
+    ) = asbLine;
+    bHttpOnly = sbHttpOnlyAndDomain.startswith(b"#HttpOnly_.");
     
-  def __init__(oSelf, sbName, sbValue, sbDomain, o0ExpirationDateTime = None, sb0Path = None, bSecure = False, bHttpOnly = False, sbSameSite = b"Lax"):
+    sbDomain = sbHttpOnlyAndDomain[len(b"#HttpOnly_."):] if bHttpOnly else sbHttpOnlyAndDomain;
+    if not cClass.fbIsValidDomain(sbDomain):
+      raise ValueError("Cookie does not adhere to Netscape File Format ('domain' invalid): %s" % repr(sbLine)[1:]);
+    
+    b0IncludeSubdomain = {"TRUE": True, "FALSE": False}.get(sbIncludeSubdomain);
+    if b0IncludeSubdomain is None:
+      raise ValueError("Cookie does not adhere to Netscape File Format ('include subdomain' invalid): %s" % repr(sbLine)[1:]);
+    
+    if not cClass.fbIsValidPath(sbPath):
+      raise ValueError("Cookie does not adhere to Netscape File Format ('path' invalid): %s" % repr(sbLine)[1:]);
+    
+    b0Secure = {"TRUE": True, "FALSE": False}.get(sbSecure);
+    if b0Secure is None:
+      raise ValueError("Cookie does not adhere to Netscape File Format ('secure' invalid): %s" % repr(sbLine)[1:]);
+    
+    try:
+      o0ExpirationDateTime = cDateTime.foFromTimeStamp(int(sbExpirationTimeStamp));
+    except:
+      raise ValueError("Cookie does not adhere to Netscape File Format ('expiration timestamp' invalid): %s" % repr(sbLine)[1:]);
+    
+    return cClass(
+      sbName,
+      sbValue,
+      sbDomain,
+      o0ExpirationDateTime = o0ExpirationDateTime,
+      sb0Path = sbPath,
+      bSecure = b0Secure,
+      bHttpOnly = bHttpOnly,
+    );
+
+  def __init__(oSelf,
+    sbName,
+    sbValue,
+    sbDomain,
+    o0ExpirationDateTime = None,
+    sb0Path = None,
+    bSecure = False,
+    bHttpOnly = False,
+    sbSameSite = b"Lax",
+  ):
     fAssertTypes({
       "sbName": (sbName, bytes),
       "sbValue": (sbValue, bytes),
@@ -45,7 +103,7 @@ class cCookie(object):
       "bHttpOnly": (bHttpOnly, bool),
       "sbSameSite": (sbSameSite, bytes),
     });
-    if not rDomainFormat.match(sbDomain):
+    if not oSelf.fbIsValidDomain(sbDomain):
       raise oSelf.cInvalidDomainException(
         "sbDomain must be None or a valid domain, not %s" % repr(sbDomain)
       );
@@ -54,7 +112,7 @@ class cCookie(object):
         "sbSameSite must be \"Strict\",  \"Lax\", or \"None\", not %s" % repr(sbSameSite)
       );
     if sb0Path is not None and not oSelf.fbIsValidPath(sb0Path):
-      raise cInvalidPathException(
+      raise oSelf.cInvalidPathException(
         "sb0Path must be None or a valid path, not %s" % repr(sb0Path)
       );
     oSelf.sbName = sbName;
@@ -112,6 +170,20 @@ class cCookie(object):
       asDetails.append("SameSite = %s" % fsCP437FromBytesString(oSelf.sbSameSite));
     return "; ".join(asDetails);
   
+  def fsbToNetscapeFileFormat(oSelf):
+    return b" ".join([
+      "%s%s" % (
+        b"#HttpOnly_." if oSelf.bHtttpOnly else b"",
+        oSelf.sbDomain.lstrip(b"."),
+      ),
+      b"FALSE",
+      oSelf.sb0Path or b"/",
+      b"TRUE" if oSelf.bSecure else b"FALSE",
+      oSelf.o0ExpirationDateTime.fuToTimestamp() if oSelf.o0ExpirationDateTime else 0,
+      oSelf.sbName,
+      oSelf.sbValue,
+    ]);
+
   def __repr__(oSelf):
     return "<%s.%s %s>" % (
       oSelf.__class__.__module__,

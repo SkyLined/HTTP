@@ -1,5 +1,4 @@
-
-from mNotProvided import *;
+from mNotProvided import zNotProvided;
 
 from cSession_fApplyHeadersToRequestForURL import cSession_fApplyHeadersToRequestForURL;
 from cSession_fbImportFromJSON import cSession_fbImportFromJSON;

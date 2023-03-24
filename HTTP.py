@@ -65,15 +65,10 @@ try:
   from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
   from foConsoleLoader import foConsoleLoader;
   from foGetResponseForURL import foGetResponseForURL;
-#  from fOutputCannotConnectToHostname import fOutputCannotConnectToHostname;
-#  from fOutputConnectedToHostname import fOutputConnectedToHostname;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
-#  from fOutputHostnameResolved import fOutputHostnameResolved;
   from fOutputUsageInformation import fOutputUsageInformation;
   from fOutputRequestSent import fOutputRequestSent;
   from fOutputResponseReceived import fOutputResponseReceived;
-  from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
-  from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
   from fOutputSessionSetCookie import fOutputSessionSetCookie;
   from mCP437 import fsCP437FromBytesString;
   from mColorsAndChars import *;
@@ -132,7 +127,9 @@ try:
     bDecodeBody = False;
     u0MaxRedirects = None;
     bVerifyCertificates = True;
-    s0zDownloadToFilePath = zNotProvided;
+    bSaveToFile = False;
+    bDownloadToFile = False;
+    s0TargetFilePath = zNotProvided;
     s0zSessionPath = zNotProvided;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
       def fsRequireArgumentValue():
@@ -186,7 +183,11 @@ try:
       elif s0LowerName in ["db", "decode", "decode-body"]:
         bDecodeBody = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["dl", "download"]:
-        s0zDownloadToFilePath = s0Value;
+        bDownloadToFile = True;
+        s0TargetFilePath = s0Value;
+      elif s0LowerName in ["save"]:
+        bSaveToFile = True;
+        s0TargetFilePath = s0Value;
       elif s0LowerName in ["s", "session"]:
         s0zSessionPath = s0Value;
       elif s0LowerName in ["header"]:
@@ -237,14 +238,16 @@ try:
           sys.exit(guExitCodeBadArgument);
       elif s0LowerName in ["m3u"]:
         bM3U = True;
-        # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
-        if s0Value is not None or not fbIsProvided(s0zDownloadToFilePath):
-          s0zDownloadToFilePath = s0Value;
+        bDownloadToFile = True;
+        # If a path is provided for downloading, set it.
+        if s0Value is not None:
+          s0TargetFilePath = s0Value;
       elif s0LowerName in ["sv", "segmented-video"]:
         bSegmentedVideo = True;
+        bDownloadToFile = True;
         # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
-        if s0Value is not None or not fbIsProvided(s0zDownloadToFilePath):
-          s0zDownloadToFilePath = s0Value;
+        if s0Value:
+          s0TargetFilePath = s0Value;
       elif s0LowerName in ["secure"]:
         bVerifyCertificates = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-progress"]:
@@ -296,10 +299,10 @@ try:
     # If not explicitly set, show progress
     bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
     # If not explicitly set, only show requests and responses when we are not downloading.
-    bShowStuffDefault = not fbIsProvided(s0zDownloadToFilePath);
-    bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowStuffDefault;
-    bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowStuffDefault;
-    bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else bShowStuffDefault;
+    bShowRequestResponseDetailsDefault = not (bDownloadToFile or bSaveToFile);
+    bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDetailsDefault;
+    bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDetailsDefault;
+    bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else bShowRequestResponseDetailsDefault;
     
     if bSegmentedVideo and not bM3U:
       for rbSegmentedVideo in arbSegmentedVideos:
@@ -554,14 +557,20 @@ try:
         );
     if bM3U:
       oResponse = foGetResponseForURL(
-        oClient,
-        o0SessionFile, oSession,
-        oURL, sbzMethod, s0RequestData,
-        dsbAdditionalOrRemovedHeaders,
-        d0Form_sValue_by_sName,
-        u0MaxRedirects,
-        None, True, # bIsFirstDownload
-        bShowProgress,
+        oHTTPClient = oClient,
+        o0SessionFile = o0SessionFile,
+        oSession = oSession,
+        oURL = oURL,
+        sbzMethod = sbzMethod,
+        s0RequestData = s0RequestData,
+        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+        u0MaxRedirects = u0MaxRedirects,
+        bDownloadToFile = False,
+        bSaveToFile = False,
+        s0TargetFilePath = None,
+        bIsFirstDownload = True,
+        bShowProgress = bShowProgress,
       );
       if oResponse.uStatusCode != 200:
         oConsole.fOutput(
@@ -591,22 +600,27 @@ try:
       if bSegmentedVideo:
         asPathSegments = oURL.asURLDecodedPath;
         if asPathSegments:
-          s0zDownloadToFilePath = asPathSegments[-1] + ".mp4";
+          s0TargetFilePath = asPathSegments[-1] + ".mp4";
         else:
-          s0zDownloadToFilePath = "video.mp4";
+          s0TargetFilePath = "video.mp4";
       for oURL in aoURLs:
         oResponse = foGetResponseForURL(
-          oClient,
-          o0SessionFile, oSession,
-          oURL, sbzMethod, s0RequestData,
-          dsbAdditionalOrRemovedHeaders,
-          d0Form_sValue_by_sName,
-          u0MaxRedirects,
-          s0zDownloadToFilePath,
-          uProcessedURLs == 0 if bSegmentedVideo else True, # bIsFirstDownload
-          bShowProgress,
+          oHTTPClient = oClient,
+          o0SessionFile = o0SessionFile,
+          oSession = oSession,
+          oURL = oURL,
+          sbzMethod = sbzMethod,
+          s0RequestData = s0RequestData,
+          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bIsFirstDownload = uProcessedURLs == 0 if bSegmentedVideo else True,
+          bShowProgress = bShowProgress,
         );
-        if oResponse.uStatusCode != 200 and s0zDownloadToFilePath:
+        if oResponse.uStatusCode != 200 and bDownloadToFile:
           # We are missing a piece of the video, stop.
           break;
         else:
@@ -629,7 +643,7 @@ try:
               COLOR_INFO, str(uProcessedURLs),
             ],
         COLOR_NORMAL, " ",
-            ["segments"] if s0zDownloadToFilePath else ["files"],
+            ["segments"] if bDownloadToFile else ["files"],
         COLOR_NORMAL, ".",
       );
     elif bSegmentedVideo:
@@ -638,14 +652,20 @@ try:
       while 1:
         oURL = cURL.foFromBytesString(b"%s%d%s" % (sbURLSegmentHeader, uIndex, sbURLSegmentFooter));
         oResponse = foGetResponseForURL(
-          oClient,
-          o0SessionFile, oSession,
-          oURL, sbzMethod, s0RequestData,
-          dsbAdditionalOrRemovedHeaders,
-          d0Form_sValue_by_sName,
-          u0MaxRedirects,
-          s0zDownloadToFilePath, uIndex == uStartIndex, # bIsFirstDownload
-          bShowProgress,
+          oHTTPClient = oClient,
+          o0SessionFile = o0SessionFile,
+          oSession = oSession,
+          oURL = oURL,
+          sbzMethod = sbzMethod,
+          s0RequestData = s0RequestData,
+          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bIsFirstDownload = uIndex == uStartIndex,
+          bShowProgress = bShowProgress,
         );
         if oResponse.uStatusCode != 200:
           break;
@@ -661,14 +681,20 @@ try:
     else:
       # Single request
       foGetResponseForURL(
-        oClient,
-        o0SessionFile, oSession,
-        oURL, sbzMethod, s0RequestData,
-        dsbAdditionalOrRemovedHeaders,
-        d0Form_sValue_by_sName,
-        u0MaxRedirects,
-        s0zDownloadToFilePath, True, # bIsFirstDownload
-        bShowProgress,
+        oHTTPClient = oClient,
+        o0SessionFile = o0SessionFile,
+        oSession = oSession,
+        oURL = oURL,
+        sbzMethod = sbzMethod,
+        s0RequestData = s0RequestData,
+        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+        u0MaxRedirects = u0MaxRedirects,
+        bDownloadToFile = bDownloadToFile,
+        bSaveToFile = bSaveToFile,
+        s0TargetFilePath = s0TargetFilePath,
+        bIsFirstDownload = True,
+        bShowProgress = bShowProgress,
       );
 except Exception as oException:
   if m0DebugOutput:

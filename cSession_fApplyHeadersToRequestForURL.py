@@ -1,6 +1,6 @@
 from mDateTime import cDateTime;
 from mHTTPProtocol import cHTTPHeader;
-from mNotProvided import *;
+from mNotProvided import fbIsProvided;
 
 from mCP437 import fsCP437FromBytesString;
 
