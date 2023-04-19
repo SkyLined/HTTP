@@ -3,20 +3,19 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromByte;
 oConsole = foConsoleLoader();
 
-def fOutputBody(sxBody, bOutputEOF, xPrefix = []):
+def fOutputBody(sxBody, bNeedsDecoding, bShowDetails, bOutputEOF, xPrefix = []):
   if isinstance(sxBody, str):
     xCR = "\r";
     xLF = "\n";
-    xBodyColor = COLOR_BODY_DECODED;
     fsChar = lambda sChar: sChar;
   else:
     xCR = ord("\r");
     xLF = ord("\n");
-    xBodyColor = COLOR_BODY;
     fsChar = lambda uByte: fsCP437FromByte(uByte);
+  xBodyColor = COLOR_BODY if bNeedsDecoding else COLOR_BODY_DECODED;
   
   sLine = "";
-  a0sEOL = [];
+  asEOL = [];
   uIndex = 0;
   while 1:
     bIsLastChar = uIndex == len(sxBody) - 1;
@@ -24,23 +23,23 @@ def fOutputBody(sxBody, bOutputEOF, xPrefix = []):
     uIndex += 1;
     if xCharOrByte == xCR:
       if bIsLastChar or sxBody[uIndex] != xLF:
-        a0sEOL = [COLOR_CR, CHAR_CR];
+        asEOL = [COLOR_CR, CHAR_CR];
       else:
-        a0sEOL = [COLOR_CRLF, CHAR_CRLF];
+        asEOL = [COLOR_CRLF, CHAR_CRLF];
         uIndex += 1;
     elif xCharOrByte == xLF:
-      a0sEOL = [COLOR_LF, CHAR_LF];
+      asEOL = [COLOR_LF, CHAR_LF];
     else:
       sLine += fsChar(xCharOrByte);
     bEOF = uIndex == len(sxBody);
-    if a0sEOL or bEOF:
+    if asEOL or bEOF:
       oConsole.fOutput(
         xPrefix,
         xBodyColor, sLine,
-        a0sEOL if a0sEOL else [],
-        [COLOR_EOF, CHAR_EOF] if bEOF else [],
+        asEOL if bShowDetails else [],
+        [COLOR_EOF, CHAR_EOF] if bEOF and bShowDetails and bOutputEOF else [],
       );
       if bEOF:
         return;
       sLine = "";
-      a0sEOL = None;
+      asEOL = [];

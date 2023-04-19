@@ -7,9 +7,6 @@ from mHTTPProtocol import cURL, fs0GetExtensionForMediaType, fsb0GetMediaTypeFor
 
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
-from fOutputSessionExpiredCookie import fOutputSessionExpiredCookie;
-from fOutputSessionInvalidCookieAttributeAndExit import fOutputSessionInvalidCookieAttributeAndExit;
-from fOutputSessionSetCookie import fOutputSessionSetCookie;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 from mExitCodes import *;
@@ -18,9 +15,8 @@ oConsole = foConsoleLoader();
 def foGetResponseForURL(
   *, 
   oHTTPClient,
-  o0SessionFile,
-  oSession, 
   oURL,
+  sbzHTTPVersion,
   sbzMethod,
   s0RequestData,
   dsbAdditionalOrRemovedHeaders,
@@ -37,16 +33,9 @@ def foGetResponseForURL(
   # Construct the HTTP request
   oRequest = oHTTPClient.foGetRequestForURL(
     oURL = oURL,
-    sbzVersion = oSession.sbzHTTPVersion if oSession else zNotProvided,
+    sbzVersion = sbzHTTPVersion,
     sbzMethod = sbzMethod,
     s0Data = s0RequestData,
-  );
-  # Apply session to request
-  oSession.fApplyHeadersToRequestForURL(
-    oRequest,
-    oURL,
-    f0CookieExpiredCallback = fOutputSessionExpiredCookie if bShowProgress else None,
-    f0HeaderAppliedCallback = None, # fSessionAppliedHeaderHandler(oRequest, oURL, oHeader, bReplaced)
   );
   # Apply headers provided through arguments to request
   for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
@@ -154,47 +143,10 @@ def foGetResponseForURL(
     );
     sys.exit(guExitCodeNoValidResponseReceived);
   oResponse = o0Response;
-  # Apply response to session and save session to file if needed
-  def fSessionInvalidCookieAttributeCallback(oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown):
-    fOutputSessionInvalidCookieAttributeAndExit(oURL.sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown);
-  def fSessionSetCookieCallback(oResponse, oURL, oCookie, o0PreviousCookie):
-    if oCookie.fbIsExpired():
-      fOutputSessionExpiredCookie(oURL.sbOrigin, oCookie);
-    else:
-      fOutputSessionSetCookie(oURL.sbOrigin, oCookie, o0PreviousCookie);
-  oSession.fUpdateFromResponse(
-    oResponse,
-    oURL,
-    f0InvalidCookieAttributeCallback = fSessionInvalidCookieAttributeCallback,
-    f0SetCookieCallback = fSessionSetCookieCallback if bShowProgress else None,
-  );
-  if o0SessionFile is not None:
-    sbSessionJSON = oSession.fsbExportToJSON();
-    if bShowProgress:
-      oConsole.fStatus(
-        "      ",
-        COLOR_BUSY, CHAR_BUSY,
-        COLOR_NORMAL, " Saving session to file ",
-        COLOR_INFO, o0SessionFile.sPath,
-        COLOR_NORMAL, "...",
-      );
-    try:
-      o0SessionFile.fbWrite(sbSessionJSON, bThrowErrors = True);
-    except Exception as oException:
-      oConsole.fStatus();
-      oConsole.fOutput(
-        "      ",
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not write session file ",
-        COLOR_INFO, o0SessionFile.sPath,
-        COLOR_NORMAL, "!",
-      );
-      fOutputExceptionAndExit(oException, guExitCodeCannotWriteSessionToFile);
-    oConsole.fStatus();
   # Handle redirects if needed
   if u0MaxRedirects is not None and oResponse.uStatusCode in [301, 302, 307, 308]:
-    oLocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
-    if not oLocationHeader:
+    o0LocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
+    if not o0LocationHeader:
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
@@ -203,7 +155,7 @@ def foGetResponseForURL(
         COLOR_NORMAL, "\" header.",
       );
       sys.exit(guExitCodeNoValidResponseReceived);
-    sbRedirectToURL = oLocationHeader.sbValue;
+    sbRedirectToURL = o0LocationHeader.sbValue;
     try:
       oURL = cURL.foFromBytesString(sbRedirectToURL);
     except cURL.cHTTPInvalidURLException as oException:
@@ -231,9 +183,8 @@ def foGetResponseForURL(
       sys.exit(guExitCodeTooManyRedirects);
     return foGetResponseForURL(
       oHTTPClient = oHTTPClient,
-      o0SessionFile = o0SessionFile,
-      oSession = oSession, 
       oURL = oURL,
+      sbzHTTPVersion = sbzHTTPVersion,
       sbzMethod = sbzMethod,
       s0RequestData = s0RequestData,
       dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,

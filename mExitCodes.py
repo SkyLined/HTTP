@@ -9,8 +9,8 @@ guExitCodeCannotReadFromFileSystem       = 5;
 guExitCodeCannotWriteToFileSystem        = 6;
 guExitCodeTerminatedByUser               = 7;
 # These are specific to this particular script:
-guExitCodeCannotReadSessionFromFile      = 10;
-guExitCodeCannotWriteSessionToFile       = 11;
+guExitCodeCannotReadCookiesFromFile      = 10;
+guExitCodeCannotWriteCookiesToFile       = 11;
 guExitCodeCannotReadRequestBodyFromFile  = 12;
 guExitCodeCannotWriteResponseBodyToFile  = 13;
 guExitCodeCannotCreateSecureConnection   = 14; 

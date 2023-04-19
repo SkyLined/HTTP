@@ -8,6 +8,7 @@
     "mFileSystemItem",
     "mHTTPClient",
     "mHTTPConnection",
+    "mHTTPCookieStore",
     "mHTTPProtocol",
     "mHumanReadable",
     "mMultiThreading",

@@ -3,7 +3,7 @@
                     ║╠══╣║    ║║     ║║    ║╠══╩╝  □   ╱╱  ╱╱                   
          ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄┄□┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
                                                       ‾   ‾                  """;
-import base64, os, re, sys;
+import base64, json, os, re, sys;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -38,9 +38,9 @@ guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need
 try:
   from mFileSystemItem import cFileSystemItem;
   from mHTTPClient import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cURL;
+  from mHTTPCookieStore import cHTTPCookieStore;
   from mNotProvided import fbIsProvided, zNotProvided;
   
-  from cSession import cSession;
   from faoGetURLsFromM3U import faoGetURLsFromM3U;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
   from fHandleServerHostnameOrIPAddressInvalid import fHandleServerHostnameOrIPAddressInvalid;
@@ -65,14 +65,20 @@ try:
   from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
   from foConsoleLoader import foConsoleLoader;
   from foGetResponseForURL import foGetResponseForURL;
+  from fOutputInvalidCookieAttributeAndExit import fOutputInvalidCookieAttributeAndExit;
+  from fOutputSetCookie import fOutputSetCookie;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
   from fOutputUsageInformation import fOutputUsageInformation;
   from fOutputRequestSent import fOutputRequestSent;
   from fOutputResponseReceived import fOutputResponseReceived;
-  from fOutputSessionSetCookie import fOutputSessionSetCookie;
-  from mCP437 import fsCP437FromBytesString;
   from mColorsAndChars import *;
-  from mExitCodes import *;
+  from mExitCodes import \
+      guExitCodeBadArgument, \
+      guExitCodeCannotReadCookiesFromFile, \
+      guExitCodeCannotReadRequestBodyFromFile, \
+      guExitCodeCannotWriteCookiesToFile, \
+      guExitCodeNoValidResponseReceived, \
+      guExitCodeSuccess;
   oConsole = foConsoleLoader();
   
   if __name__ == "__main__":
@@ -110,12 +116,12 @@ try:
     asArguments = sys.argv[1:];
     dsbAdditionalOrRemovedHeaders = {};
     d0Form_sValue_by_sName = {};
+    sbzHTTPVersion = zNotProvided;
     sbzMethod = zNotProvided;
     o0URL = None;
     bM3U = False;
     bSegmentedVideo = None;
     uStartIndex = None;
-    oSession = cSession();
     bzShowProgress = zNotProvided;
     bzShowRequest = zNotProvided;
     bzShowResponse = zNotProvided;
@@ -130,7 +136,7 @@ try:
     bSaveToFile = False;
     bDownloadToFile = False;
     s0TargetFilePath = zNotProvided;
-    s0zSessionPath = zNotProvided;
+    s0zCookieStoreJSONPath = zNotProvided;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
       def fsRequireArgumentValue():
         if s0Value:
@@ -188,8 +194,8 @@ try:
       elif s0LowerName in ["save"]:
         bSaveToFile = True;
         s0TargetFilePath = s0Value;
-      elif s0LowerName in ["s", "session"]:
-        s0zSessionPath = s0Value;
+      elif s0LowerName in ["s", "store"]:
+        s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["header"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbNameAndValue = sbValue.split(b":", 1);
@@ -281,8 +287,8 @@ try:
           sys.exit(guExitCodeBadArgument);
       elif not fbIsProvided(sbzMethod) and rMethod.match(sArgument):
         sbzMethod = bytes(ord(s) for s in sArgument);
-      elif not fbIsProvided(oSession.sbzHTTPVersion) and rHTTPVersion.match(sArgument):
-        oSession.sbzHTTPVersion = bytes(ord(s) for s in sArgument);
+      elif rHTTPVersion.match(sArgument):
+        sbzHTTPVersion = bytes(ord(s) for s in sArgument);
       else:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -333,6 +339,112 @@ try:
           COLOR_HILITE, str(uStartIndex),
           COLOR_NORMAL, ".",
         );
+    ### COOKIE STORE ##########################################################
+    bSaveCookiesToDisk = fbIsProvided(s0zCookieStoreJSONPath);
+    if bSaveCookiesToDisk:
+      s0zCookieStoreJSONPath  = s0zCookieStoreJSONPath or "HTTPCookieStore.json";
+      o0CookieStoreJSONFile = cFileSystemItem(s0zCookieStoreJSONPath);
+      bCookieStoreFileExists = o0CookieStoreJSONFile.fbIsFile();
+      def fSaveCookiesToDiskAndOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie):
+        dxJSON = oCookieStore.fdxExportToJSON();
+        sbJSON = bytes(json.dumps(dxJSON), "ascii", "strict");
+        if bShowProgress:
+          oConsole.fStatus(
+            "      ",
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Saving cookie store to file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, "...",
+          );
+        try:
+          o0CookieStoreJSONFile.fbWrite(sbJSON, bThrowErrors = True);
+        except Exception as oException:
+          oConsole.fStatus();
+          oConsole.fOutput(
+            "      ",
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Could not write cookie store file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, "!",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeCannotWriteCookiesToFile);
+        oConsole.fStatus();
+        fOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie);
+    else:
+      bCookieStoreFileExists = False;
+    oCookieStore = cHTTPCookieStore(
+      f0InvalidCookieAttributeCallback = fOutputInvalidCookieAttributeAndExit,
+      f0SetCookieCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputSetCookie,
+      f0CookieExpiredCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputSetCookie,
+      f0CookieAppliedCallback = None, # (oRequest, oURL, oCookie)
+      f0HeaderAppliedCallback = None, # (oRequest, oURL, oHeader)
+      f0CookieReceivedCallback = None, # (oResponse, oURL, oCookie)
+    );
+    if bSaveCookiesToDisk:
+      if bCookieStoreFileExists:
+        if bShowProgress:
+          oConsole.fOutput(
+            "      ",
+            COLOR_INFO, CHAR_INFO,
+            COLOR_NORMAL, " Cookie store settings:",
+          );
+          oConsole.fStatus(
+            "      ",
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Loading cookie store from file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, "...",
+          );
+        try:
+          sbCookieStoreJSON = o0CookieStoreJSONFile.fsbRead();
+        except Exception as oException:
+          oConsole.fOutput(
+            "      ",
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Could not read cookie store file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, ".",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
+        if bShowProgress:
+          oConsole.fStatus(
+            "      ",
+            COLOR_BUSY, CHAR_BUSY,
+            COLOR_NORMAL, " Parsing cookie store file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, "...",
+          );
+        try:
+          dxCookieStoreJSON = json.loads(str(sbCookieStoreJSON, "ascii", "strict"));
+        except ValueError as oException:
+          oConsole.fOutput(
+            "      ",
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Could not parse cookie store file ",
+            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_NORMAL, ":",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
+        bJSONHasData = oCookieStore.fbImportFromJSON(dxCookieStoreJSON);
+        if bShowProgress and not bJSONHasData:
+          oConsole.fOutput(
+            "      ",
+            "(cookie store file contains no cookie store data).",
+          );
+      elif (
+        not o0CookieStoreJSONFile.o0Parent
+        or not o0CookieStoreJSONFile.o0Parent.fbIsFolder()
+      ):
+        oConsole.fOutput(
+          "      ",
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not find cookie store file ",
+          COLOR_INFO, o0CookieStoreJSONFile.sPath,
+          COLOR_NORMAL, " or the folder in which it is located.",
+        );
+        sys.exit(guExitCodeBadArgument);
+    else:
+      o0CookieStoreJSONFile = None;
     ### HTTP CLIENT ###########################################################
     # We need to use a HTTP client with no proxy, a static proxy or a dynamic
     # proxy. We'll create an instance of the right type of HTTP client now and
@@ -343,7 +455,10 @@ try:
     # two generic functions for reporting the requests/reponses:
     if not bUseProxy:
       # Create a HTTP client instance that uses no proxy
-      oClient = cHTTPClient(bVerifyCertificates = bVerifyCertificates);
+      oClient = cHTTPClient(
+        o0CookieStore = oCookieStore,
+        bVerifyCertificates = bVerifyCertificates,
+      );
       # Create event handlers specific to this situation that call the generic request/response reporters
       if bShowProgress:
         oClient.fAddCallbacks({
@@ -363,7 +478,11 @@ try:
         );
     elif o0HTTPProxyServerURL:
       # Create a HTTP client instance that uses a static proxy
-      oClient = cHTTPClientUsingProxyServer(o0HTTPProxyServerURL, bVerifyCertificates = bVerifyCertificates);
+      oClient = cHTTPClientUsingProxyServer(
+        o0HTTPProxyServerURL, 
+        o0CookieStore = oCookieStore,
+        bVerifyCertificates = bVerifyCertificates,
+      );
       # Create event handlers specific to this situation that call the generic request/response reporters
       if bShowProgress:
         oClient.fAddCallbacks({
@@ -383,7 +502,10 @@ try:
         );
     else:
       # Create a HTTP client instance that uses dynamic proxies.
-      oClient = cHTTPClientUsingAutomaticProxyServer(bVerifyCertificates = bVerifyCertificates);
+      oClient = cHTTPClientUsingAutomaticProxyServer(
+        o0CookieStore = oCookieStore,
+        bVerifyCertificates = bVerifyCertificates,
+      );
       if bShowProgress:
         oClient.fAddCallbacks({
           "request sent": lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
@@ -433,134 +555,12 @@ try:
           "secure connection to server through proxy terminated": fHandleSecureConnectionToServerThroughProxyTerminated,
         });
     
-    ### SESSION FILE ##########################################################
-    if fbIsProvided(s0zSessionPath):
-      s0zSessionPath  = s0zSessionPath or "HTTP session.json";
-      oSessionFileOrFolder = cFileSystemItem(s0zSessionPath);
-      if oSessionFileOrFolder.fbIsFolder():
-        o0SessionFile = oSessionFileOrFolder.foGetChild("http-session.json");
-      elif oSessionFileOrFolder.fbIsFile():
-        o0SessionFile = oSessionFileOrFolder;
-      elif oSessionFileOrFolder.o0Parent and oSessionFileOrFolder.o0Parent.fbIsFolder():
-        o0SessionFile = oSessionFileOrFolder;
-      else:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Could not find session file ",
-          COLOR_INFO, oSessionFileOrFolder.sPath,
-          COLOR_NORMAL, ".",
-        );
-        sys.exit(guExitCodeBadArgument);
-    else:
-      o0SessionFile = None;
-    
-    if o0SessionFile and o0SessionFile.fbIsFile():
-      if bShowProgress:
-        oConsole.fOutput(
-          "      ",
-          COLOR_INFO, CHAR_INFO,
-          COLOR_NORMAL, " Session settings:",
-        );
-        oConsole.fStatus(
-          "      ",
-          COLOR_BUSY, CHAR_BUSY,
-          COLOR_NORMAL, " Loading session from file ",
-          COLOR_INFO, o0SessionFile.sPath,
-          COLOR_NORMAL, "...",
-        );
-      try:
-        sbSessionFileJSON = o0SessionFile.fsbRead();
-      except Exception as oException:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Could not read session file ",
-          COLOR_INFO, o0SessionFile.sPath,
-          COLOR_NORMAL, ".",
-        );
-        fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
-      if bShowProgress:
-        oConsole.fStatus(
-          "      ",
-          COLOR_BUSY, CHAR_BUSY,
-          COLOR_NORMAL, " Parsing session file ",
-          COLOR_INFO, o0SessionFile.sPath,
-          COLOR_NORMAL, "...",
-        );
-      def fOutputSessionHTTPVersion(oSession, sbHTTPVersion):
-        oConsole.fOutput(
-          "      ",
-          CHAR_LIST,
-          COLOR_NORMAL, " HTTP version: ",
-          COLOR_INFO, fsCP437FromBytesString(sbHTTPVersion),
-          COLOR_NORMAL, ".",
-        );
-      def fOutputSessionMaxRedirects(oSession, u0MaxRedirects):
-        if u0MaxRedirects is None:
-          oConsole.fOutput(
-            "      ",
-            CHAR_LIST,
-            COLOR_NORMAL, " Redirects: ",
-            COLOR_INFO, "not followed",
-            COLOR_NORMAL, ".",
-          );
-        else:
-          oConsole.fOutput(
-            "      ",
-            CHAR_LIST,
-            COLOR_NORMAL, " Max redirects: ",
-            COLOR_INFO, str(u0MaxRedirects),
-            COLOR_NORMAL, ".",
-          );
-      def fOutputSessionUserAgent(oSession, sbUserAgent):
-        oConsole.fOutput(
-          "      ",
-          CHAR_LIST,
-          COLOR_NORMAL, " User agent: ",
-          COLOR_INFO, fsCP437FromBytesString(sbUserAgent),
-          COLOR_NORMAL, ".",
-        );
-      def fOutputSessionDoNotTrackHeader(oSession, bDoNotTrack):
-        oConsole.fOutput(
-          "      ",
-          CHAR_LIST,
-          COLOR_NORMAL, " Do not track: ",
-          COLOR_INFO,
-          "" if bDoNotTrack else "do NOT ", "add \"DNT: 1\" header",
-          COLOR_NORMAL, ".",
-        );
-      def fApplySessionJSONAddCookieEventHandler(oSession, sbOrigin, oCookie):
-        fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie = None);
-      try:
-        bSessionJSONHasData = oSession.fbImportFromJSON(
-          sbSessionFileJSON,
-          f0SetHTTPVersionCallback = fOutputSessionHTTPVersion if bShowProgress else None,
-          f0SetMaxRedirectsCallback = fOutputSessionMaxRedirects if bShowProgress else None,
-          f0SetUserAgentCallback = fOutputSessionUserAgent if bShowProgress else None,
-          f0SetAddDoNotTrackHeaderCallback = fOutputSessionDoNotTrackHeader if bShowProgress else None,
-          f0AddCookieCallback = fApplySessionJSONAddCookieEventHandler if bShowProgress else None,
-        );
-      except ValueError as oException:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Could not parse session file ",
-          COLOR_INFO, o0SessionFile.sPath,
-          COLOR_NORMAL, ":",
-        );
-        fOutputExceptionAndExit(oException, guExitCodeCannotReadSessionFromFile);
-      if bShowProgress and not bSessionJSONHasData:
-        oConsole.fOutput(
-          "      ",
-          "(Session file has not data).",
-        );
+    ### M3U ######################################################################
     if bM3U:
       oResponse = foGetResponseForURL(
         oHTTPClient = oClient,
-        o0SessionFile = o0SessionFile,
-        oSession = oSession,
         oURL = oURL,
+        sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
         s0RequestData = s0RequestData,
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
@@ -606,9 +606,8 @@ try:
       for oURL in aoURLs:
         oResponse = foGetResponseForURL(
           oHTTPClient = oClient,
-          o0SessionFile = o0SessionFile,
-          oSession = oSession,
           oURL = oURL,
+          sbzHTTPVersion = sbzHTTPVersion,
           sbzMethod = sbzMethod,
           s0RequestData = s0RequestData,
           dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
@@ -653,9 +652,8 @@ try:
         oURL = cURL.foFromBytesString(b"%s%d%s" % (sbURLSegmentHeader, uIndex, sbURLSegmentFooter));
         oResponse = foGetResponseForURL(
           oHTTPClient = oClient,
-          o0SessionFile = o0SessionFile,
-          oSession = oSession,
           oURL = oURL,
+          sbzHTTPVersion = sbzHTTPVersion,
           sbzMethod = sbzMethod,
           s0RequestData = s0RequestData,
           dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
@@ -682,9 +680,8 @@ try:
       # Single request
       foGetResponseForURL(
         oHTTPClient = oClient,
-        o0SessionFile = o0SessionFile,
-        oSession = oSession,
         oURL = oURL,
+        sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
         s0RequestData = s0RequestData,
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,

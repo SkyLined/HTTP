@@ -10,53 +10,52 @@ oConsole = foConsoleLoader();
 def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = []):
   oConsole.fOutput(
     xPrefix,
-    COLOR_REQUEST_RESPONSE_BOX, "┌───[",
+    COLOR_REQUEST_RESPONSE_BOX, "┌" if bShowDetails else "─", "───[",
     COLOR_REQUEST_RESPONSE_BOX_HEADER, " Request ",
     COLOR_REQUEST_RESPONSE_BOX, "]", sPadding = "─",
   );
   # Output request status line
   oConsole.fOutput(
     xPrefix,
-    COLOR_REQUEST_RESPONSE_BOX, "│ ", 
+    [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
     COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
-    COLOR_CRLF, CHAR_CRLF,
+    [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
   );
-  if bShowDetails:
-    # Output request headers
+  # Output request headers
+  fOutputHeaders(
+    oRequest.oHeaders,
+    bShowDetails = bShowDetails,
+    xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
+  );
+  oConsole.fOutput(
+    xPrefix,
+    [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+    [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
+    [COLOR_EOF, CHAR_EOF] if bShowDetails and not oRequest.sb0Body and not oRequest.o0AdditionalHeaders else [],
+  );
+  # Output request body if any
+  if oRequest.sb0Body:
+    fOutputBody(
+      oRequest.s0Data if bDecodeBody else oRequest.sb0Body,
+      bNeedsDecoding = False if bDecodeBody else (oRequest.bChunked or oRequest.bCompressed),
+      bShowDetails = bShowDetails,
+      bOutputEOF = not oRequest.o0AdditionalHeaders,
+      xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
+    );
+  if oRequest.o0AdditionalHeaders:
+    # Output response additional headers
     fOutputHeaders(
-      oRequest.oHeaders,
-      xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "],
+      oRequest.o0AdditionalHeaders,
+      bShowDetails = bShowDetails,
+      xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
     );
     oConsole.fOutput(
       xPrefix,
-      COLOR_REQUEST_RESPONSE_BOX, "│ ", 
-      COLOR_CRLF, CHAR_CRLF,
-      *([COLOR_EOF, CHAR_EOF] if not oRequest.sb0Body is not None else [])
+      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+      [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
+      [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
-    if oRequest.sb0Body:
-      if bDecodeBody:
-        # Output decoded request body if any
-        fOutputBody(
-          oRequest.s0Data,
-          bOutputEOF = not oRequest.o0AdditionalHeaders,
-          xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "],
-        );
-      else:
-        # Output request body if any
-        fOutputBody(oRequest.sb0Body, bOutputEOF = not oRequest.o0AdditionalHeaders);
-    if oRequest.o0AdditionalHeaders:
-      # Output response additional headers
-      fOutputHeaders(
-        oRequest.o0AdditionalHeaders,
-        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "],
-      );
-      oConsole.fOutput(
-        xPrefix,
-        COLOR_REQUEST_RESPONSE_BOX, "│ ", 
-        COLOR_CRLF, CHAR_CRLF,
-        COLOR_EOF, CHAR_EOF,
-      );
   oConsole.fOutput(
     xPrefix,
-    COLOR_REQUEST_RESPONSE_BOX, "└", sPadding = "─",
+    COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",
   );

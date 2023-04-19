@@ -5,8 +5,9 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
-  if oCookie.o0ExpirationDateTime is not None:
+def fOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie):
+  bCookieExpired = oCookie.fbIsExpired();
+  if not bCookieExpired and oCookie.o0ExpirationDateTime is not None:
     oValidDuration = cDateTime.foNow().foGetDurationForEndDateTime(oCookie.o0ExpirationDateTime);
     oValidDuration.fNormalize();
     s0Expires = oValidDuration.fsToHumanReadableString(u0MaxNumberOfUnitsInOutput = 2);
@@ -17,6 +18,8 @@ def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
   oConsole.fOutput(
     "      ",
     [
+      COLOR_REMOVE, CHAR_REMOVE,
+    ] if bCookieExpired else [
       COLOR_ADD, CHAR_ADD,
     ] if bCookieIsNew else [
       COLOR_MODIFY, CHAR_MODIFY,
@@ -27,17 +30,16 @@ def fOutputSessionSetCookie(sbOrigin, oCookie, o0PreviousCookie):
       " Session cookie " if oCookie.o0ExpirationDateTime is None else
       " Cookie "
     ), (
+      "expired" if bCookieExpired else
       "added" if bCookieIsNew else
       "updated" if bCookieValueWasModified else
       "repeated"
-    ), " for ",
-    COLOR_INFO, fsCP437FromBytesString(sbOrigin),
-    COLOR_NORMAL, ": ",
+    ), ": ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbName),
     COLOR_NORMAL, " = ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue),
     COLOR_NORMAL, " (Domain = ",
-    COLOR_INFO, fsCP437FromBytesString(oCookie.sbDomain),
+    COLOR_INFO, fsCP437FromBytesString(oCookie.sbDomainName),
     [
       COLOR_NORMAL, ", Expires in ",
       COLOR_INFO, s0Expires,

@@ -6,12 +6,12 @@ from mCP437 import fsCP437FromBytesString;
 from mExitCodes import *;
 oConsole = foConsoleLoader();
 
-def fOutputSessionInvalidCookieAttributeAndExit(sbOrigin, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown):
+def fOutputInvalidCookieAttributeAndExit(oCookieStore, oResponse, oURL, oHeader, sbCookieName, sbCookieValue, sbAttributeName, sb0AttributeValue, bIsNameKnown):
   oConsole.fOutput(
     "      ",
     COLOR_WARNING, CHAR_WARNING,
     COLOR_NORMAL, " Server response from ",
-    COLOR_INFO, fsCP437FromBytesString(sbOrigin),
+    COLOR_INFO, fsCP437FromBytesString(oURL.fsbToString()),
     (
       COLOR_NORMAL, " contains an ",
       COLOR_INFO, "invalid" if bIsNameKnown else "unknown"
