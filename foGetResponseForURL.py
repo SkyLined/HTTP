@@ -144,7 +144,7 @@ def foGetResponseForURL(
     sys.exit(guExitCodeNoValidResponseReceived);
   oResponse = o0Response;
   # Handle redirects if needed
-  if u0MaxRedirects is not None and oResponse.uStatusCode in [301, 302, 307, 308]:
+  if u0MaxRedirects is not None and oResponse.uStatusCode in [301, 302, 303, 307, 308]:
     o0LocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
     if not o0LocationHeader:
       oConsole.fOutput(
