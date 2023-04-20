@@ -305,10 +305,10 @@ try:
     # If not explicitly set, show progress
     bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
     # If not explicitly set, only show requests and responses when we are not downloading.
-    bShowRequestResponseDetailsDefault = not (bDownloadToFile or bSaveToFile);
-    bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDetailsDefault;
-    bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDetailsDefault;
-    bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else bShowRequestResponseDetailsDefault;
+    bShowRequestResponseDefault = not (bDownloadToFile or bSaveToFile);
+    bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDefault;
+    bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
+    bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
     
     if bSegmentedVideo and not bM3U:
       for rbSegmentedVideo in arbSegmentedVideos:
