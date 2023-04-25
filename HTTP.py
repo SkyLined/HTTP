@@ -138,6 +138,7 @@ try:
     bDownloadToFile = False;
     s0TargetFilePath = zNotProvided;
     s0zCookieStoreJSONPath = zNotProvided;
+    s0NetscapeCookiesFilePath = None;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
       def fsRequireArgumentValue():
         if s0Value:
@@ -153,7 +154,12 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      if s0LowerName in ["debug"]:
+      if s0LowerName in ["basic-login"]:
+        sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(s0Value or "", "ascii", "strict"));
+        dsbAdditionalOrRemovedHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
+      elif s0LowerName in ["c", "cookies"]:
+        s0NetscapeCookiesFilePath = s0Value;
+      elif s0LowerName in ["debug"]:
         if fbParseBooleanArgument(s0Value):
           if not m0DebugOutput:
             oConsole.fOutput(
@@ -192,11 +198,6 @@ try:
       elif s0LowerName in ["dl", "download"]:
         bDownloadToFile = True;
         s0TargetFilePath = s0Value;
-      elif s0LowerName in ["save"]:
-        bSaveToFile = True;
-        s0TargetFilePath = s0Value;
-      elif s0LowerName in ["s", "store"]:
-        s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["header"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbNameAndValue = sbValue.split(b":", 1);
@@ -221,9 +222,12 @@ try:
         if d0Form_sValue_by_sName is None:
           d0Form_sValue_by_sName = [];
         d0Form_sValue_by_sName[sbName] = sb0Value;
-      elif s0LowerName in ["basic-login"]:
-        sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(s0Value or "", "ascii", "strict"));
-        dsbAdditionalOrRemovedHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
+      elif s0LowerName in ["m3u"]:
+        bM3U = True;
+        bDownloadToFile = True;
+        # If a path is provided for downloading, set it.
+        if s0Value is not None:
+          s0TargetFilePath = s0Value;
       elif s0LowerName in ["p", "proxy", "http-proxy"]:
         bUseProxy = True;
         if s0Value:
@@ -234,33 +238,30 @@ try:
             );
             sys.exit(guExitCodeBadArgument);
           o0HTTPProxyServerURL = cURL.foFromBytesString(bytes(ord(s) for s in s0Value));
-      elif s0LowerName in ["r", "max-redirects"]:
-        sMaxRedirects = fsRequireArgumentValue();
-        try:
-          u0MaxRedirects = int(sMaxRedirects);
-          assert u0MaxRedirects >= 0, "";
-        except:
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " The value for \"",
-            COLOR_INFO, sArgument,
-            COLOR_NORMAL, "\" must be a positive integer number or zero.",
-          );
-          sys.exit(guExitCodeBadArgument);
-      elif s0LowerName in ["m3u"]:
-        bM3U = True;
-        bDownloadToFile = True;
-        # If a path is provided for downloading, set it.
-        if s0Value is not None:
-          s0TargetFilePath = s0Value;
-      elif s0LowerName in ["sv", "segmented-video"]:
-        bSegmentedVideo = True;
-        bDownloadToFile = True;
-        # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
+      elif s0LowerName in ["r", "max-redirects", "follow-redirects"]:
         if s0Value:
-          s0TargetFilePath = s0Value;
+          try:
+            u0MaxRedirects = int(s0Value);
+            assert u0MaxRedirects >= 0, "";
+          except:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\" must be a positive integer number or zero.",
+            );
+            sys.exit(guExitCodeBadArgument);
+        else:
+          u0MaxRedirects = 32;
+      elif s0LowerName in ["s", "store"]:
+        s0zCookieStoreJSONPath = s0Value;
+      elif s0LowerName in ["save"]:
+        bSaveToFile = True;
+        s0TargetFilePath = s0Value;
       elif s0LowerName in ["secure"]:
         bVerifyCertificates = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["show-details"]:
+        bzShowDetails = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-progress"]:
         bzShowProgress = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-proxy"]:
@@ -269,8 +270,12 @@ try:
         bzShowRequest = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["show-response"]:
         bzShowResponse = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-details"]:
-        bzShowDetails = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["sv", "segmented-video"]:
+        bSegmentedVideo = True;
+        bDownloadToFile = True;
+        # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
+        if s0Value:
+          s0TargetFilePath = s0Value;
       elif s0LowerName:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -334,9 +339,9 @@ try:
         oConsole.fOutput(
           COLOR_OK, CHAR_OK,
           COLOR_NORMAL, " Segmented URL: \"",
-          COLOR_INFO, sbURLSegmentHeader,
+          COLOR_INFO, str(sbURLSegmentHeader, "ascii", "replace"),
           COLOR_HILITE, "*INDEX*",
-          COLOR_INFO, sbURLSegmentFooter,
+          COLOR_INFO, str(sbURLSegmentFooter, "ascii", "replace"),
           COLOR_NORMAL, "\".",
         );
         oConsole.fOutput(
@@ -348,8 +353,8 @@ try:
     bSaveCookiesToDisk = fbIsProvided(s0zCookieStoreJSONPath);
     if bSaveCookiesToDisk:
       s0zCookieStoreJSONPath  = s0zCookieStoreJSONPath or "HTTPCookieStore.json";
-      o0CookieStoreJSONFile = cFileSystemItem(s0zCookieStoreJSONPath);
-      bCookieStoreFileExists = o0CookieStoreJSONFile.fbIsFile();
+      oCookieStoreJSONFile = cFileSystemItem(s0zCookieStoreJSONPath);
+      bCookieStoreFileExists = oCookieStoreJSONFile.fbIsFile();
       def fSaveCookiesToDiskAndOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie):
         dxJSON = oCookieStore.fdxExportToJSON();
         sbJSON = bytes(json.dumps(dxJSON), "ascii", "strict");
@@ -362,7 +367,7 @@ try:
             COLOR_NORMAL, "...",
           );
         try:
-          o0CookieStoreJSONFile.fbWrite(sbJSON, bThrowErrors = True);
+          oCookieStoreJSONFile.fWrite(sbJSON);
         except Exception as oException:
           oConsole.fStatus();
           oConsole.fOutput(
@@ -385,6 +390,47 @@ try:
       f0HeaderAppliedCallback = None, # (oRequest, oURL, oHeader)
       f0CookieReceivedCallback = None, # (oResponse, oURL, oCookie)
     );
+    if s0NetscapeCookiesFilePath:
+      oNetscapeCookiesFile = cFileSystemItem(s0NetscapeCookiesFilePath);
+      if not oNetscapeCookiesFile.fbIsFile():
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Netscape cookies file ",
+          COLOR_INFO, oNetscapeCookiesFile.sPath,
+          COLOR_NORMAL, " does not exist!",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
+      if bShowProgress:
+        oConsole.fStatus(
+          "      ",
+          COLOR_BUSY, CHAR_BUSY,
+          COLOR_NORMAL, " Reading cookies from file ",
+          COLOR_INFO, oNetscapeCookiesFile.sPath,
+          COLOR_NORMAL, "...",
+        );
+      try:
+        sbCookiesInNetscapeFileFormat = oNetscapeCookiesFile.fsbRead();
+      except Exception as oException:
+        oConsole.fStatus();
+        oConsole.fOutput(
+          "      ",
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Could not read Netscape cookies file ",
+          COLOR_INFO, oNetscapeCookiesFile.sPath,
+          COLOR_NORMAL, "!",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotWriteCookiesToFile);
+      uNumberOfCookiesRead = oCookieStore.fuAddFromNetscapeFileFormat(sbCookiesInNetscapeFileFormat);
+      oConsole.fStatus();
+      if bShowProgress:
+        oConsole.fOutput(
+          COLOR_OK, CHAR_OK,
+          COLOR_NORMAL, " Read ",
+          COLOR_INFO, str(uNumberOfCookiesRead),
+          COLOR_HILITE, " cookies from ",
+          COLOR_INFO, oNetscapeCookiesFile.sPath,
+          COLOR_NORMAL, ".",
+        );
     if bSaveCookiesToDisk:
       if bCookieStoreFileExists:
         if bShowProgress:
