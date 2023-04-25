@@ -1,5 +1,4 @@
-﻿from mHumanReadable import fsBytesToHumanReadableString;
-
+﻿from faxListOutput import faxListOutput;
 from foConsoleLoader import foConsoleLoader;
 from fOutputBody import fOutputBody;
 from fOutputHeaders import fOutputHeaders;
@@ -7,7 +6,7 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = []):
+def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = []):
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "┌" if bShowDetails else "─", "───[",
@@ -36,8 +35,12 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = []):
   # Output request body if any
   if oRequest.sb0Body:
     fOutputBody(
-      oRequest.s0Data if bDecodeBody else oRequest.sb0Body,
+      oRequest.fs0GetData(
+        bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors,
+        bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
+      ) if bDecodeBody else oRequest.sb0Body,
       bNeedsDecoding = False if bDecodeBody else (oRequest.bChunked or oRequest.bCompressed),
+      asb0ActualCompressionTypesList = oRequest.asb0ActualCompressionTypes,
       bShowDetails = bShowDetails,
       bOutputEOF = not oRequest.o0AdditionalHeaders,
       xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
@@ -54,6 +57,18 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = []):
       [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
+    );
+  if oRequest.asb0ActualCompressionTypes:
+    oConsole.fOutput(
+      xPrefix,
+      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+      COLOR_ERROR, CHAR_ERROR, " NOTE",
+      COLOR_NORMAL, ": The body was compressed using ",
+      faxListOutput(
+        asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oRequest.asb0ActualCompressionTypes],
+        sAndOr = "and",
+      ),
+      COLOR_NORMAL, " compression!",
     );
   oConsole.fOutput(
     xPrefix,

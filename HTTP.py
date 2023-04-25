@@ -131,6 +131,7 @@ try:
     o0HTTPProxyServerURL = None;
     s0RequestData = None;
     bDecodeBody = False;
+    bFixDecodeBodyErrors = False;
     u0MaxRedirects = None;
     bVerifyCertificates = True;
     bSaveToFile = False;
@@ -206,6 +207,10 @@ try:
           if sb0Value.strip() == "":
             sb0Value = None;
         dsbAdditionalOrRemovedHeaders[sbName] = sb0Value;
+      elif s0LowerName in ["fdb", "fix-decode", "fix-decode-body"]:
+        bFixDecodeBodyErrors = fbParseBooleanArgument(s0Value);
+        if bFixDecodeBodyErrors:
+          bDecodeBody = True;
       elif s0LowerName in ["form"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbNameAndValue = sbValue.split(b"=", 1);
@@ -469,12 +474,12 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest:
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
     elif o0HTTPProxyServerURL:
       # Create a HTTP client instance that uses a static proxy
@@ -493,12 +498,12 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest: 
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
     else:
       # Create a HTTP client instance that uses dynamic proxies.
@@ -515,12 +520,12 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = "")
+          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
         );
     if bShowProgress:
       if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
@@ -567,6 +572,7 @@ try:
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = False,
+        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
         bSaveToFile = False,
         s0TargetFilePath = None,
         bIsFirstDownload = True,
@@ -614,6 +620,7 @@ try:
           d0Form_sValue_by_sName = d0Form_sValue_by_sName,
           u0MaxRedirects = u0MaxRedirects,
           bDownloadToFile = bDownloadToFile,
+          bFixDecodeBodyErrors = bFixDecodeBodyErrors,
           bSaveToFile = bSaveToFile,
           s0TargetFilePath = s0TargetFilePath,
           bIsFirstDownload = uProcessedURLs == 0 if bSegmentedVideo else True,
@@ -688,6 +695,7 @@ try:
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
+        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
         bIsFirstDownload = True,

@@ -23,6 +23,7 @@ def foGetResponseForURL(
   d0Form_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
+  bFixDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
   bIsFirstDownload,
@@ -191,6 +192,7 @@ def foGetResponseForURL(
       d0Form_sValue_by_sName = d0Form_sValue_by_sName,
       u0MaxRedirects = u0MaxRedirects - 1,
       bDownloadToFile = bDownloadToFile,
+      bFixDecodeBodyErrors = bFixDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
       bIsFirstDownload = bIsFirstDownload,
@@ -234,7 +236,7 @@ def foGetResponseForURL(
       COLOR_INFO, oTargetFile.sPath,
       COLOR_NORMAL, "...",
     );
-    sbData = oResponse.sb0DecompressedBody or b"";
+    sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors) or b"";
   try:
     oTargetFile.fbWrite(
       sbData = sbData,

@@ -1,11 +1,12 @@
-﻿from foConsoleLoader import foConsoleLoader;
+﻿from faxListOutput import faxListOutput;
+from foConsoleLoader import foConsoleLoader;
 from fOutputBody import fOutputBody;
 from fOutputHeaders import fOutputHeaders;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = []):
+def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = []):
   if 100 <= oResponse.uStatusCode <= 199:
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_1XX;
   elif 200 <= oResponse.uStatusCode <= 299:
@@ -48,7 +49,10 @@ def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = []):
   # Output response body if any
   if oResponse.sb0Body:
     fOutputBody(
-      oResponse.s0Data if bDecodeBody else oResponse.sb0Body,
+      oResponse.fs0GetData(
+        bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors,
+        bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
+      ) if bDecodeBody else oResponse.sb0Body,
       bNeedsDecoding = False if bDecodeBody else (oResponse.bChunked or oResponse.bCompressed),
       bShowDetails = bShowDetails,
       bOutputEOF = not oResponse.o0AdditionalHeaders,
@@ -67,6 +71,19 @@ def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, xPrefix = []):
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
+  if oResponse.asb0ActualCompressionTypes:
+    oConsole.fOutput(
+      xPrefix,
+      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+      COLOR_ERROR, CHAR_ERROR, " NOTE",
+      COLOR_NORMAL, ": The body was compressed using ",
+      faxListOutput(
+        asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oResponse.asb0ActualCompressionTypes],
+        sAndOr = "and",
+      ),
+      COLOR_NORMAL, " compression!",
+    );
   oConsole.fOutput(
+    xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",
   );
