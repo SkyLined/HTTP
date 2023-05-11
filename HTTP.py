@@ -65,7 +65,7 @@ try:
   from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
   from foConsoleLoader import foConsoleLoader;
   from foGetResponseForURL import foGetResponseForURL;
-  from fOutputInvalidCookieAttributeAndExit import fOutputInvalidCookieAttributeAndExit;
+  from fOutputInvalidCookieAttribute import fOutputInvalidCookieAttribute;
   from fOutputSetCookie import fOutputSetCookie;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
   from fOutputUsageInformation import fOutputUsageInformation;
@@ -383,7 +383,7 @@ try:
     else:
       bCookieStoreFileExists = False;
     oCookieStore = cHTTPCookieStore(
-      f0InvalidCookieAttributeCallback = fOutputInvalidCookieAttributeAndExit,
+      f0InvalidCookieAttributeCallback = fOutputInvalidCookieAttribute,
       f0SetCookieCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputSetCookie,
       f0CookieExpiredCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputSetCookie,
       f0CookieAppliedCallback = None, # (oRequest, oURL, oCookie)
