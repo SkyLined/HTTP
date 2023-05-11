@@ -65,7 +65,7 @@ def foGetResponseForURL(
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Connecting to server timed out:",
+        COLOR_NORMAL, " Connecting to server timed out.",
       );
     elif isinstance(oException, (
       oHTTPClient.cTCPIPConnectionRefusedException,
@@ -75,7 +75,7 @@ def foGetResponseForURL(
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not connect to server:",
+        COLOR_NORMAL, " Could not connect to server.",
       );
     elif isinstance(oException, (
       oHTTPClient.cTCPIPConnectionDisconnectedException,
@@ -84,13 +84,13 @@ def foGetResponseForURL(
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " The server did not respond to our request:",
+        COLOR_NORMAL, " The server did not respond to our request.",
       );
     elif isinstance(oException, oHTTPClient.cHTTPClientFailedToConnectToServerThroughProxyException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not connect to server through proxy:",
+        COLOR_NORMAL, " Could not connect to server through proxy.",
       );
     elif isinstance(oException, (
       oHTTPClient.cHTTPMaxConnectionsToServerReachedException,
@@ -98,7 +98,7 @@ def foGetResponseForURL(
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not connect to server:",
+        COLOR_NORMAL, " Could not connect to server.",
       );
     elif isinstance(oException, oHTTPClient.cTCPIPDataTimeoutException):
       oConsole.fOutput(
@@ -113,27 +113,23 @@ def foGetResponseForURL(
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " There was a protocol error while talking to the server:",
+        COLOR_NORMAL, " There was a protocol error while talking to the server.",
       );
     elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLSecureTimeoutException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Securing the connection to the server timed out:",
+        COLOR_NORMAL, " Securing the connection to the server timed out.",
       );
-    elif oHTTPClient.bSSLIsSupported and isinstance(oException, (
-      oHTTPClient.cSSLWrapSocketException,
-      oHTTPClient.cSSLSecureHandshakeException,
-      oHTTPClient.cSSLCannotGetRemoteCertificateException,
-      oHTTPClient.cSSLIncorrectHostnameException,
-    )):
+    elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Securing the connection to the server failed:",
+        COLOR_NORMAL, " Securing the connection to the server failed.",
       );
     else:
       raise;
+    oConsole.fOutput();
     fOutputExceptionAndExit(oException, guExitCodeCannotCreateSecureConnection);
   oConsole.fStatus();
   if not o0Response:
