@@ -363,7 +363,7 @@ try:
             "      ",
             COLOR_BUSY, CHAR_BUSY,
             COLOR_NORMAL, " Saving cookie store to file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, "...",
           );
         try:
@@ -374,7 +374,7 @@ try:
             "      ",
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Could not write cookie store file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, "!",
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotWriteCookiesToFile);
@@ -443,17 +443,17 @@ try:
             "      ",
             COLOR_BUSY, CHAR_BUSY,
             COLOR_NORMAL, " Loading cookie store from file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, "...",
           );
         try:
-          sbCookieStoreJSON = o0CookieStoreJSONFile.fsbRead();
+          sbCookieStoreJSON = oCookieStoreJSONFile.fsbRead();
         except Exception as oException:
           oConsole.fOutput(
             "      ",
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Could not read cookie store file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, ".",
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
@@ -462,7 +462,7 @@ try:
             "      ",
             COLOR_BUSY, CHAR_BUSY,
             COLOR_NORMAL, " Parsing cookie store file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, "...",
           );
         try:
@@ -472,7 +472,7 @@ try:
             "      ",
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " Could not parse cookie store file ",
-            COLOR_INFO, o0CookieStoreJSONFile.sPath,
+            COLOR_INFO, oCookieStoreJSONFile.sPath,
             COLOR_NORMAL, ":",
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
@@ -483,19 +483,17 @@ try:
             "(cookie store file contains no cookie store data).",
           );
       elif (
-        not o0CookieStoreJSONFile.o0Parent
-        or not o0CookieStoreJSONFile.o0Parent.fbIsFolder()
+        not oCookieStoreJSONFile.o0Parent
+        or not oCookieStoreJSONFile.o0Parent.fbIsFolder()
       ):
         oConsole.fOutput(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not find cookie store file ",
-          COLOR_INFO, o0CookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFile.sPath,
           COLOR_NORMAL, " or the folder in which it is located.",
         );
         sys.exit(guExitCodeBadArgument);
-    else:
-      o0CookieStoreJSONFile = None;
     ### HTTP CLIENT ###########################################################
     # We need to use a HTTP client with no proxy, a static proxy or a dynamic
     # proxy. We'll create an instance of the right type of HTTP client now and
