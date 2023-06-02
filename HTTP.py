@@ -120,6 +120,7 @@ try:
     sbzMethod = zNotProvided;
     o0URL = None;
     bM3U = False;
+    bSegmentedM3U = False;
     bSegmentedVideo = None;
     uStartIndex = None;
     bzShowProgress = zNotProvided;
@@ -136,7 +137,7 @@ try:
     bVerifyCertificates = True;
     bSaveToFile = False;
     bDownloadToFile = False;
-    s0TargetFilePath = zNotProvided;
+    s0TargetFilePath = None;
     s0zCookieStoreJSONPath = zNotProvided;
     s0NetscapeCookiesFilePath = None;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
@@ -276,6 +277,10 @@ try:
         # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
         if s0Value:
           s0TargetFilePath = s0Value;
+      elif s0LowerName in ["sm3u", "segmented-m3u"]:
+        bM3U = True;
+        bDownloadToFile = True;
+        bSegmentedM3U = True;
       elif s0LowerName:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -667,7 +672,7 @@ try:
           bFixDecodeBodyErrors = bFixDecodeBodyErrors,
           bSaveToFile = bSaveToFile,
           s0TargetFilePath = s0TargetFilePath,
-          bIsFirstDownload = uProcessedURLs == 0 if bSegmentedVideo else True,
+          bConcatinateDownload = uProcessedURLs > 0 if (bSegmentedVideo or bSegmentedM3U) else False,
           bShowProgress = bShowProgress,
         );
         if oResponse.uStatusCode != 200 and bDownloadToFile:
@@ -713,7 +718,7 @@ try:
           bDownloadToFile = bDownloadToFile,
           bSaveToFile = bSaveToFile,
           s0TargetFilePath = s0TargetFilePath,
-          bIsFirstDownload = uIndex == uStartIndex,
+          bConcatinateDownload = uIndex != uStartIndex,
           bShowProgress = bShowProgress,
         );
         if oResponse.uStatusCode != 200:
@@ -742,7 +747,7 @@ try:
         bFixDecodeBodyErrors = bFixDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
-        bIsFirstDownload = True,
+        bConcatinateDownload = False,
         bShowProgress = bShowProgress,
       );
 except Exception as oException:

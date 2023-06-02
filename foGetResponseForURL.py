@@ -26,7 +26,7 @@ def foGetResponseForURL(
   bFixDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
-  bIsFirstDownload,
+  bConcatinateDownload,
   bShowProgress,
 ):
   if d0Form_sValue_by_sName is not None and not fbIsProvided(sbzMethod):
@@ -206,7 +206,7 @@ def foGetResponseForURL(
       bFixDecodeBodyErrors = bFixDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
-      bIsFirstDownload = bIsFirstDownload,
+      bConcatinateDownload = bConcatinateDownload,
       bShowProgress = bShowProgress,
     );
   if not (bSaveToFile or (bDownloadToFile and oResponse.uStatusCode == 200)):
@@ -251,7 +251,7 @@ def foGetResponseForURL(
   try:
     oTargetFile.fbWrite(
       sbData = sbData,
-      bAppend = not bIsFirstDownload,
+      bAppend = bConcatinateDownload,
       bThrowErrors = True,
     );
   except Exception as oException:
