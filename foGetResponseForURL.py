@@ -205,7 +205,7 @@ def foGetResponseForURL(
     if oURL.asURLDecodedPath:
       sTargetFilePath = oURL.asURLDecodedPath[-1];
       if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(s0TargetFilePath):
-        s0TargetFilePath += "." + s0Extension;
+        sTargetFilePath += "." + s0Extension;
     else:
       sTargetFilePath = "download from %s%s" % (
         fsCP437FromBytesString(oURL.sbHostname),
