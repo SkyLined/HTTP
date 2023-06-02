@@ -47,7 +47,6 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors
         bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
       ) if bDecodeBody else oRequest.sb0Body,
       bNeedsDecoding = False if bDecodeBody else (oRequest.bChunked or oRequest.bCompressed),
-      asb0ActualCompressionTypesList = oRequest.asb0ActualCompressionTypes,
       bShowDetails = bShowDetails,
       bOutputEOF = not oRequest.o0AdditionalHeaders,
       xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
@@ -65,18 +64,26 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
-  if oRequest.asb0ActualCompressionTypes:
-    oConsole.fOutput(
-      xPrefix,
-      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-      COLOR_ERROR, CHAR_ERROR, " NOTE",
-      COLOR_NORMAL, ": The body was compressed using ",
-      faxListOutput(
-        asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oRequest.asb0ActualCompressionTypes],
-        sAndOr = "and",
-      ),
-      COLOR_NORMAL, " compression!",
-    );
+  if oRequest.asbActualCompressionTypes != oRequest.asbCompressionTypes:
+    if oRequest.asbActualCompressionTypes:
+      oConsole.fOutput(
+        xPrefix,
+        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+        COLOR_WARNING, CHAR_WARNING, " NOTE",
+        COLOR_NORMAL, ": The body was compressed using ",
+        faxListOutput(
+          asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oRequest.asbActualCompressionTypes],
+          sAndOr = "and",
+        ),
+        COLOR_NORMAL, " compression!",
+      );
+    else:
+      oConsole.fOutput(
+        xPrefix,
+        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+        COLOR_WARNING, CHAR_WARNING, " NOTE",
+        COLOR_NORMAL, ": The body could not be decompressed!",
+      );
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",

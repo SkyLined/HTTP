@@ -83,18 +83,26 @@ def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBody
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
-  if oResponse.asb0ActualCompressionTypes:
-    oConsole.fOutput(
-      xPrefix,
-      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-      COLOR_ERROR, CHAR_ERROR, " NOTE",
-      COLOR_NORMAL, ": The body was compressed using ",
-      faxListOutput(
-        asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oResponse.asb0ActualCompressionTypes],
-        sAndOr = "and",
-      ),
-      COLOR_NORMAL, " compression!",
-    );
+  if oResponse.asbActualCompressionTypes != oResponse.asbCompressionTypes:
+    if oResponse.asbActualCompressionTypes:
+      oConsole.fOutput(
+        xPrefix,
+        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+        COLOR_WARNING, CHAR_WARNING, " NOTE",
+        COLOR_NORMAL, ": The body was compressed using ",
+        faxListOutput(
+          asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oResponse.asbActualCompressionTypes],
+          sAndOr = "and",
+        ),
+        COLOR_NORMAL, " compression!",
+      );
+    else:
+      oConsole.fOutput(
+        xPrefix,
+        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
+        COLOR_WARNING, CHAR_WARNING, " NOTE",
+        COLOR_NORMAL, ": The body could not be decompressed!",
+      );
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",
