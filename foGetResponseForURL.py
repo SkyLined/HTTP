@@ -127,6 +127,21 @@ def foGetResponseForURL(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Securing the connection to the server failed.",
       );
+      o0SSLContext = oException.dxDetails.get("oSSLContext");
+      if o0SSLContext:
+        for sLine in o0SSLContext.fasGetDetails():
+          oConsole.fOutput(
+            "          ", sLine,
+          );
+      d0xPeerCertificate = oException.dxDetails.get("dxPeerCertificate");
+      if d0xPeerCertificate:
+        for (sName, xValue) in d0xPeerCertificate.items():
+          oConsole.fOutput(
+            "          ",
+            COLOR_NORMAL, str(sName),
+            COLOR_DIM, ": ",
+            COLOR_NORMAL, repr(xValue),
+          );
     else:
       raise;
     oConsole.fOutput();
