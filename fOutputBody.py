@@ -1,5 +1,12 @@
 ﻿from foConsoleLoader import foConsoleLoader;
-from mColorsAndChars import *;
+from mColorsAndChars import \
+  COLOR_BODY, \
+  COLOR_BODY_DECODED, \
+  COLOR_CR, CHAR_CR, \
+  COLOR_CRLF, CHAR_CRLF, \
+  COLOR_EOF, CHAR_EOF, \
+  COLOR_LF, CHAR_LF, \
+  COLOR_NORMAL;
 from mCP437 import fsCP437FromByte;
 oConsole = foConsoleLoader();
 

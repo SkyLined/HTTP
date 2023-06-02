@@ -2,7 +2,19 @@
 from foConsoleLoader import foConsoleLoader;
 from fOutputBody import fOutputBody;
 from fOutputHeaders import fOutputHeaders;
-from mColorsAndChars import *;
+from mColorsAndChars import \
+    COLOR_CRLF, CHAR_CRLF, \
+    COLOR_EOF, CHAR_EOF, \
+    COLOR_NORMAL, \
+    COLOR_RESPONSE_STATUS_LINE_1XX, \
+    COLOR_RESPONSE_STATUS_LINE_2XX, \
+    COLOR_RESPONSE_STATUS_LINE_3XX, \
+    COLOR_RESPONSE_STATUS_LINE_4XX, \
+    COLOR_RESPONSE_STATUS_LINE_5XX, \
+    COLOR_RESPONSE_STATUS_LINE_INVALID, \
+    COLOR_REQUEST_RESPONSE_BOX, \
+    COLOR_REQUEST_RESPONSE_BOX_HEADER, \
+    COLOR_WARNING, CHAR_WARNING;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
