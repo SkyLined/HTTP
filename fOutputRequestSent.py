@@ -64,7 +64,7 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
-  if oRequest.asbActualCompressionTypes != oRequest.asbCompressionTypes:
+  if oRequest.asbCompressionTypes and oRequest.asbActualCompressionTypes != oRequest.asbCompressionTypes:
     if oRequest.asbActualCompressionTypes:
       oConsole.fOutput(
         xPrefix,

@@ -83,7 +83,7 @@ def fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBody
       [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
     );
-  if oResponse.asbActualCompressionTypes != oResponse.asbCompressionTypes:
+  if oResponse.asbCompressionTypes and oResponse.asbActualCompressionTypes != oResponse.asbCompressionTypes:
     if oResponse.asbActualCompressionTypes:
       oConsole.fOutput(
         xPrefix,
