@@ -140,6 +140,7 @@ try:
     s0TargetFilePath = None;
     s0zCookieStoreJSONPath = zNotProvided;
     s0NetscapeCookiesFilePath = None;
+    n0zTimeoutInSeconds = zNotProvided;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
       def fsRequireArgumentValue():
         if s0Value:
@@ -528,6 +529,9 @@ try:
       # Create a HTTP client instance that uses no proxy
       oClient = cHTTPClient(
         o0CookieStore = oCookieStore,
+        n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
       );
       # Create event handlers specific to this situation that call the generic request/response reporters
@@ -552,6 +556,9 @@ try:
       oClient = cHTTPClientUsingProxyServer(
         o0HTTPProxyServerURL, 
         o0CookieStore = oCookieStore,
+        n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
       );
       # Create event handlers specific to this situation that call the generic request/response reporters
@@ -575,6 +582,9 @@ try:
       # Create a HTTP client instance that uses dynamic proxies.
       oClient = cHTTPClientUsingAutomaticProxyServer(
         o0CookieStore = oCookieStore,
+        n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
       );
       if bShowProgress:
