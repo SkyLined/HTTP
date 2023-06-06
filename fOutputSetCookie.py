@@ -37,7 +37,14 @@ def fOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie):
     ), ": ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbName),
     COLOR_NORMAL, " = ",
-    COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue),
+    [
+      COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue),
+    ] if len(oCookie.sbValue) < 30 else [
+      COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue[:30]),
+      COLOR_NORMAL, "...(",
+      COLOR_INFO, str(len(oCookie.sbValue)),
+      COLOR_NORMAL, " bytes)"
+    ],
     COLOR_NORMAL, " (Domain = ",
     COLOR_INFO, fsCP437FromBytesString(oCookie.sbDomainName),
     [
