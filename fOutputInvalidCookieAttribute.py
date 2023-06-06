@@ -21,7 +21,7 @@ def fOutputInvalidCookieAttribute(oCookieStore, oResponse, oURL, oHeader, sbCook
     COLOR_NORMAL, " cookie attribute ",
     COLOR_INFO if bIsNameKnown else COLOR_WARNING, fsCP437FromBytesString(sbAttributeName),
     [
-      COLOR_NORMAL, " = ",
+      COLOR_NORMAL, "=",
       COLOR_WARNING if bIsNameKnown else COLOR_INFO, fsCP437FromBytesString(sb0AttributeValue),
     ] if sb0AttributeValue is not None else [],
     COLOR_NORMAL, " for cookie ",
