@@ -155,22 +155,13 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      if s0LowerName in ["basic-login"]:
+      if s0LowerName in ["bl", "basic-login"]:
         sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(s0Value or "", "ascii", "strict"));
         dsbAdditionalOrRemovedHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
       elif s0LowerName in ["c", "cookies"]:
         s0NetscapeCookiesFilePath = s0Value;
-      elif s0LowerName in ["debug"]:
-        if fbParseBooleanArgument(s0Value):
-          if not m0DebugOutput:
-            oConsole.fOutput(
-              COLOR_ERROR, CHAR_ERROR,
-              COLOR_NORMAL, " The ",
-              COLOR_INFO, "mDebugOutput",
-              COLOR_NORMAL, " module is needed to show debug information but it is not available!",
-            );
-            sys.exit(guExitCodeBadArgument);
-          m0DebugOutput.fEnableAllDebugOutput();
+      elif s0LowerName in ["cs", "cookie-store"]:
+        s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["data"]:
         s0RequestData = fsRequireArgumentValue();
       elif s0LowerName in ["df", "data-file"]:
@@ -194,25 +185,26 @@ try:
             COLOR_NORMAL, ".",
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
+      elif s0LowerName in ["debug"]:
+        if fbParseBooleanArgument(s0Value):
+          if not m0DebugOutput:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The ",
+              COLOR_INFO, "mDebugOutput",
+              COLOR_NORMAL, " module is needed to show debug information but it is not available!",
+            );
+            sys.exit(guExitCodeBadArgument);
+          m0DebugOutput.fEnableAllDebugOutput();
       elif s0LowerName in ["db", "decode", "decode-body"]:
         bDecodeBody = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["dl", "download"]:
-        bDownloadToFile = True;
-        s0TargetFilePath = s0Value;
-      elif s0LowerName in ["header"]:
-        sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
-        tsbNameAndValue = sbValue.split(b":", 1);
-        if len(tsbNameAndValue) == 1:
-          sbName = sbValue; sb0Value = None;
-        else:
-          sbName, sb0Value = tsbNameAndValue;
-          if sb0Value.strip() == "":
-            sb0Value = None;
-        dsbAdditionalOrRemovedHeaders[sbName] = sb0Value;
       elif s0LowerName in ["fdb", "fix-decode", "fix-decode-body"]:
         bFixDecodeBodyErrors = fbParseBooleanArgument(s0Value);
         if bFixDecodeBodyErrors:
           bDecodeBody = True;
+      elif s0LowerName in ["dl", "download"]:
+        bDownloadToFile = True;
+        s0TargetFilePath = s0Value;
       elif s0LowerName in ["form"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbNameAndValue = sbValue.split(b"=", 1);
@@ -223,6 +215,16 @@ try:
         if d0Form_sValue_by_sName is None:
           d0Form_sValue_by_sName = [];
         d0Form_sValue_by_sName[sbName] = sb0Value;
+      elif s0LowerName in ["header"]:
+        sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
+        tsbNameAndValue = sbValue.split(b":", 1);
+        if len(tsbNameAndValue) == 1:
+          sbName = sbValue; sb0Value = None;
+        else:
+          sbName, sb0Value = tsbNameAndValue;
+          if sb0Value.strip() == "":
+            sb0Value = None;
+        dsbAdditionalOrRemovedHeaders[sbName] = sb0Value;
       elif s0LowerName in ["m3u"]:
         bM3U = True;
         bDownloadToFile = True;
@@ -254,33 +256,48 @@ try:
             sys.exit(guExitCodeBadArgument);
         else:
           u0MaxRedirects = 32;
-      elif s0LowerName in ["s", "store"]:
-        s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["save"]:
         bSaveToFile = True;
         s0TargetFilePath = s0Value;
       elif s0LowerName in ["secure"]:
         bVerifyCertificates = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-details"]:
-        bzShowDetails = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-progress"]:
-        bzShowProgress = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-proxy"]:
-        bzShowProxyConnects = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-request"]:
-        bzShowRequest = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["show-response"]:
-        bzShowResponse = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["very-secure"]:
+        bVerifyCertificates = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["insecure", "non-secure"]:
+        bVerifyCertificates = not fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["sm3u", "segmented-m3u"]:
+        bM3U = True;
+        bDownloadToFile = True;
+        bSegmentedM3U = True;
       elif s0LowerName in ["sv", "segmented-video"]:
         bSegmentedVideo = True;
         bDownloadToFile = True;
         # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
         if s0Value:
           s0TargetFilePath = s0Value;
-      elif s0LowerName in ["sm3u", "segmented-m3u"]:
-        bM3U = True;
-        bDownloadToFile = True;
-        bSegmentedM3U = True;
+      elif s0LowerName in ["show-details"]:
+        bzShowDetails = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["show-progress"]:
+        bzShowProgress = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["show-request"]:
+        bzShowRequest = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["show-response"]:
+        bzShowResponse = fbParseBooleanArgument(s0Value);
+      elif s0LowerName in ["t", "timeout"]:
+        if s0Value is None or s0Value.lower() == "none":
+          n0zTimeoutInSeconds = None;
+        else:
+          try:
+            n0zTimeoutInSeconds = float(s0Value);
+            assert n0zTimeoutInSeconds > 0, "";
+          except:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\" must be a number larger than zero.",
+            );
+            sys.exit(guExitCodeBadArgument);
       elif s0LowerName:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
