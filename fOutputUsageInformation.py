@@ -81,10 +81,14 @@ def fOutputUsageInformation():
     oConsole.fOutput("    is provided, it is savde in the current folder in a file named based on");
     oConsole.fOutput("    the request URL.");
     oConsole.fOutput("  ", COLOR_INFO, "-s", COLOR_NORMAL, ", ", COLOR_INFO, "--secure", axBoolean);
-    oConsole.fOutput("    Check all certificates for HTTPS connections (default). Set to.");
-    oConsole.fOutput("    \"false\" to allow invalid, expired and self-signed certificates.");
+    oConsole.fOutput("    Check the certificate for HTTPS connections (default). Set to \"false\"");
+    oConsole.fOutput("    to allow invalid, expired and self-signed certificates. This does not");
+    oConsole.fOutput("    check if all intermediate certificates are provided by the server.");
+    oConsole.fOutput("  ", COLOR_INFO, "--very-secure", axBoolean);
+    oConsole.fOutput("    Same as ", COLOR_INFO, "--very-secure" but also checks if all intermediate");
+    oConsole.fOutput("    certificatess are provided by the server.");
     oConsole.fOutput("  ", COLOR_INFO, "--insecure", COLOR_NORMAL, ", ", COLOR_INFO, "--non-secure", axBoolean);
-    oConsole.fOutput("    Do not check certificates for HTTPS connections. Same as '-s=false'.");
+    oConsole.fOutput("    Do not check any certificates for HTTPS connections. Equivalent to ", COLOR_INFO, "--secure=false");
     oConsole.fOutput("  ", COLOR_INFO, "-sm3u", COLOR_NORMAL, ", ", COLOR_INFO, "--segmented-m3u");
     oConsole.fOutput("    The URL provided represents a playlist and you want to download all files");
     oConsole.fOutput("    in the playlist into a single file instead of the playlist itself. This is");
