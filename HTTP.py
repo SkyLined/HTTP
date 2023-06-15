@@ -232,6 +232,12 @@ try:
         # If a path is provided for downloading, set it.
         if s0Value is not None:
           s0TargetFilePath = s0Value;
+      elif s0LowerName in ["sm3u", "segmented-m3u"]:
+        bM3U = True;
+        bDownloadToFile = True;
+        bSegmentedM3U = True;
+        if s0Value is not None:
+          s0TargetFilePath = s0Value;
       elif s0LowerName in ["p", "proxy", "http-proxy"]:
         bUseProxy = True;
         if s0Value:
@@ -645,7 +651,7 @@ try:
         bFixDecodeBodyErrors = bFixDecodeBodyErrors,
         bSaveToFile = False,
         s0TargetFilePath = None,
-        bIsFirstDownload = True,
+        bConcatinateDownload = False,
         bShowProgress = bShowProgress,
       );
       if oResponse.uStatusCode != 200:
@@ -673,12 +679,17 @@ try:
         sys.exit(guExitCodeNoValidResponseReceived);
       uProcessedURLs = 0;
       uDownloadedURLs = 0;
-      if bSegmentedVideo:
+      if bSegmentedM3U and s0TargetFilePath is None:
         asPathSegments = oURL.asURLDecodedPath;
         if asPathSegments:
           s0TargetFilePath = asPathSegments[-1] + ".mp4";
         else:
           s0TargetFilePath = "video.mp4";
+      oConsole.fOutput(
+        "      ",
+        COLOR_OK, CHAR_OK,
+        COLOR_NORMAL, " Provided M3U file URL contains ", COLOR_INFO, str(len(aoURLs)), COLOR_NORMAL, " links.",
+      );
       for oURL in aoURLs:
         oResponse = foGetResponseForURL(
           oHTTPClient = oClient,
@@ -693,7 +704,7 @@ try:
           bFixDecodeBodyErrors = bFixDecodeBodyErrors,
           bSaveToFile = bSaveToFile,
           s0TargetFilePath = s0TargetFilePath,
-          bConcatinateDownload = uProcessedURLs > 0 if (bSegmentedVideo or bSegmentedM3U) else False,
+          bConcatinateDownload = uProcessedURLs > 0 if bSegmentedM3U else False,
           bShowProgress = bShowProgress,
         );
         if oResponse.uStatusCode != 200 and bDownloadToFile:
