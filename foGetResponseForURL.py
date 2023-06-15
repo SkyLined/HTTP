@@ -18,6 +18,7 @@ def foGetResponseForURL(
   oURL,
   sbzHTTPVersion,
   sbzMethod,
+  sb0RequestBody,
   s0RequestData,
   dsbAdditionalOrRemovedHeaders,
   d0Form_sValue_by_sName,
@@ -36,6 +37,7 @@ def foGetResponseForURL(
     oURL = oURL,
     sbzVersion = sbzHTTPVersion,
     sbzMethod = sbzMethod,
+    sb0Body = sb0RequestBody,
     s0Data = s0RequestData,
   );
   # Apply headers provided through arguments to request
@@ -198,6 +200,7 @@ def foGetResponseForURL(
       oURL = oURL,
       sbzHTTPVersion = sbzHTTPVersion,
       sbzMethod = sbzMethod,
+      sb0RequestBody = sb0RequestBody,
       s0RequestData = s0RequestData,
       dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
       d0Form_sValue_by_sName = d0Form_sValue_by_sName,

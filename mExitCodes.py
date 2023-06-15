@@ -7,3 +7,4 @@ guExitCodeCannotWriteResponseBodyToFile  = 13;
 guExitCodeCannotCreateSecureConnection   = 14; 
 guExitCodeNoValidResponseReceived        = 15;
 guExitCodeTooManyRedirects               = 16;
+guExitCodeRequestDataInFileIsNotUTF8     = 17;

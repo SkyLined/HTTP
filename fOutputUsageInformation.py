@@ -30,9 +30,11 @@ def fOutputUsageInformation():
     oConsole.fOutput("    folder is used. If the file does not exist, it will be created.");
     
     oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
-    oConsole.fOutput("    Send \"<text>\" in the body of the request.");
-    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
+    oConsole.fOutput("    Send utf-8 encoded \"<text>\" as data in the body of the request.");
+    oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
     oConsole.fOutput("    Send the content of the given file in the body of the request.");
+    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
+    oConsole.fOutput("    Send the utf-8 encoded content of the given file as data in the body of the request.");
     oConsole.fOutput("  ", COLOR_INFO, "--debug", axBoolean);
     oConsole.fOutput("    Show debug output. Set to \"false\" to hide them (default).");
     oConsole.fOutput("  ", COLOR_INFO, "-db", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode-body");

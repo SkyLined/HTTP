@@ -76,6 +76,7 @@ try:
       guExitCodeBadArgument, \
       guExitCodeCannotReadCookiesFromFile, \
       guExitCodeCannotReadRequestBodyFromFile, \
+      guExitCodeRequestDataInFileIsNotUTF8, \
       guExitCodeCannotWriteCookiesToFile, \
       guExitCodeNoValidResponseReceived, \
       guExitCodeSuccess;
@@ -130,6 +131,7 @@ try:
     bShowProxyConnects = False;
     bUseProxy = False;
     o0HTTPProxyServerURL = None;
+    sb0RequestBody = None;
     s0RequestData = None;
     bDecodeBody = False;
     bFixDecodeBodyErrors = False;
@@ -164,7 +166,29 @@ try:
       elif s0LowerName in ["cs", "cookie-store"]:
         s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["data"]:
+        sb0RequestBody = None;
         s0RequestData = fsRequireArgumentValue();
+      elif s0LowerName in ["bf", "body-file"]:
+        oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+        if not oDataFileSystemItem.fbIsFile():
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot find file \"",
+            COLOR_INFO, oDataFileSystemItem.sPath,
+            COLOR_NORMAL, "\"."
+          );
+          sys.exit(guExitCodeBadArgument);
+        try:
+          sb0RequestBody = oDataFileSystemItem.fsbRead();
+          s0RequestData = None;
+        except Exception as oException:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot read from file ",
+            COLOR_INFO, oDataFileSystemItem.sPath,
+            COLOR_NORMAL, ".",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
       elif s0LowerName in ["df", "data-file"]:
         oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
         if not oDataFileSystemItem.fbIsFile():
@@ -176,8 +200,7 @@ try:
           );
           sys.exit(guExitCodeBadArgument);
         try:
-          sbRequestData = oDataFileSystemItem.fsbRead();
-          s0RequestData = str(sbRequestData, "utf-8", "strict");
+          sbFileContent = oDataFileSystemItem.fsbRead();
         except Exception as oException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
@@ -186,6 +209,17 @@ try:
             COLOR_NORMAL, ".",
           );
           fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
+        try:
+          sb0RequestBody = None;
+          s0RequestData = str(sbFileContent, "utf-8", "strict");
+        except Exception as oException:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " File ",
+            COLOR_INFO, oDataFileSystemItem.sPath,
+            COLOR_NORMAL, " does not contain utf-8 encoded data.",
+          );
+          fOutputExceptionAndExit(oException, guExitCodeRequestDataInFileIsNotUTF8);
       elif s0LowerName in ["debug"]:
         if fbParseBooleanArgument(s0Value):
           if not m0DebugOutput:
@@ -330,6 +364,7 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
+    
     ### DONE PARSING ARGUMENTS #################################################
     if o0URL is None:
       fOutputUsageInformation();
@@ -643,6 +678,7 @@ try:
         oURL = oURL,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
+        sb0RequestBody = sb0RequestBody,
         s0RequestData = s0RequestData,
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
@@ -696,6 +732,7 @@ try:
           oURL = oURL,
           sbzHTTPVersion = sbzHTTPVersion,
           sbzMethod = sbzMethod,
+          sb0RequestBody = sb0RequestBody,
           s0RequestData = s0RequestData,
           dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
           d0Form_sValue_by_sName = d0Form_sValue_by_sName,
@@ -743,6 +780,7 @@ try:
           oURL = oURL,
           sbzHTTPVersion = sbzHTTPVersion,
           sbzMethod = sbzMethod,
+          sb0RequestBody = sb0RequestBody,
           s0RequestData = s0RequestData,
           dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
           d0Form_sValue_by_sName = d0Form_sValue_by_sName,
@@ -771,6 +809,7 @@ try:
         oURL = oURL,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
+        sb0RequestBody = sb0RequestBody,
         s0RequestData = s0RequestData,
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
