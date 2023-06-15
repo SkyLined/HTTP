@@ -143,6 +143,8 @@ try:
     s0zCookieStoreJSONPath = zNotProvided;
     s0NetscapeCookiesFilePath = None;
     n0zTimeoutInSeconds = zNotProvided;
+    bForceHex = False;
+    uHexChars = 16;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
       def fsRequireArgumentValue():
         if s0Value:
@@ -260,6 +262,21 @@ try:
           if sb0Value.strip() == "":
             sb0Value = None;
         dsbAdditionalOrRemovedHeaders[sbName] = sb0Value;
+      elif s0LowerName in ["hex"]:
+        bForceHex = True;
+        # If a path is provided for downloading, set it.
+        if s0Value is not None:
+          try:
+            uHexChars = int(s0Value);
+            assert uHexChars > 0;
+          except (ValueError, AssertionError):
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value for \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\" must be a positive integer number greater than zero.",
+            );
+            sys.exit(guExitCodeBadArgument);
       elif s0LowerName in ["m3u"]:
         bM3U = True;
         bDownloadToFile = True;
@@ -579,12 +596,27 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest:
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+          fOutputRequestSent(
+            oRequest,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "",
+          )
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+          fOutputResponseReceived(
+            oResponse,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "")
         );
     elif o0HTTPProxyServerURL:
       # Create a HTTP client instance that uses a static proxy
@@ -606,12 +638,28 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda oClient, oConnection, oRequest: 
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+          fOutputRequestSent(
+            oRequest,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "",
+          )
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda oClient, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+          fOutputResponseReceived(
+            oResponse,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "",
+          )
         );
     else:
       # Create a HTTP client instance that uses dynamic proxies.
@@ -630,13 +678,42 @@ try:
               fHandleRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0HTTPProxyServerURL, bShowProxyConnects),
         });
       if bShowRequest:
-        oClient.fAddCallback("request sent", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest:
-          fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+        oClient.fAddCallback("request sent", lambda
+          oClient,
+          oSecondaryClient,
+          o0ProxyServerURL,
+          oConnection,
+          oRequest
+        :
+          fOutputRequestSent(
+            oRequest,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "",
+          )
         );
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
-        oClient.fAddCallback("request sent and response received", lambda oClient, oSecondaryClient, o0ProxyServerURL, oConnection, oRequest, oResponse:
-          fOutputResponseReceived(oResponse, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = "")
+        oClient.fAddCallback("request sent and response received", lambda
+          oClient,
+          oSecondaryClient,
+          o0ProxyServerURL,
+          oConnection,
+          oRequest,
+          oResponse
+        :
+          fOutputResponseReceived(
+            oResponse,
+            bShowDetails = bShowDetails,
+            bDecodeBody = bDecodeBody,
+            bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+            bForceHex = bForceHex,
+            uHexChars = uHexChars,
+            xPrefix = "",
+          )
         );
     if bShowProgress:
       if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):

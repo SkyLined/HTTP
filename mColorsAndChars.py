@@ -72,8 +72,8 @@ COLOR_RESPONSE_STATUS_LINE_INVALID      = 0xFFC0; # Black on bright red
 COLOR_HEADER_NAME                       = 0xFF0B; # Bright cyan
 COLOR_HEADER_VALUE                      = 0xFF07; # Bright grey
 
-COLOR_BODY_DECODED                      = 0xFF07;
-COLOR_BODY                              = 0xFF08;
+COLOR_BODY                              = 0xFF07;
+COLOR_DATA                              = 0xFF0F;
 
 COLOR_CR                                = 0xFF0E;
 COLOR_LF                                = 0xFF0A;

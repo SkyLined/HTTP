@@ -2,14 +2,19 @@ import sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHumanReadable import fsBytesToHumanReadableString;
-from mNotProvided import fbIsProvided, zNotProvided;
+from mNotProvided import fbIsProvided;
 from mHTTPProtocol import cURL, fs0GetExtensionForMediaType, fsb0GetMediaTypeForExtension;
 
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
-from mExitCodes import *;
+from mExitCodes import \
+    guExitCodeCannotCreateSecureConnection, \
+    guExitCodeCannotWriteResponseBodyToFile, \
+    guExitCodeNoValidResponseReceived, \
+    guExitCodeRequestDataInFileIsNotUTF8, \
+    guExitCodeTooManyRedirects;
 oConsole = foConsoleLoader();
 
 def foGetResponseForURL(
@@ -33,13 +38,22 @@ def foGetResponseForURL(
   if d0Form_sValue_by_sName is not None and not fbIsProvided(sbzMethod):
     sbzMethod = "POST";
   # Construct the HTTP request
-  oRequest = oHTTPClient.foGetRequestForURL(
-    oURL = oURL,
-    sbzVersion = sbzHTTPVersion,
-    sbzMethod = sbzMethod,
-    sb0Body = sb0RequestBody,
-    s0Data = s0RequestData,
-  );
+  try:
+    oRequest = oHTTPClient.foGetRequestForURL(
+      oURL = oURL,
+      sbzVersion = sbzHTTPVersion,
+      sbzMethod = sbzMethod,
+      sb0Body = sb0RequestBody,
+      s0Data = s0RequestData,
+    );
+  except oHTTPClient.cHTTPInvalidEncodedDataException as oException:
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " The provided utf-8 encoded data cannot be encoded: ",
+      COLOR_INFO, oException.sMessage,
+      COLOR_NORMAL, ".",
+    );
+    sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
   # Apply headers provided through arguments to request
   for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
     if sbValue is None:

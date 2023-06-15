@@ -1,6 +1,7 @@
 ﻿from faxListOutput import faxListOutput;
 from foConsoleLoader import foConsoleLoader;
 from fOutputBody import fOutputBody;
+from fOutputData import fOutputData;
 from fOutputHeaders import fOutputHeaders;
 from mColorsAndChars import \
     COLOR_CRLF, CHAR_CRLF, \
@@ -13,7 +14,16 @@ from mColorsAndChars import \
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors, xPrefix = []):
+def fOutputRequestSent(
+  oRequest,
+  *,
+  bShowDetails = None,
+  bDecodeBody = None,
+  bFixDecodeBodyErrors = None,
+  bForceHex = False,
+  uHexChars = 16,
+  xPrefix = [],
+):
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "┌" if bShowDetails else "─", "───[",
@@ -41,16 +51,25 @@ def fOutputRequestSent(oRequest, bShowDetails, bDecodeBody, bFixDecodeBodyErrors
   );
   # Output request body if any
   if oRequest.sb0Body:
-    fOutputBody(
-      oRequest.fs0GetData(
-        bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors,
-        bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
-      ) if bDecodeBody else oRequest.sb0Body,
-      bNeedsDecoding = False if bDecodeBody else (oRequest.bChunked or oRequest.bCompressed),
-      bShowDetails = bShowDetails,
-      bOutputEOF = not oRequest.o0AdditionalHeaders,
-      xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
-    );
+    if bDecodeBody:
+      fOutputData(
+        oRequest.fs0GetData(
+          bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors,
+          bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
+        ),
+        bShowDetails = bShowDetails,
+        bOutputEOF = not oRequest.o0AdditionalHeaders,
+        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
+      );
+    else:
+      fOutputBody(
+        oRequest.sb0Body,
+        bShowDetails = bShowDetails,
+        bOutputEOF = not oRequest.o0AdditionalHeaders,
+        bForceHex = bForceHex,
+        uHexChars = uHexChars,
+        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
+      );
   if oRequest.o0AdditionalHeaders:
     # Output response additional headers
     fOutputHeaders(
