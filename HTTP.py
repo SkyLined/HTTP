@@ -135,7 +135,6 @@ try:
     bFixDecodeBodyErrors = False;
     u0MaxRedirects = None;
     bVerifyCertificates = True;
-    bVerifyIntermediateCertificates = False;
     bSaveToFile = False;
     bDownloadToFile = False;
     s0TargetFilePath = None;
@@ -263,15 +262,8 @@ try:
         s0TargetFilePath = s0Value;
       elif s0LowerName in ["secure"]:
         bVerifyCertificates = fbParseBooleanArgument(s0Value);
-        bVerifyIntermediateCertificates = False;
-      elif s0LowerName in ["very-secure"]:
-        bVerifyCertificates = bVerifyIntermediateCertificates = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["insecure", "non-secure"]:
-        bVerifyCertificates = bVerifyIntermediateCertificates = not fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["sm3u", "segmented-m3u"]:
-        bM3U = True;
-        bDownloadToFile = True;
-        bSegmentedM3U = True;
+        bVerifyCertificates = not fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["sv", "segmented-video"]:
         bSegmentedVideo = True;
         bDownloadToFile = True;
@@ -535,7 +527,6 @@ try:
         n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
         n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
-        bVerifyIntermediateCertificates = bVerifyIntermediateCertificates,
       );
       # Create event handlers specific to this situation that call the generic request/response reporters
       if bShowProgress:
@@ -589,7 +580,6 @@ try:
         n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
         n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
-        bVerifyIntermediateCertificates = bVerifyIntermediateCertificates,
       );
       if bShowProgress:
         oClient.fAddCallbacks({

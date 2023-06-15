@@ -85,8 +85,6 @@ def fOutputUsageInformation():
     oConsole.fOutput("    to allow invalid, expired and self-signed certificates. This does not");
     oConsole.fOutput("    check if all intermediate certificates are provided by the server.");
     oConsole.fOutput("  ", COLOR_INFO, "--very-secure", axBoolean);
-    oConsole.fOutput("    Same as ", COLOR_INFO, "--very-secure" but also checks if all intermediate");
-    oConsole.fOutput("    certificatess are provided by the server.");
     oConsole.fOutput("  ", COLOR_INFO, "--insecure", COLOR_NORMAL, ", ", COLOR_INFO, "--non-secure", axBoolean);
     oConsole.fOutput("    Do not check any certificates for HTTPS connections. Equivalent to ", COLOR_INFO, "--secure=false");
     oConsole.fOutput("  ", COLOR_INFO, "-sm3u", COLOR_NORMAL, ", ", COLOR_INFO, "--segmented-m3u");
