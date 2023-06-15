@@ -1,6 +1,6 @@
 from mHTTPProtocol import cURL;
 
-gbDebugOutput = True;
+gbDebugOutput = False;
 
 def faoGetURLsFromM3U(sM3UContents, oBaseURL):
   # This is as tolerant and simple as possible:
@@ -15,7 +15,7 @@ def faoGetURLsFromM3U(sM3UContents, oBaseURL):
       # URLs are always ASCII, so encode whatever Unicode there may be in the URL as UTF-8:
       sbPossibleURL = bytes(sLine, "utf-8", "strict");
       try:
-        oURL = oBaseURL.foFromRelativeBytesString(sbPossibleURL);
+        oURL = oBaseURL.foFromAbsoluteOrRelativeBytesString(sbPossibleURL);
       except cURL.cHTTPInvalidURLException:
         if gbDebugOutput: print("- Invalid URL: %s" % repr(sbPossibleURL));
       else:
