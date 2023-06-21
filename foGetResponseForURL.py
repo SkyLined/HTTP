@@ -1,9 +1,12 @@
 import sys;
 
 from mFileSystemItem import cFileSystemItem;
+from mHTTPProtocol import \
+    cURL, \
+    fs0GetExtensionForMediaType, \
+    fsb0GetMediaTypeForExtension;
 from mHumanReadable import fsBytesToHumanReadableString;
 from mNotProvided import fbIsProvided;
-from mHTTPProtocol import cURL, fs0GetExtensionForMediaType, fsb0GetMediaTypeForExtension;
 
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
