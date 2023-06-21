@@ -123,7 +123,6 @@ def foGetResponseForURL(
         COLOR_NORMAL, " The server was unable to respond in a timely manner.",
       );
     elif isinstance(oException, (
-      oHTTPClient.cHTTPOutOfBandDataException,
       oHTTPClient.cHTTPInvalidMessageException,
     )):
       oConsole.fOutput(
