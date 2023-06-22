@@ -623,8 +623,9 @@ try:
       oClient = cHTTPClientUsingProxyServer(
         o0HTTPProxyServerURL, 
         o0CookieStore = oCookieStore,
-        n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
-        n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zConnectToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zSecureConnectionToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
+        n0zSecureConnectionToServerTimeoutInSeconds = n0zTimeoutInSeconds,
         n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
         bVerifyCertificates = bVerifyCertificates,
       );
