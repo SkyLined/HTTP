@@ -394,7 +394,7 @@ try:
     if o0HTTPFile:
       oHTTPFile = o0HTTPFile;
       sbHTTPRequest = oHTTPFile.fsbRead();
-      oHTTPRequest = cHTTPRequest.foParse(sbHTTPRequest);
+      oHTTPRequest = cHTTPRequest.foFromBytesString(sbHTTPRequest);
       if bSegmentedVideo:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
