@@ -118,7 +118,7 @@ try:
     
     asArguments = sys.argv[1:];
     dsbAdditionalOrRemovedHeaders = {};
-    d0Form_sValue_by_sName = {};
+    d0Form_sValue_by_sName = None;
     sbzHTTPVersion = zNotProvided;
     sbzMethod = zNotProvided;
     o0URL = None;
@@ -253,7 +253,7 @@ try:
         else:
           sbName, sb0Value = tsbNameAndValue;
         if d0Form_sValue_by_sName is None:
-          d0Form_sValue_by_sName = [];
+          d0Form_sValue_by_sName = {};
         d0Form_sValue_by_sName[sbName] = sb0Value;
       elif s0LowerName in ["header"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
