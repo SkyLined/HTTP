@@ -3,7 +3,7 @@
                     ║╠══╣║    ║║     ║║    ║╠══╩╝    ╱╱  ╱╱                   
          ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄▀┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
                                                     ‾   ‾                  """;
-import base64, json, os, re, sys;
+import base64, os, re, sys;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -41,8 +41,9 @@ try:
   from mHTTPProtocol import cHTTPRequest;
   from mNotProvided import fbIsProvided, zNotProvided;
   
-  from faoGetURLsFromM3U import faoGetURLsFromM3U;
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
+  from fHandleM3U import fHandleM3U;
+  from fHandleSegmentedVideo import fHandleSegmentedVideo;
   from foConsoleLoader import foConsoleLoader;
   from foGetHTTPClient import foGetHTTPClient;
   from foGetResponseForURL import foGetResponseForURL;
@@ -54,7 +55,6 @@ try:
       guExitCodeBadArgument, \
       guExitCodeCannotReadRequestBodyFromFile, \
       guExitCodeRequestDataInFileIsNotUTF8, \
-      guExitCodeNoValidResponseReceived, \
       guExitCodeSuccess;
   oConsole = foConsoleLoader();
   
@@ -63,32 +63,6 @@ try:
     rMethod = re.compile(r"^[A-Z]+$", re.I);
     rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
     rCharEncoding = re.compile(r"([^\\]+)|\\(?:x([0-9a-f]{2}))?", re.I);
-    arbSegmentedVideos = [re.compile(sb) for sb in [
-      (
-        rb"("
-          rb".*?/"
-          rb"(?:\w+\-)+?"
-        rb")("
-          rb"\d+"
-        rb")("
-          rb"(?:\-\w+)*"
-          rb"\.ts"
-          rb"(?:\?.*)?"
-        rb")"
-      ), (
-        rb"("
-          rb".*?/"
-          rb"(?:\w+\-)+?"
-          rb"(?:\w*?)"
-        rb")("
-          rb"\d+"
-        rb")("
-          rb"(?:\-\w+)*"
-          rb"\.ts"
-          rb"(?:\?.*)?"
-        rb")"
-      )
-    ]];
     
     asArguments = sys.argv[1:];
     dsbAdditionalOrRemovedHeaders = {};
@@ -446,38 +420,9 @@ try:
     bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
     bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
     
-    if bSegmentedVideo and not bM3U:
-      for rbSegmentedVideo in arbSegmentedVideos:
-        obURLSegmentMatch = rbSegmentedVideo.match(oURL.sbAbsolute);
-        if obURLSegmentMatch:
-          break;
-      else:
-        oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Could not identify segmentation from URL \"",
-          COLOR_INFO, oURL.sbAbsolute,
-          COLOR_NORMAL, "\"",
-        );
-        sys.exit(guExitCodeBadArgument);
-      sbURLSegmentHeader, sbStartIndex, sbURLSegmentFooter = obURLSegmentMatch.groups();
-      uStartIndex = int(sbStartIndex);
-      if bShowProgress:
-        oConsole.fOutput(
-          COLOR_OK, CHAR_OK,
-          COLOR_NORMAL, " Segmented URL: \"",
-          COLOR_INFO, str(sbURLSegmentHeader, "ascii", "replace"),
-          COLOR_HILITE, "*INDEX*",
-          COLOR_INFO, str(sbURLSegmentFooter, "ascii", "replace"),
-          COLOR_NORMAL, "\".",
-        );
-        oConsole.fOutput(
-          COLOR_NORMAL, "  Index will start at ",
-          COLOR_HILITE, str(uStartIndex),
-          COLOR_NORMAL, ".",
-        );
     ### HTTP CLIENT #############################################################
     bSaveCookiesToDisk = fbIsProvided(s0zCookieStoreJSONPath);
-    oClient = foGetHTTPClient(
+    oHTTPClient = foGetHTTPClient(
       bUseProxy = bUseProxy,
       o0HTTPProxyServerURL = o0HTTPProxyServerURL,
       n0zTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -494,14 +439,13 @@ try:
       bSaveCookiesToDisk = bSaveCookiesToDisk,
       s0NetscapeCookiesFilePath = s0NetscapeCookiesFilePath,
     );
-    if oClient.o0CookieStore and o0HTTPRequest:
-      oClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
+    if oHTTPClient.o0CookieStore and o0HTTPRequest:
+      oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
     
-    ### M3U ######################################################################
     if bM3U:
-      oResponse = foGetResponseForURL(
-        oHTTPClient = oClient,
-        oURL = oURL,
+      ### M3U ######################################################################
+      fHandleM3U(
+        oHTTPClient = oHTTPClient,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
         sb0RequestBody = sb0RequestBody,
@@ -509,129 +453,35 @@ try:
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
-        bDownloadToFile = False,
         bFixDecodeBodyErrors = bFixDecodeBodyErrors,
-        bSaveToFile = False,
-        s0TargetFilePath = None,
-        bConcatinateDownload = False,
         bShowProgress = bShowProgress,
-      );
-      if oResponse.uStatusCode != 200:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Cannot download M3U file.",
-        );
-        sys.exit(guExitCodeNoValidResponseReceived);
-      s0M3UContents = oResponse.fs0GetData();
-      if s0M3UContents is None:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Provided URL does not contain an M3U file.",
-        );
-        sys.exit(guExitCodeNoValidResponseReceived);
-      aoURLs = faoGetURLsFromM3U(s0M3UContents, oURL);
-      if not aoURLs:
-        oConsole.fOutput(
-          "      ",
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Provided M3U file URL does not contain any links.",
-        );
-        sys.exit(guExitCodeNoValidResponseReceived);
-      uProcessedURLs = 0;
-      uDownloadedURLs = 0;
-      if bSegmentedM3U and s0TargetFilePath is None:
-        asPathSegments = oURL.asURLDecodedPath;
-        if asPathSegments:
-          s0TargetFilePath = asPathSegments[-1] + ".mp4";
-        else:
-          s0TargetFilePath = "video.mp4";
-      oConsole.fOutput(
-        "      ",
-        COLOR_OK, CHAR_OK,
-        COLOR_NORMAL, " Provided M3U file URL contains ", COLOR_INFO, str(len(aoURLs)), COLOR_NORMAL, " links.",
-      );
-      for oURL in aoURLs:
-        oResponse = foGetResponseForURL(
-          oHTTPClient = oClient,
-          oURL = oURL,
-          sbzHTTPVersion = sbzHTTPVersion,
-          sbzMethod = sbzMethod,
-          sb0RequestBody = sb0RequestBody,
-          s0RequestData = s0RequestData,
-          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
-          u0MaxRedirects = u0MaxRedirects,
-          bDownloadToFile = bDownloadToFile,
-          bFixDecodeBodyErrors = bFixDecodeBodyErrors,
-          bSaveToFile = bSaveToFile,
-          s0TargetFilePath = s0TargetFilePath,
-          bConcatinateDownload = uProcessedURLs > 0 if bSegmentedM3U else False,
-          bShowProgress = bShowProgress,
-        );
-        if oResponse.uStatusCode != 200 and bDownloadToFile:
-          # We are missing a piece of the video, stop.
-          break;
-        else:
-          uDownloadedURLs += 1;
-        uProcessedURLs += 1;
-
-      oConsole.fOutput(
-        "      ",
-        [COLOR_ERROR, CHAR_ERROR] if uDownloadedURLs == 0 else
-            [COLOR_WARNING, CHAR_WARNING] if uDownloadedURLs != uProcessedURLs else
-            [COLOR_OK, CHAR_OK],
-        COLOR_NORMAL, [" Unable to downloaded any "] if uProcessedURLs == 0 else
-            [
-              " Downloaded all ",
-              COLOR_INFO, str(uDownloadedURLs),
-            ] if uProcessedURLs == uDownloadedURLs else [
-              " Downloaded ",
-              COLOR_INFO, str(uDownloadedURLs),
-              COLOR_NORMAL, "/",
-              COLOR_INFO, str(uProcessedURLs),
-            ],
-        COLOR_NORMAL, " ",
-            ["segments"] if bDownloadToFile else ["files"],
-        COLOR_NORMAL, ".",
+        bSegmentedM3U = bSegmentedM3U,
+        bDownloadToFile = bDownloadToFile,
+        bSaveToFile = bSaveToFile,
       );
     elif bSegmentedVideo:
+      ### SEGMENTED VIDEO ##########################################################
       # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
-      uIndex = uStartIndex;
-      while 1:
-        oURL = cURL.foFromBytesString(b"%s%d%s" % (sbURLSegmentHeader, uIndex, sbURLSegmentFooter));
-        oResponse = foGetResponseForURL(
-          oHTTPClient = oClient,
-          oURL = oURL,
-          sbzHTTPVersion = sbzHTTPVersion,
-          sbzMethod = sbzMethod,
-          sb0RequestBody = sb0RequestBody,
-          s0RequestData = s0RequestData,
-          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
-          u0MaxRedirects = u0MaxRedirects,
-          bDownloadToFile = bDownloadToFile,
-          bSaveToFile = bSaveToFile,
-          s0TargetFilePath = s0TargetFilePath,
-          bConcatinateDownload = uIndex != uStartIndex,
-          bShowProgress = bShowProgress,
-        );
-        if oResponse.uStatusCode != 200:
-          break;
-        uIndex += 1;
-      if bShowProgress:
-        oConsole.fOutput(
-          "      ",
-          COLOR_OK, CHAR_OK,
-          COLOR_NORMAL, " Found ",
-          COLOR_INFO, str(uIndex - uStartIndex),
-          COLOR_NORMAL, " segments.",
-        );
+      fHandleSegmentedVideo(
+        oHTTPClient = oHTTPClient,
+        sbzHTTPVersion = sbzHTTPVersion,
+        sbzMethod = sbzMethod,
+        sb0RequestBody = sb0RequestBody,
+        s0RequestData = s0RequestData,
+        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+        u0MaxRedirects = u0MaxRedirects,
+        bDownloadToFile = bDownloadToFile,
+        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bSaveToFile = bSaveToFile,
+        s0TargetFilePath = s0TargetFilePath,
+        bShowProgress = bShowProgress,
+      );
     elif o0HTTPRequest is None:
+      ### URL ######################################################################
       # Single request from URL
       foGetResponseForURL(
-        oHTTPClient = oClient,
+        oHTTPClient = oHTTPClient,
         oURL = oURL,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
@@ -648,9 +498,10 @@ try:
         bShowProgress = bShowProgress,
       );
     else:
+      ### .HTTP(S) FILE ############################################################
       # Single request
       foGetResponseForRequestAndURL(
-        oHTTPClient = oClient,
+        oHTTPClient = oHTTPClient,
         oRequest = o0HTTPRequest,
         oURL = oURL,
         u0MaxRedirects = u0MaxRedirects,
