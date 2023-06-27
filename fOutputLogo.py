@@ -3,18 +3,18 @@ from mColorsAndChars import *;
 oConsole = foConsoleLoader();
 
 asLogo = [s.rstrip() for s in """
-                                                         _   _                  
-           ┄┄┄┄┄┄┄┄╒╦╦┄┄╦╦╕┄╒═╦╦═╕┄╒═╦╦═╕┄╒╦╦══╦╗┄┄┄┄┄┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄          
-                    ║╠══╣║    ║║     ║║    ║╠══╩╝  □   ╱╱  ╱╱                   
-         ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄┄□┄┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
-                                                      ‾   ‾                     """.split("""
+                                                       __ __                 
+           ┄╌──────╒╦╦╶─╦╦╕╶╒═╦╦═╕╶╒═╦╦═╕╶╒╦╦══╦╗╶─▄──╱╱╶╱╱╶────╌┄           
+              ░░▒▒▓▓║╠══╣║▓▒░▓║║▓▒░▒▓║║▓▒░▓║╠══╩╝▓▒▒▓╱╱▓╱╱▓▒▒░               
+         ┄╌────────╘╩╩╶─╩╩╛╶─╘╩╩╛╶──╘╩╩╛╶─╘╩╩╛╶───▀─╱╱╶╱╱╶────╌┄             
+                                                   ‾‾ ‾‾                     """.split("""
 """)];
 asColors = [s.rstrip() for s in """
-                                                         F   F                  
-           99999999FFB99FB39FFFBB39FFFBB39FFFFBB39999999F399F399999999          
-                    B3BFB3    B3     B3    B33B33  B   F3  B3                   
-         9999999999FB399B3399FB33999FB3399FB3399999399B399B399999999            
-                                                      3   3                     """.split("""
+                                                       FB FB                 
+           99999999FFB99FB39FFFBB39FFFBB39FFFFBB399B99F39F399999999          
+              111111B3BFB31111B311111B31111B33B331111F31B31111                
+         9999999999FB399B3399FB33999FB3399FB33999939B39B399999999            
+                                                   33 33                     """.split("""
 """)];
 def fOutputLogo():
   # We will use the above ASCII and color data to create a list of arguments
