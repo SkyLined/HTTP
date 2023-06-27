@@ -757,10 +757,10 @@ try:
         });
       if bShowRequest:
         oClient.fAddCallback("request sent", lambda
-          oClient,
-          oSecondaryClient,
-          o0ProxyServerURL,
-          oConnection,
+          oClient_unused,
+          oSecondaryClient_unused,
+          o0ProxyServerURL_unused,
+          oConnection_unused,
           oRequest
         :
           fOutputRequestSent(
@@ -776,11 +776,11 @@ try:
       if bShowResponse:
         # If we do this with "response received" event, it will fire before we have shown progress (above)
         oClient.fAddCallback("request sent and response received", lambda
-          oClient,
-          oSecondaryClient,
-          o0ProxyServerURL,
-          oConnection,
-          oRequest,
+          oClient_unused,
+          oSecondaryClient_unused,
+          o0ProxyServerURL_unused,
+          oConnection_unused,
+          oRequest_unused,
           oResponse
         :
           fOutputResponseReceived(
