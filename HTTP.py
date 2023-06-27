@@ -39,6 +39,7 @@ try:
   from mFileSystemItem import cFileSystemItem;
   from mHTTPClient import cHTTPClient, cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer, cURL;
   from mHTTPCookieStore import cHTTPCookieStore;
+  from mHTTPProtocol import cHTTPRequest;
   from mNotProvided import fbIsProvided, zNotProvided;
   
   from faoGetURLsFromM3U import faoGetURLsFromM3U;
@@ -65,6 +66,7 @@ try:
   from fHandleResolvingProxyHostnameFailed import fHandleResolvingProxyHostnameFailed;
   from foConsoleLoader import foConsoleLoader;
   from foGetResponseForURL import foGetResponseForURL;
+  from foGetResponseForRequestAndURL import foGetResponseForRequestAndURL;
   from fOutputInvalidCookieAttribute import fOutputInvalidCookieAttribute;
   from fOutputSetCookie import fOutputSetCookie;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
@@ -120,6 +122,7 @@ try:
     sbzHTTPVersion = zNotProvided;
     sbzMethod = zNotProvided;
     o0URL = None;
+    o0HTTPFile = None;
     bM3U = False;
     bSegmentedM3U = False;
     bSegmentedVideo = None;
@@ -374,19 +377,93 @@ try:
       elif rHTTPVersion.match(sArgument):
         sbzHTTPVersion = bytes(ord(s) for s in sArgument);
       else:
-        oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Superfluous argument \"",
-          COLOR_INFO, sArgument,
-          COLOR_NORMAL, "\".",
-        );
-        sys.exit(guExitCodeBadArgument);
+        o0HTTPFile = cFileSystemItem(sArgument);
+        if not o0HTTPFile.fbIsFile():
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Superfluous argument \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\".",
+          );
+          oConsole.fOutput(
+            COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing input file.",
+          );
+          sys.exit(guExitCodeBadArgument);
     
     ### DONE PARSING ARGUMENTS #################################################
-    if o0URL is None:
+    if o0HTTPFile:
+      oHTTPFile = o0HTTPFile;
+      sbHTTPRequest = oHTTPFile.fsbRead();
+      oHTTPRequest = cHTTPRequest.foParse(sbHTTPRequest);
+      if bSegmentedVideo:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Segmented videos using a HTTP request as input is not implemented.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      if bM3U:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " M2U parsing using a HTTP request as input is not implemented.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      if d0Form_sValue_by_sName is not None:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Providing form values while using a HTTP request as input is not implemented.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      if fbIsProvided(sbzHTTPVersion):
+        oHTTPRequest.sbHTTPVersion = sbzHTTPVersion;
+      if fbIsProvided(sbzMethod):
+        oHTTPRequest.sbMethod = sbzMethod;
+      if sb0RequestBody is not None:
+        oHTTPRequest.fSetBody(sb0RequestBody);
+      if s0RequestData is not None:
+        oHTTPRequest.fSetData(s0RequestData);
+      for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
+        if sbValue is None:
+          oHTTPRequest.oHeaders.fbRemoveHeadersForName(sbName);
+        else:
+          oHTTPRequest.oHeaders.fbReplaceHeadersForNameAndValue(sbName, sbValue);
+      if o0URL is None:
+        s0Extension = oHTTPFile.s0Extension.lower() if oHTTPFile.s0Extension else None;
+        if s0Extension not in ["http", "https"]:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot determine the protocol to use because the HTTP request input file does",
+          );
+          oConsole.fOutput(
+            "  not have a .http(s) extension and no URL was provided.",
+          );
+          sys.exit(guExitCodeBadArgument);
+        sbProtocol = bytes(s0Extension, "ascii", "strict");
+        o0HostHeader = oHTTPRequest.oHeaders.fo0GetUniqueHeaderForName(b"Host");
+        if o0HostHeader is None:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " Cannot determine the server to connect to becasuse the HTTP request input file",
+          );
+          oConsole.fOutput(
+            "  does not contain a 'Host' header and no URL was provided.",
+          );
+          sys.exit(guExitCodeBadArgument);
+        sbURL = b"%s://%s%s" % (
+          sbProtocol,
+          o0HostHeader.sbValue,
+          oHTTPRequest.sbURL,
+        );
+        oURL = cURL.foFromBytesString(sbURL);
+      else:
+        oURL = o0URL;
+      o0HTTPRequest = oHTTPRequest;
+    elif o0URL:
+      oURL = o0URL;
+      o0HTTPRequest = None;
+    else:
       fOutputUsageInformation();
       sys.exit(guExitCodeSuccess);
-    oURL = o0URL;
+    
     # If not explicitly set, show progress
     bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
     # If not explicitly set, only show requests and responses when we are not downloading.
@@ -880,8 +957,8 @@ try:
           COLOR_INFO, str(uIndex - uStartIndex),
           COLOR_NORMAL, " segments.",
         );
-    else:
-      # Single request
+    elif o0HTTPRequest is None:
+      # Single request from URL
       foGetResponseForURL(
         oHTTPClient = oClient,
         oURL = oURL,
@@ -891,6 +968,20 @@ try:
         s0RequestData = s0RequestData,
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+        u0MaxRedirects = u0MaxRedirects,
+        bDownloadToFile = bDownloadToFile,
+        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bSaveToFile = bSaveToFile,
+        s0TargetFilePath = s0TargetFilePath,
+        bConcatinateDownload = False,
+        bShowProgress = bShowProgress,
+      );
+    else:
+      # Single request
+      foGetResponseForRequestAndURL(
+        oHTTPClient = oClient,
+        oRequest = o0HTTPRequest,
+        oURL = oURL,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
         bFixDecodeBodyErrors = bFixDecodeBodyErrors,
