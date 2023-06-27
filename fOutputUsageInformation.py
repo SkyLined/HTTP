@@ -1,8 +1,10 @@
-from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
+from foConsoleLoader import foConsoleLoader;
+from fOutputLogo import fOutputLogo;
 oConsole = foConsoleLoader();
 
 def fOutputUsageInformation():
+  fOutputLogo();
   oConsole.fLock();
   try:
     axBoolean = ["[=", COLOR_INFO, "true", COLOR_NORMAL, "|", COLOR_INFO, "false", COLOR_NORMAL, "]"];
