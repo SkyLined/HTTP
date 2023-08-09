@@ -176,7 +176,7 @@ def foGetResponseForRequestAndURL(
       );
       sys.exit(guExitCodeTooManyRedirects);
     # Modify the request according to the new URL:
-    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oURL.sbHostnameAndOptionalPort);
+    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostnameAndOptionalPort);
     oRequest.sbURL = oRedirectToURL.sbRelative;
     if oResponse.uStatusCode in [303]:
       oRequest.sbMethod = b"GET";
