@@ -44,6 +44,7 @@ garbSegmentedVideos = [re.compile(sb) for sb in [
 def fHandleSegmentedVideo(
   *,
   oHTTPClient,
+  oURL,
   sbzHTTPVersion,
   sbzMethod,
   sb0RequestBody,

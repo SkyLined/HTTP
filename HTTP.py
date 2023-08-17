@@ -446,6 +446,7 @@ try:
       ### M3U ######################################################################
       fHandleM3U(
         oHTTPClient = oHTTPClient,
+        oURL = oURL,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
         sb0RequestBody = sb0RequestBody,
@@ -453,17 +454,19 @@ try:
         dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
+        bDownloadToFile = bDownloadToFile,
         bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bSaveToFile = bSaveToFile,
+        s0TargetFilePath = s0TargetFilePath,
         bShowProgress = bShowProgress,
         bSegmentedM3U = bSegmentedM3U,
-        bDownloadToFile = bDownloadToFile,
-        bSaveToFile = bSaveToFile,
       );
     elif bSegmentedVideo:
       ### SEGMENTED VIDEO ##########################################################
       # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
       fHandleSegmentedVideo(
         oHTTPClient = oHTTPClient,
+        oURL = oURL,
         sbzHTTPVersion = sbzHTTPVersion,
         sbzMethod = sbzMethod,
         sb0RequestBody = sb0RequestBody,

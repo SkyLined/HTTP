@@ -17,6 +17,7 @@ from mExitCodes import \
 def fHandleM3U(
   *,
   oHTTPClient,
+  oURL,
   sbzHTTPVersion,
   sbzMethod,
   sb0RequestBody,
@@ -24,11 +25,12 @@ def fHandleM3U(
   dsbAdditionalOrRemovedHeaders,
   d0Form_sValue_by_sName,
   u0MaxRedirects,
+  bDownloadToFile,
   bFixDecodeBodyErrors,
+  bSaveToFile,
+  s0TargetFilePath,
   bShowProgress,
   bSegmentedM3U,
-  bDownloadToFile,
-  bSaveToFile,
 ):
   oResponse = foGetResponseForURL(
     oHTTPClient = oHTTPClient,
