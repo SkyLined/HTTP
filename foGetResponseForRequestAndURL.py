@@ -207,7 +207,7 @@ def foGetResponseForRequestAndURL(
     # No download file name provided; generate one from the URL path if one is provided:
     if oURL.asURLDecodedPath:
       sTargetFilePath = oURL.asURLDecodedPath[-1];
-      if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(s0TargetFilePath):
+      if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(sTargetFilePath):
         sTargetFilePath += "." + s0Extension;
     else:
       sTargetFilePath = "download from %s%s" % (
