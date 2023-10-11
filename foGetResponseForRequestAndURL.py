@@ -50,6 +50,12 @@ def foGetResponseForRequestAndURL(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Connecting to server timed out.",
       );
+    if isinstance(oException, oHTTPClient.cTCPIPNetworkErrorException):
+      oConsole.fOutput(
+        "      ",
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " A network error occurred.",
+      );
     elif isinstance(oException, (
       oHTTPClient.cTCPIPConnectionRefusedException,
       oHTTPClient.cTCPIPInvalidAddressException,
