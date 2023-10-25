@@ -252,7 +252,7 @@ def foGetResponseForRequestAndURL(
     );
     sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors) or b"";
   try:
-    oTargetFile.fbWrite(
+    assert oTargetFile.fbWrite(
       sbData = sbData,
       bAppend = bConcatinateDownload,
       bThrowErrors = True,
