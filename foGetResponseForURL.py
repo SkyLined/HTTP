@@ -46,6 +46,7 @@ def foGetResponseForURL(
       COLOR_NORMAL, ".",
     );
     sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
+
   # Apply headers provided through arguments to request
   for (sbName, sbValue) in dsbAdditionalOrRemovedHeaders.items():
     if sbValue is None:
