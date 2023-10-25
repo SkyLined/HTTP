@@ -1,7 +1,7 @@
 @ECHO OFF
 SETLOCAL
-SET REDIRECT_STDOUT_FILE_PATH=%TEMP%\BugId Test stdout %RANDOM%.txt
-SET TEST_DOWNLOAD_FILE_PATH=%TEMP%\HTTP Test file %RANDOM%.txt
+SET REDIRECT_STDOUT_FILE_PATH=%TEMP%\HTTP Test stdout %RANDOM%.txt
+SET TEST_DOWNLOAD_FILE_PATH=%TEMP%\HTTP Test download %RANDOM%.txt
 
 ECHO   * Test usage help...
 CALL "%~dp0\..\HTTP.cmd" --help >"%REDIRECT_STDOUT_FILE_PATH%"
@@ -20,24 +20,23 @@ CALL "%~dp0\..\HTTP.cmd" --license-update >"%REDIRECT_STDOUT_FILE_PATH%"
 IF ERRORLEVEL 1 GOTO :ERROR
 
 ECHO   * Test GET http://example.com...
-CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" -db
+CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" -db >"%REDIRECT_STDOUT_FILE_PATH%"
 IF ERRORLEVEL 1 GOTO :ERROR
 
-ECHO   * Test GET http://duckduckgo.com (redirect to https) with debug output...
-CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" --debug -r=1
+ECHO   * Test download GET http://skylined.nl (redirect to https://ascii.skylined.nl) with debug output...
+CALL "%~dp0\..\HTTP.cmd" GET "http://skylined.nl" --debug -r=10 --download="%TEST_DOWNLOAD_FILE_PATH%" >"%REDIRECT_STDOUT_FILE_PATH%"
 IF ERRORLEVEL 1 GOTO :ERROR
-
-ECHO   * Test download GET http://example.com...
-CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" --download="%TEST_DOWNLOAD_FILE_PATH%"
-IF ERRORLEVEL 1 GOTO :ERROR
-
-ECHO   * Test download GET https://example.com...
-CALL "%~dp0\..\HTTP.cmd" GET "https://example.com" --download="%TEST_DOWNLOAD_FILE_PATH%"
-IF ERRORLEVEL 1 GOTO :ERROR
-
-DEL "%TEST_DOWNLOAD_FILE_PATH%" /Q
-DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
-
+IF NOT EXIST "%TEST_DOWNLOAD_FILE_PATH%" (
+  ECHO - Downloaded file "%TEST_DOWNLOAD_FILE_PATH%" not found!
+  IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
+    POWERSHELL $OutputEncoding = New-Object -Typename System.Text.UTF8Encoding; Get-Content -Encoding utf8 '"%REDIRECT_STDOUT_FILE_PATH%"'
+  )
+) ELSE (
+  DEL "%TEST_DOWNLOAD_FILE_PATH%" /Q
+)
+IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
+  DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
+)
 ECHO + Test.cmd completed.
 ENDLOCAL
 EXIT /B 0
