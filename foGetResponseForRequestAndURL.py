@@ -181,19 +181,28 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " Too many sequential redirects.",
       );
       sys.exit(guExitCodeTooManyRedirects);
-    # Modify the request according to the new URL:
-    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostnameAndOptionalPort);
-    oRequest.sbURL = oRedirectToURL.sbRelative;
-    if oResponse.uStatusCode in [303]:
-      oRequest.sbMethod = b"GET";
-      oRequest.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
-      oRequest.oHeaders.fbRemoveHeadersForName(b"Content-Encoding");
-      oRequest.oHeaders.fbRemoveHeadersForName(b"Content-Type");
-      oRequest.o0AdditionalHeaders = None;
+    # Create a new request based on the last one:
+    oRedirectedRequest = oRequest.foClone();
+    # Update the `Host` header and path in the request to reflect the new URL:
+    oRedirectedRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostnameAndOptionalPort);
+    oRedirectedRequest.sbURL = oRedirectToURL.sbRelative;
+    # If the hostname or port number changed in the URL, update the cookies:
+    if oRedirectToURL.sbHostnameAndOptionalPort != oURL.sbHostnameAndOptionalPort:
+      # Delete existing cookies:
+      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Cookie");
+      # Apply appropriate cookies if we have a cookiestore.
+      if oHTTPClient.o0CookieStore:
+        oHTTPClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
+    if oResponse.uStatusCode in [303]: # AFAIK this only applies to 303.
+      oRedirectedRequest.sbMethod = b"GET";
+      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
+      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Content-Encoding");
+      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Content-Type");
+      oRedirectedRequest.o0AdditionalHeaders = None;
       oResponse.sbBody = b"";
     return foGetResponseForRequestAndURL(
       oHTTPClient = oHTTPClient,
-      oRequest = oRequest,
+      oRequest = oRedirectedRequest,
       oURL = oRedirectToURL,
       u0MaxRedirects = u0MaxRedirects - 1,
       bDownloadToFile = bDownloadToFile,
