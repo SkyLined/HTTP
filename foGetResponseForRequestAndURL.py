@@ -7,6 +7,7 @@ from mHTTPProtocol import \
     fsb0GetMediaTypeForExtension;
 from mHumanReadable import fsBytesToHumanReadableString;
 
+from fHandleSSLException import fHandleSSLException;
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from mColorsAndChars import *;
@@ -110,26 +111,7 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " Securing the connection to the server timed out.",
       );
     elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLException):
-      oConsole.fOutput(
-        "      ",
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Securing the connection to the server failed.",
-      );
-      o0SSLContext = oException.dxDetails.get("oSSLContext");
-      if o0SSLContext:
-        for sLine in o0SSLContext.fasGetDetails():
-          oConsole.fOutput(
-            "          ", sLine,
-          );
-      d0xPeerCertificate = oException.dxDetails.get("dxPeerCertificate");
-      if d0xPeerCertificate:
-        for (sName, xValue) in d0xPeerCertificate.items():
-          oConsole.fOutput(
-            "          ",
-            COLOR_NORMAL, str(sName),
-            COLOR_DIM, ": ",
-            COLOR_NORMAL, repr(xValue),
-          );
+      fHandleSSLException(oHTTPClient, oException);
     else:
       raise;
     oConsole.fOutput();
