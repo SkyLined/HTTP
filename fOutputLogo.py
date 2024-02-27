@@ -3,18 +3,25 @@ from mColorsAndChars import *;
 oConsole = foConsoleLoader();
 
 asLogo = [s.rstrip() for s in """
-                                                       __ __                 
-           ┄╌──────╒╦╦╶─╦╦╕╶╒═╦╦═╕╶╒═╦╦═╕╶╒╦╦══╦╗╶─▄──╱╱╶╱╱╶────╌┄           
-              ░░▒▒▓▓║╠══╣║▓▒░▓║║▓▒░▒▓║║▓▒░▓║╠══╩╝▓▒▒▓╱╱▓╱╱▓▒▒░               
-         ┄╌────────╘╩╩╶─╩╩╛╶─╘╩╩╛╶──╘╩╩╛╶─╘╩╩╛╶───▀─╱╱╶╱╱╶────╌┄             
-                                                   ‾‾ ‾‾                     """.split("""
+                   ░▒░ ░▒   ░▒░    ░▒░    ░▒░░      ░ ▒_ ▒_                   
+           ┄╌──────╒╦╦╶─╦╦╕╶╒═╦╦═╕╶╒═╦╦═╕╶╒╦╦══╦╗╶╴▄╶─╱╱╶╱╱╶────╌┄            
+              ░░▒▒▓▓║╠══╣║▓▒░▓║║▓▒░▒▓║║▓▒░▓║╠══╩╝▓▒▒▓╱╱▓╱╱▓▒▒░                
+         ┄╌────────╘╩╩╶─╩╩╛╶─╘╩╩╛╶──╘╩╩╛╶─╘╩╩╛╶──╴▀╶╱╱╶╱╱╶────╌┄              
+                  ░▒░       ░▒░    ░▒░   ░▒░      ░░‾ ░‾                      """.split("""
 """)];
-asColors = [s.rstrip() for s in """
-                                                       FB FB                 
-           99999999FFB99FB39FFFBB39FFFBB39FFFFBB399B99F39F399999999          
+asFGColors = [s for s in """
+                   111 11   111    111    1111     1  1F 1F                   
+           99999993FFB93FB33FFFBB33FFFBB33FFFFBB393B93F33F399999999           
               111111B3BFB31111B311111B31111B33B331111F31B31111                
-         9999999999FB399B3399FB33999FB3399FB33999939B39B399999999            
-                                                   33 33                     """.split("""
+         9999999993FB393B3393FB33993FB3393FB33999339B33B399999999             
+                  111       111    111   111      113 13                      """.split("""
+""")];
+asBGColors = [s for s in """
+                                                       1  1                   
+                   111 111  111111 111111 111111   1  11 11                   
+                    111111    11     11    111111    11 11                    
+                   11   1    111    111   111     1 1  1                      
+                                                                              """.split("""
 """)];
 def fOutputLogo():
   # We will use the above ASCII and color data to create a list of arguments
@@ -23,27 +30,31 @@ def fOutputLogo():
   try:
     for uLineIndex in range(len(asLogo)):
       uCurrentColor = COLOR_NORMAL;
-      bUnderlined = False;
       asLogoPrintArguments = [""];
       sCharsLine = asLogo[uLineIndex];
-      sColorsLine = asColors[uLineIndex];
-      uColorIndex = 0;
+      sFGColorsLine = asFGColors[uLineIndex];
+      sBGColorsLine = asBGColors[uLineIndex];
       for uColumnIndex in range(len(sCharsLine)):
         try:
-          sColor = sColorsLine[uColorIndex];
-          uColorIndex += 1;
-          if sColor == "_":
-            bUnderlined = not bUnderlined;
-            sColor = sColorsLine[uColorIndex];
-            uColorIndex += 1;
-          uColor = (sColor != " " and (0x0F00 + int(sColor, 16)) or COLOR_NORMAL) + (bUnderlined and CONSOLE_UNDERLINE or 0);
+          sChar = sCharsLine[uColumnIndex];
+          sFGColor = sFGColorsLine[uColumnIndex].strip() or "0";
+          sBGColor = sBGColorsLine[uColumnIndex].strip() or "0";
+          sColor = sBGColor + sFGColor;
+          uColor = (sColor != "00" and (0xFF00 + int(sColor, 16)) or COLOR_NORMAL);
           if uColor != uCurrentColor:
             asLogoPrintArguments.extend([uColor, ""]);
             uCurrentColor = uColor;
-          sChar = sCharsLine[uColumnIndex];
           asLogoPrintArguments[-1] += sChar;
         except IndexError:
-          raise IndexError("Line %d has %d chars but %d colors:\r\n%s\r\n%s" % (uLineIndex + 1, len(sCharsLine), len(sColorsLine), sCharsLine, sColorsLine));
+          raise IndexError("Line %d has %d chars, %d FG colors and %d BG colors:\r\n%s:\r\n%s\r\n%s" % (
+            uLineIndex + 1,
+            len(sCharsLine),
+            len(sFGColorsLine),
+            len(sBGColorsLine),
+            repr(sCharsLine),
+            repr(sFGColorsLine),
+            repr(sBGColorsLine),
+          ));
       oConsole.fOutput(*asLogoPrintArguments);
   finally:
     oConsole.fUnlock();
