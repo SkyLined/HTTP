@@ -24,7 +24,7 @@ def fOutputResponseReceived(
     *,
     bShowDetails,
     bDecodeBody,
-    bFixDecodeBodyErrors,
+    bFailOnDecodeBodyErrors,
     bForceHex = False,
     uHexChars = 16,
     xPrefix = [],
@@ -73,8 +73,8 @@ def fOutputResponseReceived(
     if bDecodeBody:
       fOutputData(
         oResponse.fs0GetData(
-          bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors,
-          bIgnoreDecompressionFailures = bFixDecodeBodyErrors,
+          bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors,
+          bIgnoreDecompressionFailures = not bFailOnDecodeBodyErrors,
         ),
         bShowDetails = bShowDetails,
         bOutputEOF = not oResponse.o0AdditionalHeaders,

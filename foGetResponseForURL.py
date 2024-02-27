@@ -21,7 +21,7 @@ def foGetResponseForURL(
   d0Form_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
-  bFixDecodeBodyErrors,
+  bFailOnDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
   bConcatinateDownload,
@@ -57,13 +57,14 @@ def foGetResponseForURL(
     oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
     for (sName, sValue) in d0Form_sValue_by_sName.items():
       oRequest.fSetFormValue(sName, sValue);
+  
   return foGetResponseForRequestAndURL(
     oHTTPClient = oHTTPClient,
     oRequest = oRequest,
     oURL = oURL,
     u0MaxRedirects = u0MaxRedirects,
     bDownloadToFile = bDownloadToFile,
-    bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+    bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
     bSaveToFile = bSaveToFile,
     s0TargetFilePath = s0TargetFilePath,
     bConcatinateDownload = bConcatinateDownload,

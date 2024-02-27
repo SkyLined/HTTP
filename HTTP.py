@@ -85,7 +85,7 @@ try:
     sb0RequestBody = None;
     s0RequestData = None;
     bDecodeBody = False;
-    bFixDecodeBodyErrors = False;
+    bFailOnDecodeBodyErrors = False;
     u0MaxRedirects = None;
     bVerifyCertificates = True;
     bSaveToFile = False;
@@ -186,10 +186,8 @@ try:
           m0DebugOutput.fEnableAllDebugOutput();
       elif s0LowerName in ["db", "decode", "decode-body"]:
         bDecodeBody = fbParseBooleanArgument(s0Value);
-      elif s0LowerName in ["fdb", "fix-decode", "fix-decode-body"]:
-        bFixDecodeBodyErrors = fbParseBooleanArgument(s0Value);
-        if bFixDecodeBodyErrors:
-          bDecodeBody = True;
+      elif s0LowerName in ["fail-on-decode-errors", "report-decode-body-errors"]:
+        bFailOnDecodeBodyErrors = fbParseBooleanArgument(s0Value);
       elif s0LowerName in ["dl", "download"]:
         bDownloadToFile = True;
         s0TargetFilePath = s0Value;
@@ -433,7 +431,7 @@ try:
       bShowResponse = bShowResponse,
       bShowDetails = bShowDetails,
       bDecodeBody = bDecodeBody,
-      bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+      bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bForceHex = bForceHex,
       uHexChars = uHexChars,
       bSaveCookiesToDisk = bSaveCookiesToDisk,
@@ -455,7 +453,7 @@ try:
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
-        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
         bShowProgress = bShowProgress,
@@ -475,7 +473,7 @@ try:
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
-        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
         bShowProgress = bShowProgress,
@@ -494,7 +492,7 @@ try:
         d0Form_sValue_by_sName = d0Form_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
-        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
         bConcatinateDownload = False,
@@ -509,7 +507,7 @@ try:
         oURL = oURL,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
-        bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
         bConcatinateDownload = False,

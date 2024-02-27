@@ -26,7 +26,7 @@ def foGetResponseForRequestAndURL(
   oURL,
   u0MaxRedirects,
   bDownloadToFile,
-  bFixDecodeBodyErrors,
+  bFailOnDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
   bConcatinateDownload,
@@ -168,13 +168,11 @@ def foGetResponseForRequestAndURL(
     # Update the `Host` header and path in the request to reflect the new URL:
     oRedirectedRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostnameAndOptionalPort);
     oRedirectedRequest.sbURL = oRedirectToURL.sbRelative;
-    # If the hostname or port number changed in the URL, update the cookies:
-    if oRedirectToURL.sbHostnameAndOptionalPort != oURL.sbHostnameAndOptionalPort:
-      # Delete existing cookies:
-      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Cookie");
-      # Apply appropriate cookies if we have a cookiestore.
-      if oHTTPClient.o0CookieStore:
-        oHTTPClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
+    # Delete existing cookies:
+    oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Cookie");
+    # Apply appropriate cookies if we have a cookiestore.
+    if oHTTPClient.o0CookieStore:
+      oHTTPClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
     if oResponse.uStatusCode in [303]: # AFAIK this only applies to 303.
       oRedirectedRequest.sbMethod = b"GET";
       oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
@@ -188,7 +186,7 @@ def foGetResponseForRequestAndURL(
       oURL = oRedirectToURL,
       u0MaxRedirects = u0MaxRedirects - 1,
       bDownloadToFile = bDownloadToFile,
-      bFixDecodeBodyErrors = bFixDecodeBodyErrors,
+      bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
       bConcatinateDownload = bConcatinateDownload,
@@ -232,7 +230,7 @@ def foGetResponseForRequestAndURL(
       COLOR_INFO, oTargetFile.sPath,
       COLOR_NORMAL, "...",
     );
-    sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = bFixDecodeBodyErrors) or b"";
+    sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors) or b"";
   try:
     assert oTargetFile.fbWrite(
       sbData = sbData,
