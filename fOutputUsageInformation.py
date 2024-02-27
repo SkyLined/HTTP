@@ -108,6 +108,11 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "-t=<seconds|none>",  COLOR_NORMAL, ", ", COLOR_INFO, "--timeout=<seconds|none>");
     oConsole.fOutput("    Set the response timeout to the given number of seconds. Use 'none' to ");
     oConsole.fOutput("    disable timeouts altogether.");
+    oConsole.fOutput("  ", COLOR_INFO, "-host:<hostname>=<spoofed hostname>");
+    oConsole.fOutput("    For URLs that use the first hostname, the connection will be made to the");
+    oConsole.fOutput("    second hostname (or IP address). The \"Host\" header, cookies, and HTTPS");
+    oConsole.fOutput("    certificate checks are unaffected. This allows you to \"spoof\" a request to");
+    oConsole.fOutput("    the a server at the second hostname exactly as it would be sent to the first.");
 
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Output options", COLOR_NORMAL, ":");

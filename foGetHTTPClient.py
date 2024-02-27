@@ -36,6 +36,7 @@ from fHandleSecureConnectionToServerThroughProxyCreated import fHandleSecureConn
 from fHandleSecureConnectionToServerThroughProxyTerminated import fHandleSecureConnectionToServerThroughProxyTerminated;
 from fHandleServerHostnameOrIPAddressInvalid import fHandleServerHostnameOrIPAddressInvalid;
 from fHandleServerHostnameResolvedToIPAddress import fHandleServerHostnameResolvedToIPAddress;
+from fHandleServerHostnameSpoofed import fHandleServerHostnameSpoofed;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputInvalidCookieAttribute import fOutputInvalidCookieAttribute;
 from fOutputRequestSent import fOutputRequestSent;
@@ -64,6 +65,7 @@ def foGetHTTPClient(
   s0NetscapeCookiesFilePath,
   bSaveCookiesToDisk,
   s0zCookieStoreJSONPath,
+  dsbSpoofedHostname_by_sbHostname,
 ):
   ### COOKIE STORE ###########################################################
   if bSaveCookiesToDisk:
@@ -162,6 +164,7 @@ def foGetHTTPClient(
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
       bVerifyCertificates = bVerifyCertificates,
+      dsbSpoofedHostname_by_sbHostname = dsbSpoofedHostname_by_sbHostname,
     );
   elif o0HTTPProxyServerURL:
     # Create a HTTP client instance that uses a static proxy
@@ -214,6 +217,10 @@ def foGetHTTPClient(
           bShowProxyConnects,
         ),
     );
+    if isinstance(oClient, (cHTTPClient,)):
+      oClient.fAddCallbacks({
+        "spoofing server hostname": fHandleServerHostnameSpoofed,
+      });
     if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
       oClient.fAddCallbacks({
         "server hostname or ip address invalid": fHandleServerHostnameOrIPAddressInvalid,

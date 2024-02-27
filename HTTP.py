@@ -95,6 +95,7 @@ try:
     s0zCookieStoreJSONPath = zNotProvided;
     s0NetscapeCookiesFilePath = None;
     n0zTimeoutInSeconds = zNotProvided;
+    dsbSpoofedHostname_by_sbHostname = {};
     bForceHex = False;
     uHexChars = 16;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
@@ -329,6 +330,10 @@ try:
               COLOR_NORMAL, "\" must be a number larger than zero.",
             );
             sys.exit(guExitCodeBadArgument);
+      elif s0LowerName.startswith("host:") or s0LowerName.startswith("hostname:"):
+        sbHostname = bytes(ord(s) for s in s0LowerName.split(":", 1)[1]);
+        sbIPaddress = bytes(ord(s) for s in fsRequireArgumentValue());
+        dsbSpoofedHostname_by_sbHostname[sbHostname] = sbIPaddress;
       else:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -439,6 +444,7 @@ try:
       s0NetscapeCookiesFilePath = s0NetscapeCookiesFilePath,
       bSaveCookiesToDisk = bSaveCookiesToDisk,
       s0zCookieStoreJSONPath = s0zCookieStoreJSONPath,
+      dsbSpoofedHostname_by_sbHostname = dsbSpoofedHostname_by_sbHostname,
     );
     if oHTTPClient.o0CookieStore and o0HTTPRequest:
       oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
