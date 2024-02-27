@@ -51,11 +51,12 @@ try:
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
   from fOutputUsageInformation import fOutputUsageInformation;
   from mColorsAndChars import *;
-  from mExitCodes import \
-      guExitCodeBadArgument, \
-      guExitCodeCannotReadRequestBodyFromFile, \
-      guExitCodeRequestDataInFileIsNotUTF8, \
-      guExitCodeSuccess;
+  from mExitCodes import (
+    guExitCodeBadArgument,
+    guExitCodeCannotReadRequestBodyFromFile,
+    guExitCodeRequestDataInFileIsNotUTF8,
+    guExitCodeSuccess,
+  );
   oConsole = foConsoleLoader();
   
   if __name__ == "__main__":
@@ -111,12 +112,41 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      if s0LowerName in ["bl", "basic-login"]:
-        sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(s0Value or "", "ascii", "strict"));
+      if not s0LowerName:
+        if o0URL is None and rShouldBeAURL.match(sArgument):
+          try:
+            o0URL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
+          except cURL.cHTTPInvalidURLException:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " The value \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\" is not a valid URL.",
+            );
+            sys.exit(guExitCodeBadArgument);
+        elif not fbIsProvided(sbzMethod) and rMethod.match(sArgument):
+          sbzMethod = bytes(ord(s) for s in sArgument);
+        elif rHTTPVersion.match(sArgument):
+          sbzHTTPVersion = bytes(ord(s) for s in sArgument);
+        else:
+          o0HTTPFile = cFileSystemItem(sArgument);
+          if not o0HTTPFile.fbIsFile():
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " Superfluous argument \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\".",
+            );
+            oConsole.fOutput(
+              COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing input file.",
+            );
+            sys.exit(guExitCodeBadArgument);
+      elif s0LowerName in ["bl", "basic-login"]:
+        sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(ord(s) for s in (s0Value or "")));
         dsbAdditionalOrRemovedHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
       elif s0LowerName in ["c", "cookies"]:
         s0NetscapeCookiesFilePath = s0Value;
-      elif s0LowerName in ["cs", "cookie-store"]:
+      elif s0LowerName in ["s", "cs", "cookie-store"]:
         s0zCookieStoreJSONPath = s0Value;
       elif s0LowerName in ["data"]:
         sb0RequestBody = None;
@@ -299,7 +329,7 @@ try:
               COLOR_NORMAL, "\" must be a number larger than zero.",
             );
             sys.exit(guExitCodeBadArgument);
-      elif s0LowerName:
+      else:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Unknown argument \"",
@@ -307,35 +337,7 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      elif o0URL is None and rShouldBeAURL.match(sArgument):
-        try:
-          o0URL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
-        except cURL.cHTTPInvalidURLException:
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " The value \"",
-            COLOR_INFO, sArgument,
-            COLOR_NORMAL, "\" is not a valid URL.",
-          );
-          sys.exit(guExitCodeBadArgument);
-      elif not fbIsProvided(sbzMethod) and rMethod.match(sArgument):
-        sbzMethod = bytes(ord(s) for s in sArgument);
-      elif rHTTPVersion.match(sArgument):
-        sbzHTTPVersion = bytes(ord(s) for s in sArgument);
-      else:
-        o0HTTPFile = cFileSystemItem(sArgument);
-        if not o0HTTPFile.fbIsFile():
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " Superfluous argument \"",
-            COLOR_INFO, sArgument,
-            COLOR_NORMAL, "\".",
-          );
-          oConsole.fOutput(
-            COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing input file.",
-          );
-          sys.exit(guExitCodeBadArgument);
-    
+
     ### DONE PARSING ARGUMENTS #################################################
     if o0HTTPFile:
       oHTTPFile = o0HTTPFile;
@@ -383,7 +385,7 @@ try:
             "  not have a .http(s) extension and no URL was provided.",
           );
           sys.exit(guExitCodeBadArgument);
-        sbProtocol = bytes(s0Extension, "ascii", "strict");
+        sbProtocol = bytes(ord(s) for s in s0Extension);
         o0HostHeader = oHTTPRequest.oHeaders.fo0GetUniqueHeaderForName(b"Host");
         if o0HostHeader is None:
           oConsole.fOutput(
@@ -434,8 +436,9 @@ try:
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bForceHex = bForceHex,
       uHexChars = uHexChars,
-      bSaveCookiesToDisk = bSaveCookiesToDisk,
       s0NetscapeCookiesFilePath = s0NetscapeCookiesFilePath,
+      bSaveCookiesToDisk = bSaveCookiesToDisk,
+      s0zCookieStoreJSONPath = s0zCookieStoreJSONPath,
     );
     if oHTTPClient.o0CookieStore and o0HTTPRequest:
       oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
@@ -461,7 +464,7 @@ try:
       );
     elif bSegmentedVideo:
       ### SEGMENTED VIDEO ##########################################################
-      # Multiple request to URL with increasing index until we get a response that is not "200 COLOR_OK"
+      # Multiple request to URL with increasing index until we get a response that is not "200 Ok"
       fHandleSegmentedVideo(
         oHTTPClient = oHTTPClient,
         oURL = oURL,
