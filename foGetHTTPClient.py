@@ -62,6 +62,8 @@ def foGetHTTPClient(
   bForceHex,
   uHexChars,
   s0NetscapeCookiesFilePath,
+  bSaveCookiesToDisk,
+  s0zCookieStoreJSONPath,
 ):
   ### COOKIE STORE ###########################################################
   if bSaveCookiesToDisk:

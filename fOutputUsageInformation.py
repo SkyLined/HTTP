@@ -3,7 +3,7 @@ from foConsoleLoader import foConsoleLoader;
 from fOutputLogo import fOutputLogo;
 oConsole = foConsoleLoader();
 
-def fOutputUsageInformation():
+def fOutputUsageInformation(bOutputAllOptions = True):
   fOutputLogo();
   oConsole.fLock();
   try:
@@ -15,14 +15,21 @@ def fOutputUsageInformation():
                               "[", COLOR_INFO, "HTTP/x.x", COLOR_DIM, "] ",
                               "[", COLOR_HILITE, "OPTIONS", COLOR_DIM, "]");
     oConsole.fOutput();
+    if not bOutputAllOptions:
+        oConsole.fOutput("For a list of all options, run ", COLOR_INFO, "HTTP --help", COLOR_NORMAL, ".");  
+        return;
     oConsole.fOutput(COLOR_HILITE, "OPTIONS", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "--arguments", COLOR_NORMAL, "=<", COLOR_INFO, "file path", COLOR_NORMAL, ">");
     oConsole.fOutput("    Load additional arguments from the provided value and insert them in place");
     oConsole.fOutput("    of this argument.");
     
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Login", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-bl", COLOR_NORMAL, ",  ", COLOR_INFO, "--basic-login=username:password");
     oConsole.fOutput("    Add an `Authorization: basic ...` header with the base64 encoded username and password.");
     
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Cookies", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-c=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--cookies=<file path>");
     oConsole.fOutput("    Read cookies from a 'Netscape' formatted file for use in requests.");
     oConsole.fOutput("  ", COLOR_INFO, "-s[=<file path>]", COLOR_NORMAL, ",  ", COLOR_INFO, "--cookie-store[=<file path>]");
@@ -31,14 +38,26 @@ def fOutputUsageInformation():
     oConsole.fOutput("    If no file is provided, a file named 'HTTPCookieStore.json' in the current");
     oConsole.fOutput("    folder is used. If the file does not exist, it will be created.");
     
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Request options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
     oConsole.fOutput("    Send utf-8 encoded \"<text>\" as data in the body of the request.");
     oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
     oConsole.fOutput("    Send the content of the given file in the body of the request.");
     oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
     oConsole.fOutput("    Send the utf-8 encoded content of the given file as data in the body of the request.");
-    oConsole.fOutput("  ", COLOR_INFO, "--debug", axBoolean);
-    oConsole.fOutput("    Show debug output. Set to \"false\" to hide them (default).");
+    oConsole.fOutput("  ", COLOR_INFO, "--header=<name[:value]>");
+    oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
+    oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
+    oConsole.fOutput("    for each request. This argument can be used to modify them.");
+    oConsole.fOutput("  ", COLOR_INFO, "--form=<name[=value]>");
+    oConsole.fOutput("    POST the given name-value pair as a `application/x-www-form-urlencoded` form. Use multiple");
+    oConsole.fOutput("    arguments to add multiple name-value pairs. A `Content-Type` header will automatically be");
+    oConsole.fOutput("    added and the default HTTP method will be POST.");
+    
+
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Response options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-db", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode-body");
     oConsole.fOutput("    Decode the response body.");
     oConsole.fOutput("  ", COLOR_INFO, "-fdb", COLOR_NORMAL, ",  ", COLOR_INFO, "--fix-decode", COLOR_NORMAL, ",  ", COLOR_INFO, "--fix-decode-body");
@@ -49,48 +68,20 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Download; write the decoded response body to the given file. if no file is");
     oConsole.fOutput("    provided, it is written in the current folder in a file with a name based");
     oConsole.fOutput("    on the request URL.");
-    
-    oConsole.fOutput("  ", COLOR_INFO, "--form=<name[=value]>");
-    oConsole.fOutput("    POST the given name-value pair as a `application/x-www-form-urlencoded` form. Use multiple");
-    oConsole.fOutput("    arguments to add multiple name-value pairs. A `Content-Type` header will automatically be");
-    oConsole.fOutput("    added and the default HTTP method will be POST.");
-    
-    oConsole.fOutput("  ", COLOR_INFO, "--header=<name[:value]>");
-    oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
-    oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
-    oConsole.fOutput("    for each request. This argument can be used to modify them.");
-    oConsole.fOutput("  ", COLOR_INFO, "-h", COLOR_NORMAL, ", ", COLOR_INFO, "--help");
-    oConsole.fOutput("    This cruft.");
-    
-    oConsole.fOutput("  ", COLOR_INFO, "--license");
-    oConsole.fOutput("    Show license information.");
-    oConsole.fOutput("  ", COLOR_INFO, "--license-update");
-    oConsole.fOutput("    Download license updates and show license information.");
-    
-    oConsole.fOutput("  ", COLOR_INFO, "-m3u");
-    oConsole.fOutput("    The URL provided represents a playlist and you want to download all files");
-    oConsole.fOutput("    in the playlist individually instead of the playlist itself. See also the");
-    oConsole.fOutput("    ", COLOR_INFO, "--segmented-m3u", COLOR_NORMAL, " option.");
-
-    oConsole.fOutput("  ", COLOR_INFO, "-p[=<URL>]", COLOR_NORMAL, ", ", COLOR_INFO, "--proxy[=<URL>]", COLOR_NORMAL, ", ", COLOR_INFO, "--http-proxy[=<URL>]");
-    oConsole.fOutput("    Use the given HTTP proxy to make requests, or automatically determine ");
-    oConsole.fOutput("    the proxy if no URL is given.");
-    
-    oConsole.fOutput("  ", COLOR_INFO, "-r", COLOR_NORMAL, ", ", COLOR_INFO, "--max-redirects=<integer>", COLOR_NORMAL, ", ", COLOR_INFO, "--follow-redirects=<integer>");
-    oConsole.fOutput("    If the server respondse with a HTTP 3xx redirect, follow the redirect");
-    oConsole.fOutput("    to make another request up to the specified number of times.");
-    
     oConsole.fOutput("  ", COLOR_INFO, "-save[=<path>]");
     oConsole.fOutput("    Save the entire response in the file specified by \"<path>\". If no path");
     oConsole.fOutput("    is provided, it is savde in the current folder in a file named based on");
     oConsole.fOutput("    the request URL.");
-    oConsole.fOutput("  ", COLOR_INFO, "-s", COLOR_NORMAL, ", ", COLOR_INFO, "--secure", axBoolean);
-    oConsole.fOutput("    Check the certificate for HTTPS connections (default). Set to \"false\"");
-    oConsole.fOutput("    to allow invalid, expired and self-signed certificates. This does not");
-    oConsole.fOutput("    check if all intermediate certificates are provided by the server.");
-    oConsole.fOutput("  ", COLOR_INFO, "--very-secure", axBoolean);
-    oConsole.fOutput("  ", COLOR_INFO, "--insecure", COLOR_NORMAL, ", ", COLOR_INFO, "--non-secure", axBoolean);
-    oConsole.fOutput("    Do not check any certificates for HTTPS connections. Equivalent to ", COLOR_INFO, "--secure=false");
+    
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Multiple request options", COLOR_NORMAL, ":");
+    oConsole.fOutput("  ", COLOR_INFO, "-r", COLOR_NORMAL, ", ", COLOR_INFO, "--max-redirects=<integer>", COLOR_NORMAL, ", ", COLOR_INFO, "--follow-redirects=<integer>");
+    oConsole.fOutput("    If the server respondse with a HTTP 3xx redirect, follow the redirect");
+    oConsole.fOutput("    to make another request up to the specified number of times.");
+    oConsole.fOutput("  ", COLOR_INFO, "-m3u");
+    oConsole.fOutput("    The URL provided represents a playlist and you want to download all files");
+    oConsole.fOutput("    in the playlist individually instead of the playlist itself. See also the");
+    oConsole.fOutput("    ", COLOR_INFO, "--segmented-m3u", COLOR_NORMAL, " option.");
     oConsole.fOutput("  ", COLOR_INFO, "-sm3u", COLOR_NORMAL, ", ", COLOR_INFO, "--segmented-m3u");
     oConsole.fOutput("    The URL provided represents a playlist and you want to download all files");
     oConsole.fOutput("    in the playlist into a single file instead of the playlist itself. This is");
@@ -101,6 +92,25 @@ def fOutputUsageInformation():
     oConsole.fOutput("    streamed from multiple segments. The names of subsequent segements is");
     oConsole.fOutput("    guessed from the intial URL and all of the segments are downloaded");
     oConsole.fOutput("    into a single video file.");
+
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Connection options", COLOR_NORMAL, ":");
+    oConsole.fOutput("  ", COLOR_INFO, "-s", COLOR_NORMAL, ", ", COLOR_INFO, "--secure", axBoolean);
+    oConsole.fOutput("    Check the certificate for HTTPS connections (default). Set to \"false\"");
+    oConsole.fOutput("    to allow invalid, expired and self-signed certificates. This does not");
+    oConsole.fOutput("    check if all intermediate certificates are provided by the server.");
+    oConsole.fOutput("  ", COLOR_INFO, "--very-secure", axBoolean);
+    oConsole.fOutput("  ", COLOR_INFO, "--insecure", COLOR_NORMAL, ", ", COLOR_INFO, "--non-secure", axBoolean);
+    oConsole.fOutput("    Do not check any certificates for HTTPS connections. Equivalent to ", COLOR_INFO, "--secure=false");
+    oConsole.fOutput("  ", COLOR_INFO, "-p[=<URL>]", COLOR_NORMAL, ", ", COLOR_INFO, "--proxy[=<URL>]", COLOR_NORMAL, ", ", COLOR_INFO, "--http-proxy[=<URL>]");
+    oConsole.fOutput("    Use the given HTTP proxy to make requests, or automatically determine ");
+    oConsole.fOutput("    the proxy if no URL is given.");
+    oConsole.fOutput("  ", COLOR_INFO, "-t=<seconds|none>",  COLOR_NORMAL, ", ", COLOR_INFO, "--timeout=<seconds|none>");
+    oConsole.fOutput("    Set the response timeout to the given number of seconds. Use 'none' to ");
+    oConsole.fOutput("    disable timeouts altogether.");
+
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "Output options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "--show-details", axBoolean);
     oConsole.fOutput("    Show request headers/body and response headers. Set to \"false\" to hide");
     oConsole.fOutput("    them. Does not affect whether the response body is shown or not.");
@@ -112,11 +122,17 @@ def fOutputUsageInformation():
     oConsole.fOutput("    Show requests (default). Set to \"false\" to hide them.");
     oConsole.fOutput("  ", COLOR_INFO, "--show-response", axBoolean);
     oConsole.fOutput("    Show responses (default). Set to \"false\" to hide them.");
+    oConsole.fOutput("  ", COLOR_INFO, "--debug", axBoolean);
+    oConsole.fOutput("    Show debug output. Set to \"false\" to hide them (default).");
     
-    oConsole.fOutput("  ", COLOR_INFO, "-t=<seconds|none>",  COLOR_NORMAL, ", ", COLOR_INFO, "--timeout=<seconds|none>");
-    oConsole.fOutput("    Set the response timeout to the given number of seconds. Use 'none' to ");
-    oConsole.fOutput("    disable timeouts altogether.");
-    
+    oConsole.fOutput("");
+    oConsole.fOutput("  ", COLOR_HILITE, "General options", COLOR_NORMAL, ":");
+    oConsole.fOutput("  ", COLOR_INFO, "-h", COLOR_NORMAL, ", ", COLOR_INFO, "--help");
+    oConsole.fOutput("    This cruft.");
+    oConsole.fOutput("  ", COLOR_INFO, "--license");
+    oConsole.fOutput("    Show license information.");
+    oConsole.fOutput("  ", COLOR_INFO, "--license-update");
+    oConsole.fOutput("    Download license updates and show license information.");
     oConsole.fOutput("  ", COLOR_INFO, "--version");
     oConsole.fOutput("    Show version information.");
     oConsole.fOutput("  ", COLOR_INFO, "--version-check");

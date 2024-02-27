@@ -1,10 +1,10 @@
 ﻿# COMMONLY USED COLOR NAMES
 COLOR_DIM                               = 0xFF08; # Dark gray
 COLOR_NORMAL                            = 0xFF07; # Light gray
-COLOR_HILITE                            = 0xFF0F; # White
+COLOR_HILITE                            = 0xFF0B; # Bright cyan
 
-COLOR_INFO                              = 0xFF0F; # Bright blue
-COLOR_LIST                              = 0xFF0F; # Bright blue
+COLOR_INFO                              = 0xFF0F; # 
+COLOR_LIST                              = 0xFF0F; # White
 
 COLOR_BUSY                              = 0xFF03; # Cyan
 COLOR_OK                                = 0xFF02; # Green

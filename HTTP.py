@@ -407,7 +407,7 @@ try:
       oURL = o0URL;
       o0HTTPRequest = None;
     else:
-      fOutputUsageInformation();
+      fOutputUsageInformation(bOutputAllOptions = False);
       sys.exit(guExitCodeSuccess);
     
     # If not explicitly set, show progress
