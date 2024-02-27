@@ -223,15 +223,15 @@ try:
         bDownloadToFile = True;
         s0TargetFilePath = s0Value;
       elif s0LowerName in ["form"]:
-        sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
-        tsbNameAndValue = sbValue.split(b"=", 1);
-        if len(tsbNameAndValue) == 1:
-          sbName = sbValue; sb0Value = "";
+        sValue = fsRequireArgumentValue();
+        tsFormNameAndValue = sValue.split("=", 1);
+        if len(tsFormNameAndValue) == 1:
+          sName = sValue; sValue = "";
         else:
-          sbName, sb0Value = tsbNameAndValue;
+          sName, sValue = tsFormNameAndValue;
         if d0Form_sValue_by_sName is None:
           d0Form_sValue_by_sName = {};
-        d0Form_sValue_by_sName[sbName] = sb0Value;
+        d0Form_sValue_by_sName[sName] = sValue;
       elif s0LowerName in ["header"]:
         sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
         tsbNameAndValue = sbValue.split(b":", 1);
