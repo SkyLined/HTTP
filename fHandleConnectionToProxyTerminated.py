@@ -4,7 +4,7 @@ from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
 def fHandleConnectionToProxyTerminated(oClient, oConnection, oProxyServerURL):
-  sHostnameOrIPAddress = fsCP437FromBytesString(oProxyServerURL.sbHostname);
+  sHost = fsCP437FromBytesString(oProxyServerURL.sbHost);
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
   oConsole.fOutput(
     COLOR_ACTIVE,       "C",
@@ -17,6 +17,6 @@ def fHandleConnectionToProxyTerminated(oClient, oConnection, oProxyServerURL):
     [
       COLOR_NORMAL, " using IP address ",
       COLOR_INFO, sRemoteIPAddress,
-    ] if sHostnameOrIPAddress.lower() != sRemoteIPAddress.lower() else [],
+    ] if sHost.lower() != sRemoteIPAddress.lower() else [],
     COLOR_NORMAL, " terminated.",
   );

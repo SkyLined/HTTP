@@ -1,5 +1,3 @@
-import sys;
-
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;

@@ -3,8 +3,9 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputHostnameResolved(sbHostname, sCanonicalName, sIPAddress):
+def fOutputHostnameResolved(sbHostname, sCanonicalName, sbIPAddress):
   sHostname = fsCP437FromBytesString(sbHostname);
+  sIPAddress = fsCP437FromBytesString(sbIPAddress);
   if sHostname.lower() != sIPAddress.lower():
     oConsole.fOutput(
       COLOR_OK, CHAR_OK,

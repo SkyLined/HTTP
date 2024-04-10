@@ -3,8 +3,9 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fHandleServerHostnameResolvedToIPAddress(oHTTPClient, sbHostname, sIPAddress, sCanonicalName):
+def fHandleServerHostnameResolvedToIPAddress(oHTTPClient, sbHostname, sbIPAddress, sCanonicalName):
   sHostname = fsCP437FromBytesString(sbHostname);
+  sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_CONNECT,    "··»",

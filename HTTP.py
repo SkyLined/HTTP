@@ -95,7 +95,7 @@ try:
     s0zCookieStoreJSONPath = zNotProvided;
     s0NetscapeCookiesFilePath = None;
     n0zTimeoutInSeconds = zNotProvided;
-    dsbSpoofedHostname_by_sbHostname = {};
+    dsbSpoofedHost_by_sbHost = {};
     bForceHex = False;
     uHexChars = 16;
     for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
@@ -330,10 +330,10 @@ try:
               COLOR_NORMAL, "\" must be a number larger than zero.",
             );
             sys.exit(guExitCodeBadArgument);
-      elif s0LowerName.startswith("host:") or s0LowerName.startswith("hostname:"):
-        sbHostname = bytes(ord(s) for s in s0LowerName.split(":", 1)[1]);
+      elif s0LowerName.startswith("spoof:"):
+        sbHost = bytes(ord(s) for s in s0LowerName.split(":", 1)[1]);
         sbIPaddress = bytes(ord(s) for s in fsRequireArgumentValue());
-        dsbSpoofedHostname_by_sbHostname[sbHostname] = sbIPaddress;
+        dsbSpoofedHost_by_sbHost[sbHost] = sbIPaddress;
       else:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -395,7 +395,7 @@ try:
         if o0HostHeader is None:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " Cannot determine the server to connect to becasuse the HTTP request input file",
+            COLOR_NORMAL, " Cannot determine the server to connect to because the HTTP request input file",
           );
           oConsole.fOutput(
             "  does not contain a 'Host' header and no URL was provided.",
@@ -444,7 +444,7 @@ try:
       s0NetscapeCookiesFilePath = s0NetscapeCookiesFilePath,
       bSaveCookiesToDisk = bSaveCookiesToDisk,
       s0zCookieStoreJSONPath = s0zCookieStoreJSONPath,
-      dsbSpoofedHostname_by_sbHostname = dsbSpoofedHostname_by_sbHostname,
+      dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
     );
     if oHTTPClient.o0CookieStore and o0HTTPRequest:
       oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
@@ -504,7 +504,7 @@ try:
         bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
-        bConcatinateDownload = False,
+        bConcatenateDownload = False,
         bShowProgress = bShowProgress,
       );
     else:
@@ -519,7 +519,7 @@ try:
         bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
         bSaveToFile = bSaveToFile,
         s0TargetFilePath = s0TargetFilePath,
-        bConcatinateDownload = False,
+        bConcatenateDownload = False,
         bShowProgress = bShowProgress,
       );
 except Exception as oException:

@@ -2,7 +2,7 @@
 from mColorsAndChars import *;
 oConsole = foConsoleLoader();
 
-def fHandleProxyHostnameOrIPAddressInvalid(oHTTPClient, oProxyServerURL):
+def fHandleProxyHostInvalid(oHTTPClient, oProxyServerURL):
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_ERROR,      "×",

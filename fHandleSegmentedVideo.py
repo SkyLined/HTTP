@@ -103,7 +103,7 @@ def fHandleSegmentedVideo(
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
-      bConcatinateDownload = uIndex != uStartIndex,
+      bConcatenateDownload = uIndex != uStartIndex,
       bShowProgress = bShowProgress,
     );
     if oResponse.uStatusCode != 200:

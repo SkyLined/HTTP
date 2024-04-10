@@ -24,7 +24,7 @@ from fHandleConnectionToServerCreated import fHandleConnectionToServerCreated;
 from fHandleConnectingToServerIPAddress import fHandleConnectingToServerIPAddress;
 from fHandleConnectingToServerIPAddressFailed import fHandleConnectingToServerIPAddressFailed;
 from fHandleConnectionToServerTerminated import fHandleConnectionToServerTerminated;
-from fHandleProxyHostnameOrIPAddressInvalid import fHandleProxyHostnameOrIPAddressInvalid;
+from fHandleProxyHostInvalid import fHandleProxyHostInvalid;
 from fHandleProxyHostnameResolvedToIPAddress import fHandleProxyHostnameResolvedToIPAddress;
 from fHandleRequestSent import fHandleRequestSent;
 from fHandleRequestSentAndResponseReceived import fHandleRequestSentAndResponseReceived;
@@ -34,9 +34,9 @@ from fHandleResolvingServerHostname import fHandleResolvingServerHostname;
 from fHandleResolvingServerHostnameFailed import fHandleResolvingServerHostnameFailed;
 from fHandleSecureConnectionToServerThroughProxyCreated import fHandleSecureConnectionToServerThroughProxyCreated;
 from fHandleSecureConnectionToServerThroughProxyTerminated import fHandleSecureConnectionToServerThroughProxyTerminated;
-from fHandleServerHostnameOrIPAddressInvalid import fHandleServerHostnameOrIPAddressInvalid;
+from fHandleServerHostInvalid import fHandleServerHostInvalid;
 from fHandleServerHostnameResolvedToIPAddress import fHandleServerHostnameResolvedToIPAddress;
-from fHandleServerHostnameSpoofed import fHandleServerHostnameSpoofed;
+from fHandleServerHostSpoofed import fHandleServerHostSpoofed;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
 from fOutputInvalidCookieAttribute import fOutputInvalidCookieAttribute;
 from fOutputRequestSent import fOutputRequestSent;
@@ -65,7 +65,7 @@ def foGetHTTPClient(
   s0NetscapeCookiesFilePath,
   bSaveCookiesToDisk,
   s0zCookieStoreJSONPath,
-  dsbSpoofedHostname_by_sbHostname,
+  dsbSpoofedHost_by_sbHost,
 ):
   ### COOKIE STORE ###########################################################
   if bSaveCookiesToDisk:
@@ -164,7 +164,7 @@ def foGetHTTPClient(
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
       bVerifyCertificates = bVerifyCertificates,
-      dsbSpoofedHostname_by_sbHostname = dsbSpoofedHostname_by_sbHostname,
+      dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
     );
   elif o0HTTPProxyServerURL:
     # Create a HTTP client instance that uses a static proxy
@@ -219,11 +219,11 @@ def foGetHTTPClient(
     );
     if isinstance(oClient, (cHTTPClient,)):
       oClient.fAddCallbacks({
-        "spoofing server hostname": fHandleServerHostnameSpoofed,
+        "spoofing server host": fHandleServerHostSpoofed,
       });
     if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
       oClient.fAddCallbacks({
-        "server hostname or ip address invalid": fHandleServerHostnameOrIPAddressInvalid,
+        "server host invalid": fHandleServerHostInvalid,
         
         "resolving server hostname": fHandleResolvingServerHostname,
         "resolving server hostname failed": fHandleResolvingServerHostnameFailed,
@@ -238,7 +238,7 @@ def foGetHTTPClient(
       });
     if isinstance(oClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
       oClient.fAddCallbacks({
-        "proxy hostname or ip address invalid": fHandleProxyHostnameOrIPAddressInvalid,
+        "proxy host invalid": fHandleProxyHostInvalid,
         "resolving proxy hostname": fHandleResolvingProxyHostname,
         "resolving proxy hostname failed": fHandleResolvingProxyHostnameFailed,
         "proxy hostname resolved to ip address": fHandleProxyHostnameResolvedToIPAddress,

@@ -46,7 +46,7 @@ def fHandleM3U(
     bFixDecodeBodyErrors = bFixDecodeBodyErrors,
     bSaveToFile = False,
     s0TargetFilePath = None,
-    bConcatinateDownload = False,
+    bConcatenateDownload = False,
     bShowProgress = bShowProgress,
   );
   if oResponse.uStatusCode != 200:
@@ -100,7 +100,7 @@ def fHandleM3U(
       bFixDecodeBodyErrors = bFixDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
-      bConcatinateDownload = uProcessedURLs > 0 if bSegmentedM3U else False,
+      bConcatenateDownload = uProcessedURLs > 0 if bSegmentedM3U else False,
       bShowProgress = bShowProgress,
     );
     if oResponse.uStatusCode != 200 and bDownloadToFile:

@@ -1,4 +1,4 @@
-import re, sys;
+import sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHTTPProtocol import \
@@ -29,7 +29,7 @@ def foGetResponseForRequestAndURL(
   bFailOnDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
-  bConcatinateDownload,
+  bConcatenateDownload,
   bShowProgress,
 ):
   # Send the request and get the response.
@@ -60,7 +60,7 @@ def foGetResponseForRequestAndURL(
     elif isinstance(oException, (
       oHTTPClient.cTCPIPConnectionRefusedException,
       oHTTPClient.cTCPIPInvalidAddressException,
-      oHTTPClient.cTCPIPDNSUnknownHostnameException,
+      oHTTPClient.cTCPIPDNSNameCannotBeResolvedException,
     )):
       oConsole.fOutput(
         "      ",
@@ -166,11 +166,11 @@ def foGetResponseForRequestAndURL(
     # Create a new request based on the last one:
     oRedirectedRequest = oRequest.foClone();
     # Update the `Host` header and path in the request to reflect the new URL:
-    oRedirectedRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostnameAndOptionalPort);
+    oRedirectedRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostAndOptionalPort);
     oRedirectedRequest.sbURL = oRedirectToURL.sbRelative;
     # Delete existing cookies:
     oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Cookie");
-    # Apply appropriate cookies if we have a cookiestore.
+    # Apply appropriate cookies if we have a cookie store.
     if oHTTPClient.o0CookieStore:
       oHTTPClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
     if oResponse.uStatusCode in [303]: # AFAIK this only applies to 303.
@@ -189,14 +189,14 @@ def foGetResponseForRequestAndURL(
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bSaveToFile = bSaveToFile,
       s0TargetFilePath = s0TargetFilePath,
-      bConcatinateDownload = bConcatinateDownload,
+      bConcatenateDownload = bConcatenateDownload,
       bShowProgress = bShowProgress,
     );
   if not (bSaveToFile or (bDownloadToFile and oResponse.uStatusCode == 200)):
     return oResponse;
   # Determine target file for download/save
   if s0TargetFilePath is None:
-    # Create a file name that makes sense, given the media type, URL path, and/or hostname
+    # Create a file name that makes sense, given the media type, URL path, and/or host
     sb0MediaType = oResponse.sb0MediaType;
     s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
     # No download file name provided; generate one from the URL path if one is provided:
@@ -206,7 +206,7 @@ def foGetResponseForRequestAndURL(
         sTargetFilePath += "." + s0Extension;
     else:
       sTargetFilePath = "download from %s%s" % (
-        fsCP437FromBytesString(oURL.sbHostname),
+        fsCP437FromBytesString(oURL.sbHost),
         ".%s" % s0Extension if s0Extension else "",
       );
   else:
@@ -234,7 +234,7 @@ def foGetResponseForRequestAndURL(
   try:
     assert oTargetFile.fbWrite(
       sbData = sbData,
-      bAppend = bConcatinateDownload,
+      bAppend = bConcatenateDownload,
       bThrowErrors = True,
     );
   except Exception as oException:

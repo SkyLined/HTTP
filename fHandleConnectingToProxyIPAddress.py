@@ -3,7 +3,8 @@ from mColorsAndChars import *;
 from mNotProvided import fbIsProvided;
 oConsole = foConsoleLoader();
 
-def fHandleConnectingToProxyIPAddress(oHTTPClient, oProxyServerURL, sIPAddress, sbzHostname):
+def fHandleConnectingToProxyIPAddress(oHTTPClient, oProxyServerURL, sbIPAddress):
+  sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fStatus(
     COLOR_ACTIVE,     "C",
     COLOR_CONNECT,    "→",
@@ -15,6 +16,6 @@ def fHandleConnectingToProxyIPAddress(oHTTPClient, oProxyServerURL, sIPAddress, 
     [
       COLOR_NORMAL, " using IP address ",
       COLOR_INFO, sIPAddress,
-    ] if fbIsProvided(sbzHostname) else [],
+    ] if oProxyServerURL.sbHost.lower() != sbIPAddress.lower() else [],
     COLOR_NORMAL, "...",
   );

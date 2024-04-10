@@ -24,7 +24,7 @@ def foGetResponseForURL(
   bFailOnDecodeBodyErrors,
   bSaveToFile,
   s0TargetFilePath,
-  bConcatinateDownload,
+  bConcatenateDownload,
   bShowProgress,
 ):
   if d0Form_sValue_by_sName is not None and not fbIsProvided(sbzMethod):
@@ -67,6 +67,6 @@ def foGetResponseForURL(
     bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
     bSaveToFile = bSaveToFile,
     s0TargetFilePath = s0TargetFilePath,
-    bConcatinateDownload = bConcatinateDownload,
+    bConcatenateDownload = bConcatenateDownload,
     bShowProgress = bShowProgress,
   );

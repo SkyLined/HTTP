@@ -3,8 +3,9 @@ from mColorsAndChars import *;
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fHandleProxyHostnameResolvedToIPAddress(oHTTPClient, oProxyServerURL, sIPAddress, sCanonicalName):
-  sHostnameOrIPAddress = fsCP437FromBytesString(oProxyServerURL.sbHostname);
+def fHandleProxyHostnameResolvedToIPAddress(oHTTPClient, oProxyServerURL, sbIPAddress, sCanonicalName):
+  sHost = fsCP437FromBytesString(oProxyServerURL.sbHost);
+  sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_CONNECT,    "»",
@@ -20,6 +21,6 @@ def fHandleProxyHostnameResolvedToIPAddress(oHTTPClient, oProxyServerURL, sIPAdd
       " (",
       COLOR_INFO, sCanonicalName,
       COLOR_NORMAL, ")",
-    ] if sCanonicalName and sCanonicalName.lower() != sHostnameOrIPAddress.lower() else [],
+    ] if sCanonicalName and sCanonicalName.lower() != sHost.lower() else [],
     ".",
   );

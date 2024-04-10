@@ -7,7 +7,7 @@ def fHandleSSLException(oHTTPClient, oException):
   elif isinstance(oException, oHTTPClient.cSSLWrapSocketException):
     sErrorMessage = "Securely wrapping the connection to the server failed";
   elif isinstance(oException, oHTTPClient.cSSLUnknownCertificateAuthorityException):
-    sErrorMessage = "Securing the connection to the server failed because the server provided a certificate with an unknwon certificate authority";
+    sErrorMessage = "Securing the connection to the server failed because the server provided a certificate with an unknown certificate authority";
   elif isinstance(oException, oHTTPClient.cSSLIncompleteCertificateChainException):
     sErrorMessage = "Securing the connection to the server failed because the server provided a certificate with an incomplete certificate chain";
   elif isinstance(oException, oHTTPClient.cSSLInvalidCertificateException):
@@ -20,8 +20,8 @@ def fHandleSSLException(oHTTPClient, oException):
     sErrorMessage = "Securing the connection to the server failed because the server provided a certificate with an invalid certificate revocation list";
   elif isinstance(oException, oHTTPClient.cSSLInvalidCertificateRevocationListNotAvailableException):
     sErrorMessage = "Securing the connection to the server failed because the certificate revocation list is not available";
-  elif isinstance(oException, oHTTPClient.cSSLInvalidHostnameForCertificateException):
-    sErrorMessage = "Securing the connection to the server failed because the server provided a certificate that does not apply to the hostname of the server";
+  elif isinstance(oException, oHTTPClient.cSSLInvalidHostForCertificateException):
+    sErrorMessage = "Securing the connection to the server failed because the server provided a certificate that does not apply to the host of the server";
   elif isinstance(oException, oHTTPClient.cSSLInvalidSelfSignedCertificateException):
     sErrorMessage = "Securing the connection to the server failed because the server provided a self-signed certificate";
   elif isinstance(oException, oHTTPClient.cSSLInvalidSelfSignedCertificateInChainException):
@@ -29,7 +29,7 @@ def fHandleSSLException(oHTTPClient, oException):
   elif isinstance(oException, oHTTPClient.cSSLSecureHandshakeException):
     sErrorMessage = "Securing the connection to the server failed because of an error during the handshake";
   elif isinstance(oException, oHTTPClient.cSSLCannotGetRemoteCertificateException):
-    sErrorMessage = "Securing the connection to the server failed because the server certificate cannot be retreived";
+    sErrorMessage = "Securing the connection to the server failed because the server certificate cannot be retrieved";
   else:
     sErrorMessage = f"Securing the connection to the server failed: {repr(oException)}";
   oConsole.fOutput(

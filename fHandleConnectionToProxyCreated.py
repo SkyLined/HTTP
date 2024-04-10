@@ -5,7 +5,7 @@ from mNotProvided import *;
 oConsole = foConsoleLoader();
 
 def fHandleConnectionToProxyCreated(oClient, oConnection, oProxyServerURL):
-  sHostnameOrIPAddress = fsCP437FromBytesString(oProxyServerURL.sbHostname);
+  sHost = fsCP437FromBytesString(oProxyServerURL.sbHost);
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
   
   oConsole.fOutput(
@@ -19,6 +19,6 @@ def fHandleConnectionToProxyCreated(oClient, oConnection, oProxyServerURL):
     [
       COLOR_NORMAL, " using IP address ",
       COLOR_INFO, sRemoteIPAddress,
-    ] if sHostnameOrIPAddress.lower() != sRemoteIPAddress.lower() else [],
+    ] if sHost.lower() != sRemoteIPAddress.lower() else [],
     COLOR_NORMAL, ".",
   );

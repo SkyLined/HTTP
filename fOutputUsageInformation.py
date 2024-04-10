@@ -70,13 +70,13 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    on the request URL.");
     oConsole.fOutput("  ", COLOR_INFO, "-save[=<path>]");
     oConsole.fOutput("    Save the entire response in the file specified by \"<path>\". If no path");
-    oConsole.fOutput("    is provided, it is savde in the current folder in a file named based on");
+    oConsole.fOutput("    is provided, it is saved in the current folder in a file named based on");
     oConsole.fOutput("    the request URL.");
     
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Multiple request options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-r", COLOR_NORMAL, ", ", COLOR_INFO, "--max-redirects=<integer>", COLOR_NORMAL, ", ", COLOR_INFO, "--follow-redirects=<integer>");
-    oConsole.fOutput("    If the server respondse with a HTTP 3xx redirect, follow the redirect");
+    oConsole.fOutput("    If the server response with a HTTP 3xx redirect, follow the redirect");
     oConsole.fOutput("    to make another request up to the specified number of times.");
     oConsole.fOutput("  ", COLOR_INFO, "-m3u");
     oConsole.fOutput("    The URL provided represents a playlist and you want to download all files");
@@ -89,8 +89,8 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    many smaller videos for streaming.");
     oConsole.fOutput("  ", COLOR_INFO, "-sv[=<path>]", COLOR_NORMAL, ", ", COLOR_INFO, "--segmented-video[=<path>]");
     oConsole.fOutput("    The URL provided represents one of many URLs used for a video that is");
-    oConsole.fOutput("    streamed from multiple segments. The names of subsequent segements is");
-    oConsole.fOutput("    guessed from the intial URL and all of the segments are downloaded");
+    oConsole.fOutput("    streamed from multiple segments. The names of subsequent segments is");
+    oConsole.fOutput("    guessed from the initial URL and all of the segments are downloaded");
     oConsole.fOutput("    into a single video file.");
 
     oConsole.fOutput("");
@@ -108,11 +108,11 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "-t=<seconds|none>",  COLOR_NORMAL, ", ", COLOR_INFO, "--timeout=<seconds|none>");
     oConsole.fOutput("    Set the response timeout to the given number of seconds. Use 'none' to ");
     oConsole.fOutput("    disable timeouts altogether.");
-    oConsole.fOutput("  ", COLOR_INFO, "-host:<hostname>=<spoofed hostname>");
-    oConsole.fOutput("    For URLs that use the first hostname, the connection will be made to the");
-    oConsole.fOutput("    second hostname (or IP address). The \"Host\" header, cookies, and HTTPS");
-    oConsole.fOutput("    certificate checks are unaffected. This allows you to \"spoof\" a request to");
-    oConsole.fOutput("    the a server at the second hostname exactly as it would be sent to the first.");
+    oConsole.fOutput("  ", COLOR_INFO, "--spoof:<host>=<spoofed host>");
+    oConsole.fOutput("    For URLs that use the first host, all requests will be send to the second");
+    oConsole.fOutput("    host instead, without modification. The \"Host\" header, cookies, and HTTPS");
+    oConsole.fOutput("    certificate checks are unaffected. This allows you to \"spoof\" the server");
+    oConsole.fOutput("    at the first host (DNS name or IP address) using the server at the second.");
 
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Output options", COLOR_NORMAL, ":");
