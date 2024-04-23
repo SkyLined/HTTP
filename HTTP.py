@@ -522,6 +522,7 @@ try:
         bConcatenateDownload = False,
         bShowProgress = bShowProgress,
       );
+    oHTTPClient.fStop();
 except Exception as oException:
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
