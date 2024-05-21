@@ -446,83 +446,85 @@ try:
       s0zCookieStoreJSONPath = s0zCookieStoreJSONPath,
       dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
     );
-    if oHTTPClient.o0CookieStore and o0HTTPRequest:
-      oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
-    
-    if bM3U:
-      ### M3U ######################################################################
-      fHandleM3U(
-        oHTTPClient = oHTTPClient,
-        oURL = oURL,
-        sbzHTTPVersion = sbzHTTPVersion,
-        sbzMethod = sbzMethod,
-        sb0RequestBody = sb0RequestBody,
-        s0RequestData = s0RequestData,
-        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
-        u0MaxRedirects = u0MaxRedirects,
-        bDownloadToFile = bDownloadToFile,
-        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-        bSaveToFile = bSaveToFile,
-        s0TargetFilePath = s0TargetFilePath,
-        bShowProgress = bShowProgress,
-        bSegmentedM3U = bSegmentedM3U,
-      );
-    elif bSegmentedVideo:
-      ### SEGMENTED VIDEO ##########################################################
-      # Multiple request to URL with increasing index until we get a response that is not "200 Ok"
-      fHandleSegmentedVideo(
-        oHTTPClient = oHTTPClient,
-        oURL = oURL,
-        sbzHTTPVersion = sbzHTTPVersion,
-        sbzMethod = sbzMethod,
-        sb0RequestBody = sb0RequestBody,
-        s0RequestData = s0RequestData,
-        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
-        u0MaxRedirects = u0MaxRedirects,
-        bDownloadToFile = bDownloadToFile,
-        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-        bSaveToFile = bSaveToFile,
-        s0TargetFilePath = s0TargetFilePath,
-        bShowProgress = bShowProgress,
-      );
-    elif o0HTTPRequest is None:
-      ### URL ######################################################################
-      # Single request from URL
-      foGetResponseForURL(
-        oHTTPClient = oHTTPClient,
-        oURL = oURL,
-        sbzHTTPVersion = sbzHTTPVersion,
-        sbzMethod = sbzMethod,
-        sb0RequestBody = sb0RequestBody,
-        s0RequestData = s0RequestData,
-        dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-        d0Form_sValue_by_sName = d0Form_sValue_by_sName,
-        u0MaxRedirects = u0MaxRedirects,
-        bDownloadToFile = bDownloadToFile,
-        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-        bSaveToFile = bSaveToFile,
-        s0TargetFilePath = s0TargetFilePath,
-        bConcatenateDownload = False,
-        bShowProgress = bShowProgress,
-      );
-    else:
-      ### .HTTP(S) FILE ############################################################
-      # Single request
-      foGetResponseForRequestAndURL(
-        oHTTPClient = oHTTPClient,
-        oRequest = o0HTTPRequest,
-        oURL = oURL,
-        u0MaxRedirects = u0MaxRedirects,
-        bDownloadToFile = bDownloadToFile,
-        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-        bSaveToFile = bSaveToFile,
-        s0TargetFilePath = s0TargetFilePath,
-        bConcatenateDownload = False,
-        bShowProgress = bShowProgress,
-      );
-    oHTTPClient.fStop();
+    try:
+      if oHTTPClient.o0CookieStore and o0HTTPRequest:
+        oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
+      
+      if bM3U:
+        ### M3U ######################################################################
+        fHandleM3U(
+          oHTTPClient = oHTTPClient,
+          oURL = oURL,
+          sbzHTTPVersion = sbzHTTPVersion,
+          sbzMethod = sbzMethod,
+          sb0RequestBody = sb0RequestBody,
+          s0RequestData = s0RequestData,
+          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bShowProgress = bShowProgress,
+          bSegmentedM3U = bSegmentedM3U,
+        );
+      elif bSegmentedVideo:
+        ### SEGMENTED VIDEO ##########################################################
+        # Multiple request to URL with increasing index until we get a response that is not "200 Ok"
+        fHandleSegmentedVideo(
+          oHTTPClient = oHTTPClient,
+          oURL = oURL,
+          sbzHTTPVersion = sbzHTTPVersion,
+          sbzMethod = sbzMethod,
+          sb0RequestBody = sb0RequestBody,
+          s0RequestData = s0RequestData,
+          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bShowProgress = bShowProgress,
+        );
+      elif o0HTTPRequest is None:
+        ### URL ######################################################################
+        # Single request from URL
+        foGetResponseForURL(
+          oHTTPClient = oHTTPClient,
+          oURL = oURL,
+          sbzHTTPVersion = sbzHTTPVersion,
+          sbzMethod = sbzMethod,
+          sb0RequestBody = sb0RequestBody,
+          s0RequestData = s0RequestData,
+          dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
+          d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bConcatenateDownload = False,
+          bShowProgress = bShowProgress,
+        );
+      else:
+        ### .HTTP(S) FILE ############################################################
+        # Single request
+        foGetResponseForRequestAndURL(
+          oHTTPClient = oHTTPClient,
+          oRequest = o0HTTPRequest,
+          oURL = oURL,
+          u0MaxRedirects = u0MaxRedirects,
+          bDownloadToFile = bDownloadToFile,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bSaveToFile = bSaveToFile,
+          s0TargetFilePath = s0TargetFilePath,
+          bConcatenateDownload = False,
+          bShowProgress = bShowProgress,
+        );
+    finally:
+      oHTTPClient.fStop();
 except Exception as oException:
   if m0DebugOutput:
     m0DebugOutput.fTerminateWithException(oException, guExitCodeInternalError);
