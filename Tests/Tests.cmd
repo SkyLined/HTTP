@@ -18,7 +18,6 @@ IF ERRORLEVEL 1 GOTO :ERROR
 ECHO   * Test license update...
 CALL "%~dp0\..\HTTP.cmd" --license-update >"%REDIRECT_STDOUT_FILE_PATH%"
 IF ERRORLEVEL 1 GOTO :ERROR
-
 ECHO   * Test GET http://example.com...
 CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" -db >"%REDIRECT_STDOUT_FILE_PATH%"
 IF ERRORLEVEL 1 GOTO :ERROR
@@ -28,15 +27,13 @@ CALL "%~dp0\..\HTTP.cmd" GET "http://skylined.nl" --debug -r=10 --download="%TES
 IF ERRORLEVEL 1 GOTO :ERROR
 IF NOT EXIST "%TEST_DOWNLOAD_FILE_PATH%" (
   ECHO - Downloaded file "%TEST_DOWNLOAD_FILE_PATH%" not found!
-  IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
-    POWERSHELL $OutputEncoding = New-Object -Typename System.Text.UTF8Encoding; Get-Content -Encoding utf8 '"%REDIRECT_STDOUT_FILE_PATH%"'
-  )
 ) ELSE (
   DEL "%TEST_DOWNLOAD_FILE_PATH%" /Q
 )
 IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" (
   DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
 )
+
 ECHO + Test.cmd completed.
 ENDLOCAL
 EXIT /B 0
