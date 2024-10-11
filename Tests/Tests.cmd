@@ -39,10 +39,11 @@ ENDLOCAL
 EXIT /B 0
 
 :ERROR
-  ECHO     - Failed with error level %ERRORLEVEL%
+  SET EXIT_CODE=%ERRORLEVEL%
+  ECHO     - Failed with error level %EXIT_CODE%
   CALL :CLEANUP
   ENDLOCAL
-  EXIT /B 3
+  EXIT /B %EXIT_CODE%
 
 :CLEANUP
   IF EXIST "%TEST_DOWNLOAD_FILE_PATH%" (
