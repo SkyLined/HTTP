@@ -40,8 +40,6 @@
     try:
       oModule = __import__(sModuleName, dict(globals()), {}, [], 0);
     except Exception as oException:
-      if bOptional:
-        return None;
       bModuleNotFound = isinstance(oException, ModuleNotFoundError) and oException.args[0] == "No module named '%s'" % sModuleName;
       if bProductIsAnApplication or bDebugOutput:
         if bModuleNotFound:
@@ -53,6 +51,8 @@
             oException.__class__.__name__,
             str(oException),
           ));
+      if bOptional:
+        return None;
       # Dump exception stack like Python would
       import traceback;
       asExceptionReportLines = traceback.format_exc().split("\n");
