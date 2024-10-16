@@ -8,16 +8,18 @@ from foConsoleLoader import foConsoleLoader;
 from fOutputUsageInformation import fOutputUsageInformation;
 from fOutputVersionInformation import fOutputVersionInformation;
 from fOutputLicenseInformation import fOutputLicenseInformation;
-from mColorsAndChars import \
-    COLOR_ADD, CHAR_ADD, \
-    COLOR_BUSY, CHAR_BUSY,\
-    COLOR_ERROR, CHAR_ERROR, \
-    COLOR_REMOVE, CHAR_REMOVE,\
-    COLOR_WARNING, CHAR_WARNING, \
-    COLOR_INFO, COLOR_NORMAL;
-from mExitCodes import \
-    guExitCodeBadArgument, \
-    guExitCodeSuccess;
+from mColorsAndChars import (
+  COLOR_ADD, CHAR_ADD,
+  COLOR_BUSY, CHAR_BUSY,
+  COLOR_ERROR, CHAR_ERROR,
+  COLOR_REMOVE, CHAR_REMOVE,
+  COLOR_WARNING, CHAR_WARNING,
+  COLOR_INFO, COLOR_NORMAL,
+);
+from mExitCodes import (
+  guExitCodeBadArgument,
+  guExitCodeSuccess,
+);
 oConsole = foConsoleLoader();
 
 def fExitWithBadArgumentValue(sArgumentName, sMessage):

@@ -1,7 +1,12 @@
 import sys;
 
 from foConsoleLoader import foConsoleLoader;
-from mColorsAndChars import *;
+from mColorsAndChars import (
+  COLOR_DIM,
+  COLOR_ERROR, CHAR_ERROR,
+  COLOR_INFO,
+  COLOR_NORMAL,
+);
 oConsole = foConsoleLoader();
 
 gbDebugOutput = False;

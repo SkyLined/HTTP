@@ -17,23 +17,6 @@ except ModuleNotFoundError as oException:
     raise;
   m0DebugOutput = None;
 
-def fbParseBooleanArgument(s0Value):
-  if s0Value is None or s0Value.lower() == "true":
-    return True;
-  if s0Value.lower() == "false":
-    return False;
-  oConsole.fOutput(
-    COLOR_ERROR, CHAR_ERROR,
-    COLOR_NORMAL, " The value for \"",
-    COLOR_INFO, sArgument,
-    COLOR_NORMAL, "\" must be \"",
-    COLOR_INFO, "true",
-    COLOR_NORMAL, "\" (default) or \"",
-    COLOR_INFO, "false",
-    COLOR_NORMAL, "\".",
-  );
-  sys.exit(guExitCodeBadArgument);
-
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   from mFileSystemItem import cFileSystemItem;
@@ -42,23 +25,47 @@ try:
   from mNotProvided import fbIsProvided, zNotProvided;
   
   from fatsArgumentLowerNameAndValue import fatsArgumentLowerNameAndValue;
-  from fHandleM3U import fHandleM3U;
-  from fHandleSegmentedVideo import fHandleSegmentedVideo;
   from foConsoleLoader import foConsoleLoader;
-  from foGetHTTPClient import foGetHTTPClient;
-  from foGetResponseForURL import foGetResponseForURL;
-  from foGetResponseForRequestAndURL import foGetResponseForRequestAndURL;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
   from fOutputUsageInformation import fOutputUsageInformation;
-  from mColorsAndChars import *;
+  from mColorsAndChars import (
+    COLOR_ERROR, CHAR_ERROR,
+    COLOR_INFO, 
+    COLOR_NORMAL
+  );
   from mExitCodes import (
     guExitCodeBadArgument,
     guExitCodeCannotReadRequestBodyFromFile,
     guExitCodeRequestDataInFileIsNotUTF8,
     guExitCodeSuccess,
   );
+  from mRunAsClient import (
+    fHandleM3U,
+    fHandleSegmentedVideo,
+    foGetHTTPClient,
+    foGetResponseForURL,
+    foGetResponseForRequestAndURL,
+  );
   oConsole = foConsoleLoader();
-  
+
+  def fbParseBooleanArgument(s0Value):
+    if s0Value is None or s0Value.lower() == "true":
+      return True;
+    if s0Value.lower() == "false":
+      return False;
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " The value for \"",
+      COLOR_INFO, sArgument,
+      COLOR_NORMAL, "\" must be \"",
+      COLOR_INFO, "true",
+      COLOR_NORMAL, "\" (default) or \"",
+      COLOR_INFO, "false",
+      COLOR_NORMAL, "\".",
+    );
+    sys.exit(guExitCodeBadArgument);
+
+
   if __name__ == "__main__":
     rShouldBeAURL = re.compile(r"^https?://.*$", re.I);
     rMethod = re.compile(r"^[A-Z]+$", re.I);
