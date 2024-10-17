@@ -42,21 +42,22 @@ garbSegmentedVideos = [re.compile(sb) for sb in [
   )
 ]];
 
-def fHandleSegmentedVideo(
+def fProcessSegmentedVideo(
   *,
   oHTTPClient,
   oURL,
-  sbzHTTPVersion,
-  sbzMethod,
-  sb0RequestBody,
-  s0RequestData,
-  dsbAdditionalOrRemovedHeaders,
-  d0Form_sValue_by_sName,
+  sbzSetHTTPVersion,
+  sbzSetMethod,
+  sb0SetHTTPRequestBody,
+  s0SetHTTPRequestData,
+  dsbAddOrRemoveHeaders,
+  d0SetForm_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
-  bSaveToFile,
-  s0TargetFilePath,
+  bSaveHTTPResponsesToFiles,
+  o0DownloadToFileSystemItem,
+  o0SaveHTTPResponsesToFileSystemItem,
   bShowProgress,
 ):
   for rbSegmentedVideo in garbSegmentedVideos:
@@ -93,17 +94,18 @@ def fHandleSegmentedVideo(
     oResponse = foGetResponseForURL(
       oHTTPClient = oHTTPClient,
       oURL = oURL,
-      sbzHTTPVersion = sbzHTTPVersion,
-      sbzMethod = sbzMethod,
-      sb0RequestBody = sb0RequestBody,
-      s0RequestData = s0RequestData,
-      dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-      d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+      sbzSetHTTPVersion = sbzSetHTTPVersion,
+      sbzSetMethod = sbzSetMethod,
+      sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
+      s0SetHTTPRequestData = s0SetHTTPRequestData,
+      dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+      d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
       u0MaxRedirects = u0MaxRedirects,
       bDownloadToFile = bDownloadToFile,
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-      bSaveToFile = bSaveToFile,
-      s0TargetFilePath = s0TargetFilePath,
+      bSaveHTTPResponsesToFiles = bSaveHTTPResponsesToFiles,
+      o0DownloadToFileSystemItem = o0DownloadToFileSystemItem,
+      o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
       bConcatenateDownload = uIndex != uStartIndex,
       bShowProgress = bShowProgress,
     );

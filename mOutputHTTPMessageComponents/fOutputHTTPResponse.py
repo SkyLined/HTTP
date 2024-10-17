@@ -27,8 +27,8 @@ def fOutputHTTPResponse(
     bShowDetails,
     bDecodeBody,
     bFailOnDecodeBodyErrors,
-    bForceHex = False,
-    uHexChars = 16,
+    bForceHexOutputOfBody = False,
+    uHexOutputCharsPerLine = 16,
     xPrefix = [],
   ):
   if 100 <= oResponse.uStatusCode <= 199:
@@ -87,8 +87,8 @@ def fOutputHTTPResponse(
         oResponse.sb0Body,
         bShowDetails = bShowDetails,
         bOutputEOF = not oResponse.o0AdditionalHeaders,
-        bForceHex = bForceHex,
-        uHexChars = uHexChars,
+        bForceHexOutput = bForceHexOutputOfBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
         xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
       );
   if oResponse.o0AdditionalHeaders:

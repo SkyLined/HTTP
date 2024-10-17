@@ -1,3 +1,4 @@
+import json, sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHTTPClient import (
@@ -6,6 +7,7 @@ from mHTTPClient import (
   cHTTPClientUsingProxyServer,
 );
 from mHTTPCookieStore import cHTTPCookieStore;
+from mNotProvided import fbIsProvided;
 
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
@@ -43,9 +45,9 @@ from mOutputHostEvents import (
   fOutputServerHostnameResolvedToIPAddress,
   fOutputServerHostSpoofed,
 );
-from mOutputHTTPClientEvents import (
+from mOutputHTTPMessageEvents import (
   fOutputRequestSent,
-  fOutputRequestSentAndResponseReceived,
+  fOutputResponseReceived,
 );
 from mOutputHTTPMessageComponents import (
   fOutputHTTPRequest,
@@ -68,24 +70,22 @@ def foGetHTTPClient(
   n0zTimeoutInSeconds,
   bVerifyCertificates,
   bShowProgress,
-  bShowProxyConnects,
   bShowRequest,
   bShowResponse,
   bShowDetails,
-  bDecodeBody,
+  bDecodeBodyOfHTTPMessages,
   bFailOnDecodeBodyErrors,
-  bForceHex,
-  uHexChars,
-  s0NetscapeCookiesFilePath,
-  bSaveCookiesToDisk,
-  s0zCookieStoreJSONPath,
+  bForceHexOutputOfHTTPMessageBody,
+  uHexOutputCharsPerLine,
+  o0NetscapeCookiesFileSystemItem,
+  bSaveCookieStore,
+  o0CookieStoreJSONFileSystemItem,
   dsbSpoofedHost_by_sbHost,
 ):
   ### COOKIE STORE ###########################################################
-  if bSaveCookiesToDisk:
-    s0zCookieStoreJSONPath  = s0zCookieStoreJSONPath or "HTTPCookieStore.json";
-    oCookieStoreJSONFile = cFileSystemItem(s0zCookieStoreJSONPath);
-    bCookieStoreFileExists = oCookieStoreJSONFile.fbIsFile();
+  if bSaveCookieStore:
+    oCookieStoreJSONFileSystemItem = o0CookieStoreJSONFileSystemItem or cFileSystemItem("HTTPCookieStore.json");
+    bCookieStoreFileExists = oCookieStoreJSONFileSystemItem.fbIsFile();
     def fSaveCookiesToDiskAndOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie):
       dxJSON = oCookieStore.fdxExportToJSON();
       sbJSON = bytes(json.dumps(dxJSON), "ascii", "strict");
@@ -94,40 +94,39 @@ def foGetHTTPClient(
           "      ",
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Saving cookie store to file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, "...",
         );
       try:
-        oCookieStoreJSONFile.fWrite(sbJSON);
+        oCookieStoreJSONFileSystemItem.fWrite(sbJSON);
       except Exception as oException:
         oConsole.fStatus();
         oConsole.fOutput(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not write cookie store file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, "!",
         );
         fOutputExceptionAndExit(oException, guExitCodeCannotWriteCookiesToFile);
       oConsole.fStatus();
-      fOutputSetCookie(oCookieStore, oCookie, o0PreviousCookie);
+      fOutputCookieSet(oCookieStore, oCookie, o0PreviousCookie);
   else:
     bCookieStoreFileExists = False;
   oCookieStore = cHTTPCookieStore(
     f0InvalidCookieAttributeCallback = fOutputInvalidCookieAttribute,
-    f0SetCookieCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputCookieSet,
-    f0CookieExpiredCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookiesToDisk else fOutputCookieSet,
+    f0SetCookieCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookieStore else fOutputCookieSet,
+    f0CookieExpiredCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookieStore else fOutputCookieSet,
     f0CookieAppliedCallback = None, # (oRequest, oURL, oCookie)
     f0HeaderAppliedCallback = None, # (oRequest, oURL, oHeader)
     f0CookieReceivedCallback = None, # (oResponse, oURL, oCookie)
   );
-  if s0NetscapeCookiesFilePath:
-    oNetscapeCookiesFile = cFileSystemItem(s0NetscapeCookiesFilePath);
-    if not oNetscapeCookiesFile.fbIsFile():
+  if o0NetscapeCookiesFileSystemItem:
+    if not o0NetscapeCookiesFileSystemItem.fbIsFile():
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Netscape cookies file ",
-        COLOR_INFO, oNetscapeCookiesFile.sPath,
+        COLOR_INFO, o0NetscapeCookiesFileSystemItem.sPath,
         COLOR_NORMAL, " does not exist!",
       );
       fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
@@ -136,22 +135,34 @@ def foGetHTTPClient(
         "      ",
         COLOR_BUSY, CHAR_BUSY,
         COLOR_NORMAL, " Reading cookies from file ",
-        COLOR_INFO, oNetscapeCookiesFile.sPath,
+        COLOR_INFO, o0NetscapeCookiesFileSystemItem.sPath,
         COLOR_NORMAL, "...",
       );
     try:
-      sbCookiesInNetscapeFileFormat = oNetscapeCookiesFile.fsbRead();
+      sbCookiesInNetscapeFileFormat = o0NetscapeCookiesFileSystemItem.fsbRead();
     except Exception as oException:
       oConsole.fStatus();
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not read Netscape cookies file ",
-        COLOR_INFO, oNetscapeCookiesFile.sPath,
+        COLOR_INFO, o0NetscapeCookiesFileSystemItem.sPath,
         COLOR_NORMAL, "!",
       );
-      fOutputExceptionAndExit(oException, guExitCodeCannotWriteCookiesToFile);
-    uNumberOfCookiesRead = oCookieStore.fuAddFromNetscapeFileFormat(sbCookiesInNetscapeFileFormat);
+      fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
+    try:
+      uNumberOfCookiesRead = oCookieStore.fuAddFromNetscapeFileFormat(sbCookiesInNetscapeFileFormat);
+    except ValueError as oException:
+      oConsole.fStatus();
+      oConsole.fOutput(
+        "      ",
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " Could not read cookies from Netscape cookies file ",
+        COLOR_INFO, o0NetscapeCookiesFileSystemItem.sPath,
+        COLOR_NORMAL, "!",
+      );
+      fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
+
     oConsole.fStatus();
     if bShowProgress:
       oConsole.fOutput(
@@ -159,7 +170,7 @@ def foGetHTTPClient(
         COLOR_NORMAL, " Read ",
         COLOR_INFO, str(uNumberOfCookiesRead),
         COLOR_HILITE, " cookies from ",
-        COLOR_INFO, oNetscapeCookiesFile.sPath,
+        COLOR_INFO, o0NetscapeCookiesFileSystemItem.sPath,
         COLOR_NORMAL, ".",
       );
   ### HTTP CLIENT ###########################################################
@@ -169,10 +180,10 @@ def foGetHTTPClient(
   
   # Since the event arguments differ for each type of HTTP client, event
   # handlers specific to the client are created which call into the following
-  # two generic functions for reporting the requests/reponses:
+  # two generic functions for reporting the requests/responses:
   if not bUseProxy:
     # Create a HTTP client instance that uses no proxy
-    oClient = cHTTPClient(
+    oHTTPClient = cHTTPClient(
       o0CookieStore = oCookieStore,
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -182,7 +193,7 @@ def foGetHTTPClient(
     );
   elif o0HTTPProxyServerURL:
     # Create a HTTP client instance that uses a static proxy
-    oClient = cHTTPClientUsingProxyServer(
+    oHTTPClient = cHTTPClientUsingProxyServer(
       o0HTTPProxyServerURL, 
       o0CookieStore = oCookieStore,
       n0zConnectToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -193,7 +204,7 @@ def foGetHTTPClient(
     );
   else:
     # Create a HTTP client instance that uses dynamic proxies.
-    oClient = cHTTPClientUsingAutomaticProxyServer(
+    oHTTPClient = cHTTPClientUsingAutomaticProxyServer(
       o0CookieStore = oCookieStore,
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -201,8 +212,8 @@ def foGetHTTPClient(
       bVerifyCertificates = bVerifyCertificates,
     );
   if bShowProgress:
-    oClient.fAddCallback("request sent", lambda
-      oClient,
+    oHTTPClient.fAddCallback("request sent", lambda
+      oHTTPClient,
       *,
       oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
       o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
@@ -212,31 +223,29 @@ def foGetHTTPClient(
           oConnection,
           oRequest,
           o0HTTPProxyServerURL,
-          bShowProxyConnects,
         ),
     );
-    oClient.fAddCallback("request sent and response received", lambda
-      oClient,
+    oHTTPClient.fAddCallback("request sent and response received", lambda
+      oHTTPClient,
       *,
       oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
       o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
       oConnection,
       oRequest,
       oResponse:
-        fOutputRequestSentAndResponseReceived(
+        fOutputResponseReceived(
           oConnection,
           oRequest,
           oResponse,
           o0HTTPProxyServerURL,
-          bShowProxyConnects,
         ),
     );
-    if isinstance(oClient, (cHTTPClient,)):
-      oClient.fAddCallbacks({
+    if isinstance(oHTTPClient, (cHTTPClient,)):
+      oHTTPClient.fAddCallbacks({
         "spoofing server host": fOutputServerHostSpoofed,
       });
-    if isinstance(oClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
-      oClient.fAddCallbacks({
+    if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
+      oHTTPClient.fAddCallbacks({
         "server host invalid": fOutputServerHostInvalid,
         
         "resolving server hostname": fOutputResolvingServerHostname,
@@ -250,8 +259,8 @@ def foGetHTTPClient(
         "connection to server created": fOutputConnectionToServerCreated,
         "connection to server terminated": fOutputConnectionToServerTerminated,
       });
-    if isinstance(oClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
-      oClient.fAddCallbacks({
+    if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
+      oHTTPClient.fAddCallbacks({
         "proxy host invalid": fOutputProxyHostInvalid,
         "resolving proxy hostname": fOutputResolvingProxyHostname,
         "resolving proxy hostname failed": fOutputResolvingProxyHostnameFailed,
@@ -267,8 +276,8 @@ def foGetHTTPClient(
         "secure connection to server through proxy terminated": fOutputSecureConnectionToServerThroughProxyTerminated,
       });
   if bShowRequest:
-    oClient.fAddCallback("request sent", lambda
-      oClient,
+    oHTTPClient.fAddCallback("request sent", lambda
+      oHTTPClient,
       *,
       oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
       o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
@@ -277,17 +286,17 @@ def foGetHTTPClient(
         fOutputHTTPRequest(
           oRequest,
           bShowDetails = bShowDetails,
-          bDecodeBody = bDecodeBody,
+          bDecodeBody = bDecodeBodyOfHTTPMessages,
           bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-          bForceHex = bForceHex,
-          uHexChars = uHexChars,
+          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
           xPrefix = "",
         ),
     );
   if bShowResponse:
     # If we do this with "response received" event, it will fire before we have shown progress (above)
-    oClient.fAddCallback("request sent and response received", lambda
-      oClient,
+    oHTTPClient.fAddCallback("request sent and response received", lambda
+      oHTTPClient,
       *,
       oSecondaryClient = None,
       o0ProxyServerURL = None,
@@ -297,15 +306,15 @@ def foGetHTTPClient(
         fOutputHTTPResponse(
           oResponse,
           bShowDetails = bShowDetails,
-          bDecodeBody = bDecodeBody,
+          bDecodeBody = bDecodeBodyOfHTTPMessages,
           bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-          bForceHex = bForceHex,
-          uHexChars = uHexChars,
+          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
           xPrefix = "",
         ),
     );
 
-  if bSaveCookiesToDisk:
+  if bSaveCookieStore:
     if bCookieStoreFileExists:
       if bShowProgress:
         oConsole.fOutput(
@@ -317,17 +326,17 @@ def foGetHTTPClient(
           "      ",
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Loading cookie store from file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, "...",
         );
       try:
-        sbCookieStoreJSON = oCookieStoreJSONFile.fsbRead();
+        sbCookieStoreJSON = oCookieStoreJSONFileSystemItem.fsbRead();
       except Exception as oException:
         oConsole.fOutput(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not read cookie store file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, ".",
         );
         fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
@@ -336,7 +345,7 @@ def foGetHTTPClient(
           "      ",
           COLOR_BUSY, CHAR_BUSY,
           COLOR_NORMAL, " Parsing cookie store file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, "...",
         );
       try:
@@ -346,7 +355,7 @@ def foGetHTTPClient(
           "      ",
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " Could not parse cookie store file ",
-          COLOR_INFO, oCookieStoreJSONFile.sPath,
+          COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
           COLOR_NORMAL, ":",
         );
         fOutputExceptionAndExit(oException, guExitCodeCannotReadCookiesFromFile);
@@ -357,15 +366,15 @@ def foGetHTTPClient(
           "(cookie store file contains no cookie store data).",
         );
     elif (
-      not oCookieStoreJSONFile.o0Parent
-      or not oCookieStoreJSONFile.o0Parent.fbIsFolder()
+      not oCookieStoreJSONFileSystemItem.o0Parent
+      or not oCookieStoreJSONFileSystemItem.o0Parent.fbIsFolder()
     ):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not find cookie store file ",
-        COLOR_INFO, oCookieStoreJSONFile.sPath,
+        COLOR_INFO, oCookieStoreJSONFileSystemItem.sPath,
         COLOR_NORMAL, " or the folder in which it is located.",
       );
       sys.exit(guExitCodeBadArgument);
-  return oClient;
+  return oHTTPClient;

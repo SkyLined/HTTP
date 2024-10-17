@@ -15,15 +15,15 @@ def fOutputHTTPMessageBody(
   *,
   bShowDetails = None,
   bOutputEOF = None,
-  bForceHex = False,
-  uHexChars = 16,
+  bForceHexOutput = False,
+  uHexOutputCharsPerLine = 16,
   xPrefix = [],
 ):
   assert bShowDetails is not None, \
       "You must specify a value for bShowDetails.";
   assert bOutputEOF is not None, \
       "You must specify a value for bOutputEOF.";
-  if bForceHex or any(uByte < 0x20 and uByte not in b"\r\n\t" for uByte in sbBody):
+  if bForceHexOutput or any(uByte < 0x20 and uByte not in b"\r\n\t" for uByte in sbBody):
     # None ASCII bytes: dump as hex.
     asBytesOutput = [];
     sCharsOutput = "";
@@ -34,10 +34,10 @@ def fOutputHTTPMessageBody(
       # char
       sCharsOutput += fsCP437FromByte(sbBody[uOffset]);
       uOffset += 1;
-      if len(sCharsOutput) == uHexChars or uOffset == len(sbBody):
+      if len(sCharsOutput) == uHexOutputCharsPerLine or uOffset == len(sbBody):
         oConsole.fOutput(
           xPrefix,
-          COLOR_BODY, " ".join(asBytesOutput).ljust(3 * uHexChars - 1),
+          COLOR_BODY, " ".join(asBytesOutput).ljust(3 * uHexOutputCharsPerLine - 1),
           COLOR_NORMAL, "  ",
           COLOR_BODY, sCharsOutput
         );

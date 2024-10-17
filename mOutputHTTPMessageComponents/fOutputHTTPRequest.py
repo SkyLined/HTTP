@@ -22,8 +22,8 @@ def fOutputHTTPRequest(
   bShowDetails = None,
   bDecodeBody = None,
   bFailOnDecodeBodyErrors = None,
-  bForceHex = False,
-  uHexChars = 16,
+  bForceHexOutputOfBody = False,
+  uHexOutputCharsPerLine = 16,
   xPrefix = [],
 ):
   oConsole.fOutput(
@@ -68,8 +68,8 @@ def fOutputHTTPRequest(
         oRequest.sb0Body,
         bShowDetails = bShowDetails,
         bOutputEOF = not oRequest.o0AdditionalHeaders,
-        bForceHex = bForceHex,
-        uHexChars = uHexChars,
+        bForceHexOutput = bForceHexOutputOfBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
         xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
       );
   if oRequest.o0AdditionalHeaders:

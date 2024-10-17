@@ -19,7 +19,7 @@ def fOutputConnectionToServerCreated(oHTTPClient_unused, oConnection, sbHost):
     COLOR_ACTIVE,     "S",
     COLOR_NORMAL, " Connected to server ",
     COLOR_INFO, ("[%s]" if ":" in sHost else "%s") % sHost,
-    COLOR_NORMAL, ":",
+    COLOR_NORMAL, ": ",
     COLOR_INFO, str(uRemotePortNumber),
     [
       COLOR_NORMAL, " using IP address ",

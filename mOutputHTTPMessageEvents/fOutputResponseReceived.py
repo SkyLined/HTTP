@@ -18,10 +18,8 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0ProxyServerURL, bShowProxyConnects):
+def fOutputResponseReceived(oConnection, oRequest, oResponse, o0ProxyServerURL):
   bIsConnectRequest = oRequest.sbMethod.upper() == b"CONNECT";
-  if bIsConnectRequest and not bShowProxyConnects:
-    return;
   if 100 <= oResponse.uStatusCode <= 199:
     COLOR_RESPONSE = COLOR_RESPONSE_1XX;
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_1XX;
@@ -45,7 +43,7 @@ def fOutputRequestSentAndResponseReceived(oConnection, oRequest, oResponse, o0Pr
   oConsole.fOutput(
     [
       COLOR_ACTIVE,       "C",
-      COLOR_RESPONSE,     "◄==" if oConnection.bSecure else "◄--",
+      COLOR_RESPONSE,     "◄", "══" if oConnection.bSecure else "--",
       COLOR_ACTIVE,       "S",
     ] if o0ProxyServerURL is None else [
       COLOR_ACTIVE,       "C",

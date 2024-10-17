@@ -1,5 +1,7 @@
 import sys;
 
+from mFileSystemItem import cFileSystemItem;
+
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ERROR, CHAR_ERROR,
@@ -14,38 +16,40 @@ oConsole = foConsoleLoader();
 from .faoGetURLsFromM3U import faoGetURLsFromM3U;
 from .foGetResponseForURL import foGetResponseForURL;
 
-def fHandleM3U(
+def fProcessM3UFile(
   *,
   oHTTPClient,
   oURL,
-  sbzHTTPVersion,
-  sbzMethod,
-  sb0RequestBody,
-  s0RequestData,
-  dsbAdditionalOrRemovedHeaders,
-  d0Form_sValue_by_sName,
+  sbzSetHTTPVersion,
+  sbzSetMethod,
+  sb0SetHTTPRequestBody,
+  s0SetHTTPRequestData,
+  dsbAddOrRemoveHeaders,
+  d0SetForm_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
-  bSaveToFile,
-  s0TargetFilePath,
+  bSaveHTTPResponsesToFiles,
+  o0DownloadToFileSystemItem,
+  o0SaveHTTPResponsesToFileSystemItem,
   bShowProgress,
-  bSegmentedM3U,
+  bProcessSegmentedM3U,
 ):
   oResponse = foGetResponseForURL(
     oHTTPClient = oHTTPClient,
     oURL = oURL,
-    sbzHTTPVersion = sbzHTTPVersion,
-    sbzMethod = sbzMethod,
-    sb0RequestBody = sb0RequestBody,
-    s0RequestData = s0RequestData,
-    dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-    d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+    sbzSetHTTPVersion = sbzSetHTTPVersion,
+    sbzSetMethod = sbzSetMethod,
+    sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
+    s0SetHTTPRequestData = s0SetHTTPRequestData,
+    dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+    d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
     u0MaxRedirects = u0MaxRedirects,
     bDownloadToFile = False,
     bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-    bSaveToFile = False,
-    s0TargetFilePath = None,
+    bSaveHTTPResponsesToFiles = bSaveHTTPResponsesToFiles,
+    o0DownloadToFileSystemItem = o0DownloadToFileSystemItem,
+    o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
     bConcatenateDownload = False,
     bShowProgress = bShowProgress,
   );
@@ -74,12 +78,12 @@ def fHandleM3U(
     sys.exit(guExitCodeNoValidResponseReceived);
   uProcessedURLs = 0;
   uDownloadedURLs = 0;
-  if bSegmentedM3U and s0TargetFilePath is None:
+  if bProcessSegmentedM3U and o0DownloadToFileSystemItem is None:
     asPathSegments = oURL.asURLDecodedPath;
     if asPathSegments:
-      s0TargetFilePath = asPathSegments[-1] + ".mp4";
+      o0DownloadToFileSystemItem = cFileSyetemItem(asPathSegments[-1] + ".mp4");
     else:
-      s0TargetFilePath = "video.mp4";
+      o0DownloadToFileSystemItem = cFileSystemItem("video.mp4");
   oConsole.fOutput(
     "      ",
     COLOR_OK, CHAR_OK,
@@ -89,18 +93,19 @@ def fHandleM3U(
     oResponse = foGetResponseForURL(
       oHTTPClient = oHTTPClient,
       oURL = oURL,
-      sbzHTTPVersion = sbzHTTPVersion,
-      sbzMethod = sbzMethod,
-      sb0RequestBody = sb0RequestBody,
-      s0RequestData = s0RequestData,
-      dsbAdditionalOrRemovedHeaders = dsbAdditionalOrRemovedHeaders,
-      d0Form_sValue_by_sName = d0Form_sValue_by_sName,
+      sbzSetHTTPVersion = sbzSetHTTPVersion,
+      sbzSetMethod = sbzSetMethod,
+      sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
+      s0SetHTTPRequestData = s0SetHTTPRequestData,
+      dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+      d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
       u0MaxRedirects = u0MaxRedirects,
       bDownloadToFile = bDownloadToFile,
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-      bSaveToFile = bSaveToFile,
-      s0TargetFilePath = s0TargetFilePath,
-      bConcatenateDownload = uProcessedURLs > 0 if bSegmentedM3U else False,
+      bSaveHTTPResponsesToFiles = bSaveHTTPResponsesToFiles,
+      o0DownloadToFileSystemItem = o0DownloadToFileSystemItem,
+      o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
+      bConcatenateDownload = uProcessedURLs > 0 if bProcessSegmentedM3U else False,
       bShowProgress = bShowProgress,
     );
     if oResponse.uStatusCode != 200 and bDownloadToFile:

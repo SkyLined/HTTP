@@ -14,14 +14,12 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestSent(oConnection, oRequest, o0ProxyServerURL, bShowProxyConnects):
+def fOutputRequestSent(oConnection, oRequest, o0ProxyServerURL):
   bIsConnectRequest = oRequest.sbMethod.upper() == b"CONNECT";
-  if bIsConnectRequest and not bShowProxyConnects:
-    return;
   oConsole.fOutput(
     [
       COLOR_ACTIVE,       "C",
-      COLOR_REQUEST,      "==►" if oConnection.bSecure else "--►",
+      COLOR_REQUEST,      "==" if oConnection.bSecure else "--", "►",
       COLOR_ACTIVE,       "S",
     ] if o0ProxyServerURL is None else [
       COLOR_ACTIVE,       "C",

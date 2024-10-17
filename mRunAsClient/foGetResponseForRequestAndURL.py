@@ -22,6 +22,7 @@ from mColorsAndChars import (
   COLOR_INFO,
   COLOR_NORMAL,
   COLOR_OK, CHAR_OK,
+  COLOR_WARNING, CHAR_WARNING,
 );
 from mCP437 import fsCP437FromBytesString;
 from mOutputSecureConnectionEvents import fOutputSSLException;
@@ -35,8 +36,9 @@ def foGetResponseForRequestAndURL(
   u0MaxRedirects,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
-  bSaveToFile,
-  s0TargetFilePath,
+  bSaveHTTPResponsesToFiles,
+  o0DownloadToFileSystemItem,
+  o0SaveHTTPResponsesToFileSystemItem,
   bConcatenateDownload,
   bShowProgress,
 ):
@@ -195,77 +197,100 @@ def foGetResponseForRequestAndURL(
       u0MaxRedirects = u0MaxRedirects - 1,
       bDownloadToFile = bDownloadToFile,
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-      bSaveToFile = bSaveToFile,
-      s0TargetFilePath = s0TargetFilePath,
+      bSaveHTTPResponsesToFiles = bSaveHTTPResponsesToFiles,
+      o0DownloadToFileSystemItem = o0DownloadToFileSystemItem,
+      o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
       bConcatenateDownload = bConcatenateDownload,
       bShowProgress = bShowProgress,
     );
-  if not (bSaveToFile or (bDownloadToFile and oResponse.uStatusCode == 200)):
-    return oResponse;
-  # Determine target file for download/save
-  if s0TargetFilePath is None:
-    # Create a file name that makes sense, given the media type, URL path, and/or host
-    sb0MediaType = oResponse.sb0MediaType;
-    s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
-    # No download file name provided; generate one from the URL path if one is provided:
-    if oURL.asURLDecodedPath:
-      sTargetFilePath = oURL.asURLDecodedPath[-1];
-      if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(sTargetFilePath):
-        sTargetFilePath += "." + s0Extension;
+  def fSaveToFile(sMessage, o0TargetFileSystemItem, s0PostfixFileName, sbData):
+    def fsGetFileNameFromURLAndResponse():
+      # Create a file name that makes sense, given the media type, URL path, and/or host
+      sb0MediaType = oResponse.sb0MediaType;
+      s0Extension = sb0MediaType and fs0GetExtensionForMediaType(sb0MediaType);
+      # No download file name provided; generate one from the URL path if one is provided:
+      if oURL.asURLDecodedPath:
+        sTargetFileName = oURL.asURLDecodedPath[-1];
+        if s0Extension and sb0MediaType != fsb0GetMediaTypeForExtension(sTargetFileName):
+          sTargetFileName += "." + s0Extension;
+      else:
+        sTargetFileName = "download from %s%s" % (
+          fsCP437FromBytesString(oURL.sbHost),
+          ".%s" % s0Extension if s0Extension else "",
+        );
+    # Determine target file for download/save
+    if o0TargetFileSystemItem is None:
+      # User provided no input; generate a file name from the URL and response
+      # and save in the current working directory.
+      sTargetFileName = fsGetFileNameFromURLAndResponse();
+      if s0PostfixFileName:
+        sTargetFileName += s0PostfixFileName;
+      oTargetFile = cFileSystemItem(sTargetFileName);
+    elif o0TargetFileSystemItem.fbIsFolder():
+      # User provided a folder as input; generate a file name from the URL and response
+      # and create a file in the provided folder.
+      oTargetFolder = o0TargetFileSystemItem;
+      sTargetFileName = fsGetFileNameFromURLAndResponse();
+      oTargetFile = oTargetFolder.foGetChild(sTargetFileName);
     else:
-      sTargetFilePath = "download from %s%s" % (
-        fsCP437FromBytesString(oURL.sbHost),
-        ".%s" % s0Extension if s0Extension else "",
+      # User provided a path that is not a folder; assume it is a file path.
+      oTargetFile = o0TargetFileSystemItem;
+    oConsole.fStatus(
+      "      ",
+      COLOR_BUSY, CHAR_BUSY,
+      COLOR_NORMAL, " ", sMessage, " to file ",
+      COLOR_INFO, oTargetFile.sPath,
+      COLOR_NORMAL, "...",
+    );
+    try:
+      assert oTargetFile.fbWrite(
+        sbData = sbData,
+        bAppend = bConcatenateDownload,
+        bThrowErrors = True,
       );
-  else:
-    sTargetFilePath = s0TargetFilePath;
-  oTargetFile = cFileSystemItem(sTargetFilePath);
-  # Download response to file if needed
-  if bSaveToFile:
-    oConsole.fStatus(
-      "      ",
-      COLOR_BUSY, CHAR_BUSY,
-      COLOR_NORMAL, " Saving response to file ",
-      COLOR_INFO, oTargetFile.sPath,
-      COLOR_NORMAL, "...",
-    );
-    sbData = oResponse.fsbSerialize();
-  else:
-    oConsole.fStatus(
-      "      ",
-      COLOR_BUSY, CHAR_BUSY,
-      COLOR_NORMAL, " Downloading to file ",
-      COLOR_INFO, oTargetFile.sPath,
-      COLOR_NORMAL, "...",
-    );
-    sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors) or b"";
-  try:
-    assert oTargetFile.fbWrite(
-      sbData = sbData,
-      bAppend = bConcatenateDownload,
-      bThrowErrors = True,
-    );
-  except Exception as oException:
+    except Exception as oException:
+      oConsole.fStatus();
+      oConsole.fOutput(
+        "      ",
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " Cannot write ",
+        COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
+        COLOR_NORMAL, "to file ",
+        COLOR_INFO, oTargetFile.sPath,
+        COLOR_NORMAL, ":",
+      );
+      fOutputExceptionAndExit(oException, guExitCodeCannotWriteResponseBodyToFile);
     oConsole.fStatus();
-    oConsole.fOutput(
-      "      ",
-      COLOR_ERROR, CHAR_ERROR,
-      COLOR_NORMAL, " Cannot write ",
-      COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
-      COLOR_NORMAL, "to file ",
-      COLOR_INFO, oTargetFile.sPath,
-      COLOR_NORMAL, ":",
+    if bShowProgress:
+      oConsole.fOutput(
+        "      ",
+        COLOR_OK, CHAR_OK,
+        COLOR_NORMAL, " Wrote ",
+        COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
+        COLOR_NORMAL, " to ",
+        COLOR_INFO, oTargetFile.sPath,
+        COLOR_NORMAL, "."
+      );
+  if bSaveHTTPResponsesToFiles:
+    fSaveToFile(
+      sMessage = "Saving HTTP response",
+      o0TargetFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
+      s0PostfixFileName = ".http",
+      sbData = oResponse.fsbSerialize(),
     );
-    fOutputExceptionAndExit(oException, guExitCodeCannotWriteResponseBodyToFile);
-  oConsole.fStatus();
-  if bShowProgress:
-    oConsole.fOutput(
-      "      ",
-      COLOR_OK, CHAR_OK,
-      COLOR_NORMAL, " Saved ",
-      COLOR_INFO, fsBytesToHumanReadableString(len(sbData)),
-      COLOR_NORMAL, " to ",
-      COLOR_INFO, oTargetFile.sPath,
-      COLOR_NORMAL, "."
+  if bDownloadToFile:
+    if oResponse.uStatusCode != 200:
+      oConsole.fOutput(
+        "      ",
+        COLOR_WARNING, CHAR_WARNING,
+        COLOR_NORMAL, " The server returned a ",
+        COLOR_INFO, "HTTP %s" % oResponse.uStatusCode,
+        COLOR_NORMAL, " response; the downloaded file may not contain what you expect!",
+      );
+    fSaveToFile(
+      sMessage = "Downloading",
+      o0TargetFileSystemItem = o0DownloadToFileSystemItem,
+      s0PostfixFileName = None,
+      sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors) or b"",
     );
   return oResponse;
