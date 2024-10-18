@@ -86,18 +86,31 @@ def fRunAsServer(
       n0zIdleTimeoutInSeconds = n0zTimeoutInSeconds,
     );
   except cHTTPServer.cTCPIPPortAlreadyInUseAsAcceptorException:
-      oConsole.fOutput(
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Could not bind to ",
-        [
-          COLOR_NORMAL, "port ",
-          COLOR_INFO, str(uzPortNumber),
-        ] if fbIsProvided(uzPortNumber) else [
-          COLOR_NORMAL, "the default port",
-        ],
-        COLOR_NORMAL, " to accept connections, as the port is already in use.",
-      );
-      sys.exit(guExitCodeBadArgument);
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " Could not bind to ",
+      [
+        COLOR_NORMAL, "port ",
+        COLOR_INFO, str(uzPortNumber),
+      ] if fbIsProvided(uzPortNumber) else [
+        COLOR_NORMAL, "the default port",
+      ],
+      COLOR_NORMAL, " to accept connections because the port is already in use.",
+    );
+    sys.exit(guExitCodeBadArgument);
+  except cHTTPServer.cTCPIPPortNotPermittedException:
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " Could not bind to ",
+      [
+        COLOR_NORMAL, "port ",
+        COLOR_INFO, str(uzPortNumber),
+      ] if fbIsProvided(uzPortNumber) else [
+        COLOR_NORMAL, "the default port",
+      ],
+      COLOR_NORMAL, " to accept connections because this is not allowed by the Operating System.",
+    );
+    sys.exit(guExitCodeBadArgument);
 
   oHTTPServer.fAddCallbacks({
     "connection from client received": fOutputConnectionFromClientCreated,
