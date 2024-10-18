@@ -18,7 +18,7 @@ def fOutputRequestReceived(oConnection, oRequest):
     COLOR_ACTIVE,       "S",
     COLOR_REQUEST,      "◄", "══" if oConnection.bSecure else "--",
     COLOR_ACTIVE,       "C",
-    COLOR_NORMAL, " received ",
+    COLOR_NORMAL, " Received ",
     COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
     COLOR_NORMAL, " request (",
     COLOR_INFO, fsBytesToHumanReadableString(len(oRequest.fsbSerialize())),
