@@ -42,6 +42,7 @@ def fRunAsServer(
     bzShowRequest,
     bzShowResponse,
     n0zTimeoutInSeconds,
+    nSendDelayPerByteInSeconds,
     o0BaseFolderFileSystemItem,
     sbzHost,
     uHexOutputCharsPerLine,
@@ -84,6 +85,7 @@ def fRunAsServer(
       o0SSLContext = o0ServerSideSSLContext,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zIdleTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
     );
   except cHTTPServer.cTCPIPPortAlreadyInUseAsAcceptorException:
     oConsole.fOutput(

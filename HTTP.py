@@ -103,6 +103,7 @@ try:
   dsbSpoofedHost_by_sbHost = {};
   d0ClientShouldSetForm_sValue_by_sName = None;
   n0zTimeoutInSeconds = zNotProvided;
+  nSendDelayPerByteInSeconds = 0;
   o0ClientShouldDownloadToFileSystemItem = None;
   o0ClientShouldUseCookieStoreJSONFileSystemItem = None;
   o0ClientShouldUseHTTPProxyServerURL = None;
@@ -383,8 +384,8 @@ try:
       if s0Value:
         o0SaveHTTPResponsesToFileSystemItem = cFileSystemItem(s0Value);
     elif s0LowerName in ["s", "srv", "serve", "server",]:
-      bRunAsServer = True;
       asRunAsServerArguments.append(sArgument);
+      bRunAsServer = True;
     elif s0LowerName in ["secure"]:
       bzSecureConnections = fbParseBooleanArgument(s0Value);
       if bzSecureConnections and not m0SSL:
@@ -405,6 +406,27 @@ try:
       # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
       if s0Value:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
+    elif s0LowerName in ["send-delay"]:
+      if s0Value is None or s0Value.lower() == "none":
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " You must provide a number larger than or equal to zero as a value for \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+      else:
+        try:
+          nSendDelayPerByteInSeconds = float(s0Value);
+          assert nSendDelayPerByteInSeconds >= 0, "";
+        except:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " The value for \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\" must be a number larger than or equal to zero.",
+          );
+          sys.exit(guExitCodeBadArgument);
     elif s0LowerName in ["show-details"]:
       bzShowDetails = fbParseBooleanArgument(s0Value);
     elif s0LowerName in ["show-progress"]:
@@ -517,6 +539,7 @@ try:
       dsbAddOrRemoveHeaders = dsbClientShouldAddOrRemoveHeaders,
       dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
       n0zTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       o0CookieStoreJSONFileSystemItem = o0ClientShouldUseCookieStoreJSONFileSystemItem,
       o0DownloadToFileSystemItem = o0ClientShouldDownloadToFileSystemItem,
       o0HTTPRequestFileSystemItem = o0InputFileSystemItem,
@@ -541,6 +564,7 @@ try:
       bzShowRequest = bzShowRequest,
       bzShowResponse = bzShowResponse,
       n0zTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       o0BaseFolderFileSystemItem = o0InputFileSystemItem,
       sbzHost = sbzServerShouldUseHost,
       uHexOutputCharsPerLine = uHexOutputCharsPerLine,
