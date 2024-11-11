@@ -386,7 +386,6 @@ try:
       bRunAsServer = True;
       asRunAsServerArguments.append(sArgument);
     elif s0LowerName in ["secure"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       bzSecureConnections = fbParseBooleanArgument(s0Value);
       if bzSecureConnections and not m0SSL:
         oConsole.fOutput(
