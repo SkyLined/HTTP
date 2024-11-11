@@ -312,7 +312,7 @@ try:
               COLOR_INFO, s0LowerName,
               COLOR_NORMAL, " argument must contain a valid host!",
             );
-          sys.exit(guExitCodeBadArgument);
+            sys.exit(guExitCodeBadArgument);
         else:
           sbzServerShouldUseHost = zNotProvided;
     elif s0LowerName in ["m3u"]:
