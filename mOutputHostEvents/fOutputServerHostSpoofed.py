@@ -3,6 +3,7 @@ from mColorsAndChars import (
   COLOR_ACTIVE,
   COLOR_INFO,
   COLOR_NORMAL,
+  COLOR_SPOOFED, STR_SPOOFED3,
   COLOR_WARNING,
 );
 from mCP437 import fsCP437FromBytesString;
@@ -13,11 +14,11 @@ def fOutputServerHostSpoofed(oHTTPClient_unused, sbHost, sbSpoofedHost):
   sSpoofedHost = fsCP437FromBytesString(sbSpoofedHost);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
-    COLOR_WARNING,    "··»",
+    COLOR_SPOOFED,    STR_SPOOFED3,
     COLOR_WARNING,    "S",
-    COLOR_NORMAL, " The server name or IP address ",
-    COLOR_INFO, sHost,
-    COLOR_NORMAL, " has been spoofed as ",
-    COLOR_INFO, sSpoofedHost,
-    COLOR_NORMAL, ".",
+    COLOR_NORMAL,     " The server name or IP address ",
+    COLOR_INFO,       sHost,
+    COLOR_NORMAL,     " has been spoofed as ",
+    COLOR_INFO,       sSpoofedHost,
+    COLOR_NORMAL,     ".",
   );

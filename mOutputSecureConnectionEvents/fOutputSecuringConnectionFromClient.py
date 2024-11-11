@@ -1,22 +1,21 @@
 ﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_DISCONNECTED, STR_DISCONNECTED3,
   COLOR_INFO,
   COLOR_NORMAL,
+  COLOR_SECURING, STR_SECURING3,
 );
 oConsole = foConsoleLoader();
 
-def fOutputConnectionFromClientTerminated(oHTTPServer_unused, oConnection):
+def fOutputSecuringConnectionFromClient(oHTTPClient_unused, oConnection, oSSLContext):
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
-  
-  oConsole.fOutput(
+  oConsole.fStatus(
     COLOR_ACTIVE,       "S",
-    COLOR_DISCONNECTED, STR_DISCONNECTED3,
-    COLOR_ACTIVE,       "C",
-    COLOR_NORMAL,       " Connection from client: ",
+    COLOR_SECURING,     STR_SECURING3,
+    COLOR_NORMAL,       "C",
+    COLOR_NORMAL,       " Securing connection from client ",
     COLOR_INFO,         sRemoteIPAddress,
     COLOR_NORMAL,       ":",
     COLOR_INFO,         str(uRemotePortNumber),
-    COLOR_NORMAL,       " terminated.",
+    COLOR_NORMAL,       "...",
   );

@@ -4,8 +4,9 @@ from mColorsAndChars import (
   COLOR_ERROR,
   COLOR_HILITE,
   COLOR_INACTIVE,
-  COLOR_INFO,
+  COLOR_INFO, CHAR_INFO,
   COLOR_NORMAL,
+  CHAR_CONNECTING_TO_ERROR,
 );
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
@@ -14,17 +15,17 @@ def fOutputConnectingToProxyIPAddressFailed(oHTTPClient_unused, oException, oPro
   sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
-    COLOR_ERROR,      "×",
+    COLOR_ERROR,      CHAR_CONNECTING_TO_ERROR,
     COLOR_ERROR,      "P",
     COLOR_NORMAL,     " ",
     COLOR_INACTIVE,   "S",
-    COLOR_NORMAL, " Connecting to proxy ",
-    COLOR_INFO, str(oProxyServerURL),
+    COLOR_NORMAL,     " Connecting to proxy ",
+    COLOR_INFO,       str(oProxyServerURL),
     [
-      COLOR_NORMAL, " using IP address ",
-      COLOR_INFO, sIPAddress,
+      COLOR_NORMAL,   " using IP address ",
+      COLOR_INFO,     sIPAddress,
     ] if oProxyServerURL.sbHost.lower() != sbIPAddress.lower() else [],
-    COLOR_NORMAL, " failed!",
+    COLOR_NORMAL,     " failed!",
   );
   oConsole.fOutput(
     "    ",

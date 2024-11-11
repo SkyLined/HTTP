@@ -46,7 +46,9 @@ from mOutputHostEvents import (
   fOutputServerHostSpoofed,
 );
 from mOutputHTTPMessageEvents import (
+  fOutputSendingRequest,
   fOutputRequestSent,
+  fOutputReceivingResponse,
   fOutputResponseReceived,
 );
 from mOutputHTTPMessageComponents import (
@@ -54,7 +56,13 @@ from mOutputHTTPMessageComponents import (
   fOutputHTTPResponse,
 );
 from mOutputSecureConnectionEvents import (
-  fOutputSecureConnectionToServerThroughProxyCreated,
+  fOutputSecuringConnectionToServer,
+  fOutputSecuringConnectionToServerFailed,
+  fOutputConnectionToServerSecured,
+  fOutputSecuringConnectionToProxy,
+  fOutputSecuringConnectionToProxyFailed,
+  fOutputConnectionToProxySecured,
+  fOutputConnectionToServerThroughProxySecured,
   fOutputSecureConnectionToServerThroughProxyTerminated,
 );
 from mOutputCookieEvents import (
@@ -68,6 +76,7 @@ def foGetHTTPClient(
   bUseProxy,
   o0HTTPProxyServerURL,
   n0zTimeoutInSeconds,
+  nSendDelayPerByteInSeconds,
   bVerifyCertificates,
   bShowProgress,
   bShowRequest,
@@ -188,6 +197,7 @@ def foGetHTTPClient(
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       bVerifyCertificates = bVerifyCertificates,
       dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
     );
@@ -200,6 +210,7 @@ def foGetHTTPClient(
       n0zSecureConnectionToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureConnectionToServerTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       bVerifyCertificates = bVerifyCertificates,
     );
   else:
@@ -209,9 +220,23 @@ def foGetHTTPClient(
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
+      nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       bVerifyCertificates = bVerifyCertificates,
     );
   if bShowProgress:
+    oHTTPClient.fAddCallback("sending request", lambda
+      oHTTPClient,
+      *,
+      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
+      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
+      oConnection,
+      oRequest:
+        fOutputSendingRequest(
+          oConnection,
+          oRequest,
+          o0HTTPProxyServerURL,
+        ),
+    );
     oHTTPClient.fAddCallback("request sent", lambda
       oHTTPClient,
       *,
@@ -220,6 +245,19 @@ def foGetHTTPClient(
       oConnection,
       oRequest:
         fOutputRequestSent(
+          oConnection,
+          oRequest,
+          o0HTTPProxyServerURL,
+        ),
+    );
+    oHTTPClient.fAddCallback("request sent and receiving response", lambda
+      oHTTPClient,
+      *,
+      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
+      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
+      oConnection,
+      oRequest:
+        fOutputReceivingResponse(
           oConnection,
           oRequest,
           o0HTTPProxyServerURL,
@@ -252,12 +290,14 @@ def foGetHTTPClient(
         "resolving server hostname failed": fOutputResolvingServerHostnameFailed,
         "server hostname resolved to ip address": fOutputServerHostnameResolvedToIPAddress,
         
-        "connecting to server ip address": fOutputConnectingToServerIPAddress,
-        "connecting to server ip address failed": fOutputConnectingToServerIPAddressFailed,
-        # We will always inform the user of this
-        # "connecting to server failed": fOutputConnectingToServerFailed,
+        "connecting to server": fOutputConnectingToServerIPAddress,
+        "connecting to server failed": fOutputConnectingToServerIPAddressFailed,
         "connection to server created": fOutputConnectionToServerCreated,
         "connection to server terminated": fOutputConnectionToServerTerminated,
+
+        "securing connection to server": fOutputSecuringConnectionToServer,
+        "securing connection to server failed": fOutputSecuringConnectionToServerFailed,
+        "connection to server secured": fOutputConnectionToServerSecured,
       });
     if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
       oHTTPClient.fAddCallbacks({
@@ -266,14 +306,16 @@ def foGetHTTPClient(
         "resolving proxy hostname failed": fOutputResolvingProxyHostnameFailed,
         "proxy hostname resolved to ip address": fOutputProxyHostnameResolvedToIPAddress,
         
-        "connecting to proxy ip address": fOutputConnectingToProxyIPAddress,
-        "connecting to proxy ip address failed": fOutputConnectingToProxyIPAddressFailed,
-        # We will always inform the user of this
-        # "connecting to server failed": fOutputConnectingToServerFailed,
+        "connecting to proxy": fOutputConnectingToProxyIPAddress,
+        "connecting to proxy failed": fOutputConnectingToProxyIPAddressFailed,
         "connection to proxy created": fOutputConnectionToProxyCreated,
         "connection to proxy terminated": fOutputConnectionToProxyTerminated,
-        "secure connection to server through proxy created": fOutputSecureConnectionToServerThroughProxyCreated,
-        "secure connection to server through proxy terminated": fOutputSecureConnectionToServerThroughProxyTerminated,
+
+        "securing connection to proxy": fOutputSecuringConnectionToProxy,
+        "securing connection to proxy failed": fOutputSecuringConnectionToProxyFailed,
+        "connection to proxy secured": fOutputConnectionToProxySecured,
+
+        "connection to server through proxy secured": fOutputConnectionToServerThroughProxySecured,
       });
   if bShowRequest:
     oHTTPClient.fAddCallback("request sent", lambda

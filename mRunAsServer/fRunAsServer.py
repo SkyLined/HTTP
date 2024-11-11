@@ -1,4 +1,4 @@
-import sys;
+import os, sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHTTPServer import cHTTPServer;
@@ -26,8 +26,15 @@ from mOutputHTTPMessageComponents import (
   fOutputHTTPResponse,
 );
 from mOutputHTTPMessageEvents import (
+  fOutputReceivingRequest,
   fOutputRequestReceived,
+  fOutputSendingResponse,
   fOutputResponseSent,
+);
+from mOutputSecureConnectionEvents import (
+  fOutputSecuringConnectionFromClient,
+  fOutputSecuringConnectionFromClientFailed,
+  fOutputConnectionFromClientSecured,
 );
 oConsole = foConsoleLoader();
 
@@ -115,23 +122,42 @@ def fRunAsServer(
     sys.exit(guExitCodeBadArgument);
 
   oHTTPServer.fAddCallbacks({
-    "connection from client received": fOutputConnectionFromClientCreated,
+    "connection received": fOutputConnectionFromClientCreated,
+    "securing connection": fOutputSecuringConnectionFromClient,
+    "securing connection failed": fOutputSecuringConnectionFromClientFailed,
+    "connection secured": fOutputConnectionFromClientSecured,
 #    "request error": fOutputRequestFromClientError,
 #    "response error": fOutputResponseToClientError,
-    "connection from client terminated": fOutputConnectionFromClientTerminated,
+    "connection terminated": fOutputConnectionFromClientTerminated,
   });
   if not bShowRequest:
     # We're not showing the request but we do want to show that we received it:
+    oHTTPServer.fAddCallback("receiving request",
+      lambda oHTTPServer, oConnection: (
+        fOutputReceivingRequest(
+          oConnection,
+        ),
+      ),
+    );
     oHTTPServer.fAddCallback("request received",
       lambda oHTTPServer, oConnection, oRequest: (
         fOutputRequestReceived(
           oConnection,
-          oRequest
+          oRequest,
         ),
       ),
     );
   if not bShowResponse:
     # We're not showing the response but we do want to show that we sent it:
+    oHTTPServer.fAddCallback("request received and sending response",
+      lambda oHTTPServer, oConnection, oRequest, oResponse: (
+        fOutputSendingResponse(
+          oConnection,
+          oRequest,
+          oResponse,
+        ),
+      ),
+    );
     oHTTPServer.fAddCallback("response sent",
       lambda oHTTPServer, oConnection, oResponse: (
         fOutputResponseSent(

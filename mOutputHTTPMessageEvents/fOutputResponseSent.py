@@ -3,8 +3,6 @@
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_CONNECTED,
-  COLOR_INACTIVE,
   COLOR_INFO,
   COLOR_NORMAL,
   COLOR_RESPONSE_1XX, COLOR_RESPONSE_STATUS_LINE_1XX,
@@ -14,6 +12,7 @@ from mColorsAndChars import (
   COLOR_RESPONSE_5XX, COLOR_RESPONSE_STATUS_LINE_5XX,
   COLOR_RESPONSE_INVALID, COLOR_RESPONSE_STATUS_LINE_INVALID,
   COLOR_WARNING,
+  STR_RESPONSE_SENT_SECURELY3, STR_RESPONSE_SENT3
 );
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
@@ -43,7 +42,7 @@ def fOutputResponseSent(oConnection, oResponse):
   oConsole.fOutput(
     [
       COLOR_ACTIVE,       "S",
-      COLOR_RESPONSE,     "══►" if oConnection.bSecure else "--►",
+      COLOR_RESPONSE,     STR_RESPONSE_SENT_SECURELY3 if oConnection.bSecure else STR_RESPONSE_SENT3,
       COLOR_ACTIVE,       "C",
     ],
     COLOR_NORMAL, " Sent ",

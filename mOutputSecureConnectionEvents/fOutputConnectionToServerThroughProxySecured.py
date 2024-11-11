@@ -7,7 +7,7 @@ from mColorsAndChars import (
 );
 oConsole = foConsoleLoader();
 
-def fOutputSecureConnectionToServerThroughProxyCreated(oHTTPClient_unused, oConnection_unused, oProxyServerURL, oServerURL):
+def fOutputConnectionToServerThroughProxySecured(oHTTPClient_unused, oConnection_unused, oProxyServerURL, oServerURL):
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_CONNECTED,  "═",

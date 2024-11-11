@@ -4,6 +4,7 @@ from mColorsAndChars import (
   COLOR_ERROR,
   COLOR_INFO,
   COLOR_NORMAL,
+  STR_RESOLVING_ERROR3,
 );
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
@@ -11,11 +12,11 @@ oConsole = foConsoleLoader();
 def fOutputResolvingServerHostnameFailed(oHTTPClient_unused, sbHostname):
   sHostname = fsCP437FromBytesString(sbHostname);
   oConsole.fOutput(
-    COLOR_ACTIVE,   "C",
-    COLOR_ERROR,    "·×·",
-    COLOR_ERROR,    "S",
-    COLOR_NORMAL, " Cannot resolved server hostname ",
-    COLOR_INFO, sHostname,
-    COLOR_NORMAL, ".",
+    COLOR_ACTIVE,     "C",
+    COLOR_ERROR, STR_RESOLVING_ERROR3,
+    COLOR_ERROR,      "S",
+    COLOR_NORMAL,     " Cannot resolved server hostname ",
+    COLOR_INFO,       sHostname,
+    COLOR_NORMAL,     ".",
   );
 

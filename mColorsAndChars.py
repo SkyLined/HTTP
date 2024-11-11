@@ -9,7 +9,7 @@ COLOR_LIST                              = 0xFF0F; # White
 COLOR_BUSY                              = 0xFF03; # Cyan
 COLOR_OK                                = 0xFF02; # Green
 COLOR_WARNING                           = 0xFF06; # Brown
-COLOR_ERROR                             = 0xFF04; # Red
+COLOR_ERROR                             = 0xFF0C; # Red
 
 COLOR_SELECT_YES                        = 0xFF09; # Bright blue
 COLOR_SELECT_MAYBE                      = 0xFF09; # Bright blue
@@ -83,10 +83,16 @@ COLOR_EOF                               = 0xFF0C;
 COLOR_ACTIVE                            = 0xFF0F;
 COLOR_INACTIVE                          = 0xFF08;
 COLOR_NOTHING                           = 0xFF08;
-COLOR_CONNECT                           = 0xFF02;
+COLOR_SPOOFED                           = 0xFF06;
+COLOR_RESOLVING                         = 0xFF02;
+COLOR_RESOLVED                          = 0xFF0A;
+COLOR_CONNECTING                        = 0xFF02;
 COLOR_CONNECTED                         = 0xFF0A;
 COLOR_DISCONNECTED                      = 0xFF0C;
+COLOR_SECURING                          = 0xFF02;
+COLOR_SECURED                           = 0xFF0A;
 COLOR_REQUEST                           = 0xFF0E; # White
+COLOR_RESPONSE                          = 0xFF0E; # White (used before we know the status code)
 COLOR_RESPONSE_1XX                      = 0xFF0B; # Bright cyan
 COLOR_RESPONSE_2XX                      = 0xFF0A; # Bright green
 COLOR_RESPONSE_3XX                      = 0xFF0E; # Yellow
@@ -100,3 +106,70 @@ CHAR_LF                                 = "↓";
 CHAR_CRLF                               = "←┘";
 CHAR_EOF                                = "×";
 
+CHAR_SPOOFED                            = "→";
+STR_SPOOFED3                            = "··→";
+CHAR_RESOLVING                          = "→";
+STR_RESOLVING3                          = "··→";
+CHAR_RESOLVING_ERROR                    = "×";
+STR_RESOLVING_ERROR3                    = "→× ";
+CHAR_RESOLVED                           = "·";
+STR_RESOLVED3                           = "··→";
+
+CHAR_CONNECTING_FROM                    = "←";
+STR_CONNECTING_FROM3                    = "←--";
+CHAR_CONNECTED_FROM                     = "←"
+STR_CONNECTED_FROM3                     = "←――"
+
+CHAR_CONNECTING_TO                      = "→";
+STR_CONNECTING_TO3                      = "--→";
+CHAR_CONNECTED_TO                       = "→";
+STR_CONNECTED_TO3                       = "――→";
+
+CHAR_CONNECTING_TO_ERROR                = "×"
+STR_CONNECTING_TO_ERROR3                = "→× ";
+
+CHAR_DISCONNECTED                       = "×"
+STR_DISCONNECTED3                       = "-×-";
+
+CHAR_SECURING                           = "↔";
+STR_SECURING3                           = "←-→";
+CHAR_SECURING_ERROR                     = "×";
+STR_SECURING_ERROR3                     = "←×→"
+CHAR_SECURED                            = "═";
+STR_SECURED3                            = "═══";
+
+CHAR_SENDING_REQUEST                    = ">";
+STR_SENDING_REQUEST3                    = "――>";
+CHAR_SENDING_REQUEST_SECURELY           = "►";
+STR_SENDING_REQUEST_SECURELY3           = "══>";
+CHAR_REQUEST_SENT                       = ">";
+STR_REQUEST_SENT3                       = "――>";
+CHAR_REQUEST_SENT_SECURELY              = "►";
+STR_REQUEST_SENT_SECURELY3              = "══>";
+
+CHAR_RECEIVING_REQUEST                  = "<";
+STR_RECEIVING_REQUEST3                  = "<――";
+CHAR_RECEIVING_REQUEST_SECURELY         = "◄";
+STR_RECEIVING_REQUEST_SECURELY3         = "<══";
+CHAR_REQUEST_RECEIVED                   = "<";
+STR_REQUEST_RECEIVED3                   = "<――";
+CHAR_REQUEST_RECEIVED_SECURELY          = "◄";
+STR_REQUEST_RECEIVED_SECURELY3          = "<══";
+
+CHAR_SENDING_RESPONSE                   = ">";
+STR_SENDING_RESPONSE3                   = "――>";
+CHAR_SENDING_RESPONSE_SECURELY          = "►";
+STR_SENDING_RESPONSE_SECURELY3          = "══>";
+CHAR_RESPONSE_SENT                      = ">";
+STR_RESPONSE_SENT3                      = "――>";
+CHAR_RESPONSE_SENT_SECURELY             = "►";
+STR_RESPONSE_SENT_SECURELY3             = "══>";
+
+CHAR_RECEIVING_RESPONSE                 = "<";
+STR_RECEIVING_RESPONSE3                 = "<――";
+CHAR_RECEIVING_RESPONSE_SECURELY        = "◄";
+STR_RECEIVING_RESPONSE_SECURELY3        = "<══";
+CHAR_RESPONSE_RECEIVED                  = "<";
+STR_RESPONSE_RECEIVED3                  = "<――";
+CHAR_RESPONSE_RECEIVED_SECURELY         = "◄";
+STR_RESPONSE_RECEIVED_SECURELY3         = "<══";

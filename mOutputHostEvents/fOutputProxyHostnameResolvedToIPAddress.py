@@ -1,7 +1,7 @@
 ﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_CONNECT,
+  COLOR_RESOLVED, CHAR_RESOLVED,
   COLOR_INACTIVE,
   COLOR_INFO,
   COLOR_NORMAL,
@@ -14,7 +14,7 @@ def fOutputProxyHostnameResolvedToIPAddress(oHTTPClient_unused, oProxyServerURL,
   sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
-    COLOR_CONNECT,    "»",
+    COLOR_RESOLVED,   CHAR_RESOLVED,
     COLOR_ACTIVE,     "P",
     COLOR_NORMAL,     " ",
     COLOR_INACTIVE,   "S",

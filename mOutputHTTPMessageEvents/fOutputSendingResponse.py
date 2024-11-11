@@ -3,8 +3,6 @@
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_CONNECTED, CHAR_CONNECTED_TO,
-  COLOR_INACTIVE,
   COLOR_INFO,
   COLOR_NORMAL,
   COLOR_RESPONSE_1XX, COLOR_RESPONSE_STATUS_LINE_1XX,
@@ -14,14 +12,13 @@ from mColorsAndChars import (
   COLOR_RESPONSE_5XX, COLOR_RESPONSE_STATUS_LINE_5XX,
   COLOR_RESPONSE_INVALID, COLOR_RESPONSE_STATUS_LINE_INVALID,
   COLOR_WARNING,
-  CHAR_RESPONSE_RECEIVED, STR_RESPONSE_RECEIVED3,
-  CHAR_RESPONSE_RECEIVED_SECURELY, STR_RESPONSE_RECEIVED_SECURELY3,
+  STR_SENDING_RESPONSE_SECURELY3, STR_SENDING_RESPONSE3
 );
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputResponseReceived(oConnection, oRequest, oResponse, o0ProxyServerURL):
-  bIsConnectRequest = oRequest.sbMethod.upper() == b"CONNECT";
+def fOutputSendingResponse(oConnection, oResponse):
+  (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
   if 100 <= oResponse.uStatusCode <= 199:
     COLOR_RESPONSE = COLOR_RESPONSE_1XX;
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_1XX;
@@ -42,25 +39,13 @@ def fOutputResponseReceived(oConnection, oRequest, oResponse, o0ProxyServerURL):
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_INVALID;
   
   sb0MediaType = oResponse.sb0MediaType; # Getter; this takes time, so cache it.
-  oConsole.fOutput(
+  oConsole.fStatus(
     [
-      COLOR_ACTIVE,       "C",
-      COLOR_RESPONSE,     STR_RESPONSE_RECEIVED_SECURELY3 if oConnection.bSecure else STR_RESPONSE_RECEIVED3,
       COLOR_ACTIVE,       "S",
-    ] if o0ProxyServerURL is None else [
+      COLOR_RESPONSE,     STR_SENDING_RESPONSE_SECURELY3 if oConnection.bSecure else STR_SENDING_RESPONSE3,
       COLOR_ACTIVE,       "C",
-      COLOR_RESPONSE,     CHAR_RESPONSE_RECEIVED_SECURELY if oConnection.bSecure else CHAR_RESPONSE_RECEIVED,
-      COLOR_ACTIVE,       "P",
-      COLOR_CONNECTED,    CHAR_CONNECTED_TO,
-      COLOR_INACTIVE,     "S",
-    ] if bIsConnectRequest else [
-      COLOR_ACTIVE,       "C",
-      COLOR_RESPONSE,     CHAR_RESPONSE_RECEIVED_SECURELY if oConnection.bSecure else CHAR_RESPONSE_RECEIVED,
-      COLOR_ACTIVE,       "P",
-      COLOR_RESPONSE,      CHAR_RESPONSE_RECEIVED,
-      COLOR_ACTIVE,       "S",
     ],
-    COLOR_NORMAL, " Received ",
+    COLOR_NORMAL, " Sent ",
     COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
     COLOR_NORMAL, " response (",
     COLOR_INFO, fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
@@ -74,13 +59,9 @@ def fOutputResponseReceived(oConnection, oRequest, oResponse, o0ProxyServerURL):
     ] if oConnection.bSecure else [
       COLOR_WARNING, "in plain text ",
     ],
-    COLOR_NORMAL,
-    [
-      "through proxy server at ",
-      COLOR_INFO, fsCP437FromBytesString(o0ProxyServerURL.sbAbsolute),
-    ] if o0ProxyServerURL else [
-      "from server at ",
-      COLOR_INFO, fsCP437FromBytesString(oConnection.foGetURLForRemoteServer().sbAbsolute)
-    ],
+    COLOR_NORMAL, "from client at ",
+    COLOR_INFO, sRemoteIPAddress,
+    COLOR_NORMAL, ":",
+    COLOR_INFO, str(uRemotePortNumber),
     COLOR_NORMAL, ".",
   );

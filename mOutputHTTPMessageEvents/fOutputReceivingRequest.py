@@ -6,24 +6,18 @@ from mColorsAndChars import (
   COLOR_INFO,
   COLOR_NORMAL,
   COLOR_REQUEST,
-  COLOR_REQUEST_STATUS_LINE,
   COLOR_WARNING,
-  STR_REQUEST_RECEIVED3, STR_REQUEST_RECEIVED_SECURELY3
+  STR_RECEIVING_REQUEST3, STR_RECEIVING_REQUEST_SECURELY3
 );
-from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestReceived(oConnection, oRequest):
+def fOutputReceivingRequest(oConnection):
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
-  oConsole.fOutput(
+  oConsole.fStatus(
     COLOR_ACTIVE,       "S",
-    COLOR_REQUEST,      STR_REQUEST_RECEIVED_SECURELY3 if oConnection.bSecure else STR_REQUEST_RECEIVED3,
+    COLOR_REQUEST,      STR_RECEIVING_REQUEST_SECURELY3 if oConnection.bSecure else STR_RECEIVING_REQUEST3,
     COLOR_ACTIVE,       "C",
-    COLOR_NORMAL,       " Received ",
-    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
-    COLOR_NORMAL,       " request (",
-    COLOR_INFO, fsBytesToHumanReadableString(len(oRequest.fsbSerialize())),
-    COLOR_NORMAL,       ") ",
+    COLOR_NORMAL,       " Receiving request ",
     [
       COLOR_INFO,       "securely ",
     ] if oConnection.bSecure else [

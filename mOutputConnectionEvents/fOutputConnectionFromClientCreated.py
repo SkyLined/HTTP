@@ -1,7 +1,7 @@
 ﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_CONNECT,
+  COLOR_CONNECTED, STR_CONNECTED_FROM3,
   COLOR_NORMAL,
   COLOR_INFO,
 );
@@ -12,7 +12,7 @@ def fOutputConnectionFromClientCreated(oHTTPServer_unused, oConnection):
   
   oConsole.fOutput(
     COLOR_ACTIVE,       "S",
-    COLOR_CONNECT,      "←--",
+    COLOR_CONNECTED,    STR_CONNECTED_FROM3,
     COLOR_ACTIVE,       "C",
     COLOR_NORMAL,       " Connection from client: ",
     COLOR_INFO,         sRemoteIPAddress,

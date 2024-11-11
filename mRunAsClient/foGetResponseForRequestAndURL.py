@@ -25,7 +25,6 @@ from mColorsAndChars import (
   COLOR_WARNING, CHAR_WARNING,
 );
 from mCP437 import fsCP437FromBytesString;
-from mOutputSecureConnectionEvents import fOutputSSLException;
 oConsole = foConsoleLoader();
 
 def foGetResponseForRequestAndURL(
@@ -43,15 +42,6 @@ def foGetResponseForRequestAndURL(
   bShowProgress,
 ):
   # Send the request and get the response.
-  oConsole.fStatus(
-    "      ",
-    COLOR_BUSY, CHAR_BUSY,
-    COLOR_NORMAL, " Sending request ",
-    COLOR_INFO, fsCP437FromBytesString(oRequest.sbVersion),
-      " ", fsCP437FromBytesString(oRequest.sbMethod),
-      " ", fsCP437FromBytesString(oURL.sbAbsolute),
-    COLOR_NORMAL, "...",
-  );
   try:
     o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
   except Exception as oException:
@@ -115,13 +105,9 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " There was a protocol error while talking to the server.",
       );
     elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLSecureTimeoutException):
-      oConsole.fOutput(
-        "      ",
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " Securing the connection to the server timed out.",
-      );
+      pass; # We have already provided enough output
     elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLException):
-      fOutputSSLException(oHTTPClient, oException);
+      pass; # We have already provided enough output
     else:
       raise;
     oConsole.fOutput();

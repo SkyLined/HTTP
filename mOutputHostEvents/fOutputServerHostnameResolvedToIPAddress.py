@@ -1,7 +1,7 @@
 ﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
-  COLOR_CONNECT,
+  COLOR_RESOLVED, STR_RESOLVED3,
   COLOR_INFO,
   COLOR_NORMAL,
 );
@@ -13,17 +13,17 @@ def fOutputServerHostnameResolvedToIPAddress(oHTTPClient_unused, sbHostname, sbI
   sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
-    COLOR_CONNECT,    "··»",
+    COLOR_RESOLVED,   STR_RESOLVED3,
     COLOR_NORMAL,     "S",
-    COLOR_NORMAL, " Resolved hostname ",
-    COLOR_INFO, sHostname,
-    COLOR_NORMAL, " as IP address ",
-    COLOR_INFO, sIPAddress,
+    COLOR_NORMAL,     " Resolved hostname ",
+    COLOR_INFO,       sHostname,
+    COLOR_NORMAL,     " to IP address ",
+    COLOR_INFO,       sIPAddress,
     COLOR_NORMAL, 
     [
-      " (",
-      COLOR_INFO, sCanonicalName,
-      COLOR_NORMAL, ")",
+                      " (",
+      COLOR_INFO,     sCanonicalName,
+      COLOR_NORMAL,   ")",
     ] if sCanonicalName and sCanonicalName.lower() != sHostname.lower() else [],
     ".",
   );
