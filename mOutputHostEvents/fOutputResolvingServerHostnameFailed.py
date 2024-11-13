@@ -9,7 +9,7 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputResolvingServerHostnameFailed(oHTTPClient_unused, *, bHostname):
+def fOutputResolvingServerHostnameFailed(oHTTPClient_unused, *, sbHostname):
   sHostname = fsCP437FromBytesString(sbHostname);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
