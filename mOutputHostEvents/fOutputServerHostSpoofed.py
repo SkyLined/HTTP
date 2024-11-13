@@ -9,7 +9,7 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputServerHostSpoofed(oHTTPClient_unused, sbHost, sbSpoofedHost):
+def fOutputServerHostSpoofed(oHTTPClient_unused, *, sbHost, sbSpoofedHost):
   sHost = fsCP437FromBytesString(sbHost);
   sSpoofedHost = fsCP437FromBytesString(sbSpoofedHost);
   oConsole.fOutput(

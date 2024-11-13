@@ -18,23 +18,25 @@ from mColorsAndChars import (
 );
 from mExitCodes import guExitCodeBadArgument;
 from mOutputConnectionEvents import (
-  fOutputConnectionFromClientCreated,
-  fOutputConnectionFromClientTerminated,
+  fOutputToServerFromClientConnectionCreated,
+  fOutputToServerFromClientConnectionTerminated,
 );
 from mOutputHTTPMessageComponents import (
   fOutputHTTPRequest,
   fOutputHTTPResponse,
 );
 from mOutputHTTPMessageEvents import (
-  fOutputReceivingRequest,
-  fOutputRequestReceived,
-  fOutputSendingResponse,
-  fOutputResponseSent,
+  fOutputToServerFromClientReceivingRequest,
+  fOutputToServerFromClientReceivingRequestFailed,
+  fOutputToServerFromClientRequestReceived,
+  fOutputFromServerToClientSendingResponse,
+  fOutputFromServerToClientSendingResponseFailed,
+  fOutputFromServerToClientResponseSent,
 );
 from mOutputSecureConnectionEvents import (
-  fOutputSecuringConnectionFromClient,
-  fOutputSecuringConnectionFromClientFailed,
-  fOutputConnectionFromClientSecured,
+  fOutputToServerFromClientSecuringConnection,
+  fOutputToServerFromClientSecuringConnectionFailed,
+  fOutputToServerFromClientConnectionSecured,
 );
 oConsole = foConsoleLoader();
 
@@ -45,9 +47,10 @@ def fRunAsServer(
     bFailOnDecodeBodyErrors,
     bForceHexOutputOfHTTPMessageBody,
     bSecureConnections,
-    bzShowDetails,
-    bzShowRequest,
-    bzShowResponse,
+    bShowProgress,
+    bShowRequest,
+    bShowResponse,
+    bShowDetails,
     n0zTimeoutInSeconds,
     nSendDelayPerByteInSeconds,
     o0BaseFolderFileSystemItem,
@@ -55,10 +58,6 @@ def fRunAsServer(
     uHexOutputCharsPerLine,
     uzPortNumber,
 ):
-  bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else False;
-  bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else False;
-  bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
-
   if bSecureConnections:
     assert m0SSL, \
         "mSSL is not available!?";
@@ -122,87 +121,78 @@ def fRunAsServer(
     sys.exit(guExitCodeBadArgument);
 
   oHTTPServer.fAddCallbacks({
-    "connection received": fOutputConnectionFromClientCreated,
-    "securing connection": fOutputSecuringConnectionFromClient,
-    "securing connection failed": fOutputSecuringConnectionFromClientFailed,
-    "connection secured": fOutputConnectionFromClientSecured,
-#    "request error": fOutputRequestFromClientError,
-#    "response error": fOutputResponseToClientError,
-    "connection terminated": fOutputConnectionFromClientTerminated,
+    "received connection from client": fOutputToServerFromClientConnectionCreated,
+    "securing connection from client": fOutputToServerFromClientSecuringConnection,
+    "securing connection from client failed": fOutputToServerFromClientSecuringConnectionFailed,
+    "secured connection from client": fOutputToServerFromClientConnectionSecured,
+    "terminated connection from client": fOutputToServerFromClientConnectionTerminated,
+    
+    "receiving request from client": lambda oHTTPServer, oConnection: (
+      bShowProgress and fOutputToServerFromClientReceivingRequest(
+        oConnection = oConnection,
+      ),
+    ),
+    "receiving request from client failed": lambda oHTTPServer, oConnection, oException: (
+      bShowProgress and fOutputToServerFromClientReceivingRequestFailed(
+        oConnection = oConnection,
+        oException = oException,
+      ),
+    ),
+    "received request from client": lambda oHTTPServer, oConnection, oRequest: (
+      bShowProgress and fOutputToServerFromClientRequestReceived(
+        oConnection = oConnection,
+        oRequest = oRequest,
+      ),
+      # We'll show the request now if we don't also show the response
+      bShowRequest and not bShowResponse and fOutputHTTPRequest(
+        oRequest,
+        bShowDetails = bShowDetails,
+        bDecodeBody = bDecodeBodyOfHTTPMessages,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+        bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+        xPrefix = "",
+      ),
+    ),
+    "sending response to client": lambda oHTTPServer, oConnection, o0Request, oResponse: (
+      bShowProgress and fOutputFromServerToClientSendingResponse(
+        oConnection = oConnection,
+        oResponse = oResponse,
+      ),
+    ),
+    "sending response to client failed": lambda oHTTPServer, oConnection, o0Request, oResponse, oException: (
+      bShowProgress and fOutputFromServerToClientSendingResponseFailed(
+        oConnection = oConnection,
+        oResponse = oResponse,
+        oException = oException,
+      ),
+    ),
+    "sent response to client": lambda oHTTPServer, oConnection, o0Request, oResponse: (
+      bShowProgress and fOutputFromServerToClientResponseSent(
+        oConnection = oConnection,
+        oResponse = oResponse,
+      ),
+      # We'll show the request right before the response if we show both
+      bShowRequest and bShowResponse and fOutputHTTPRequest(
+        o0Request,
+        bShowDetails = bShowDetails,
+        bDecodeBody = bDecodeBodyOfHTTPMessages,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+        bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+        xPrefix = "",
+      ),
+      bShowResponse and fOutputHTTPResponse(
+        oResponse,
+        bShowDetails = bShowDetails,
+        bDecodeBody = bDecodeBodyOfHTTPMessages,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+        bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+        xPrefix = "",
+      ),
+    ),
   });
-  if not bShowRequest:
-    # We're not showing the request but we do want to show that we received it:
-    oHTTPServer.fAddCallback("receiving request",
-      lambda oHTTPServer, oConnection: (
-        fOutputReceivingRequest(
-          oConnection,
-        ),
-      ),
-    );
-    oHTTPServer.fAddCallback("request received",
-      lambda oHTTPServer, oConnection, oRequest: (
-        fOutputRequestReceived(
-          oConnection,
-          oRequest,
-        ),
-      ),
-    );
-  if not bShowResponse:
-    # We're not showing the response but we do want to show that we sent it:
-    oHTTPServer.fAddCallback("request received and sending response",
-      lambda oHTTPServer, oConnection, oRequest, oResponse: (
-        fOutputSendingResponse(
-          oConnection,
-          oRequest,
-          oResponse,
-        ),
-      ),
-    );
-    oHTTPServer.fAddCallback("response sent",
-      lambda oHTTPServer, oConnection, oResponse: (
-        fOutputResponseSent(
-          oConnection,
-          oResponse,
-        ),
-      ),
-    );
-  if bShowRequest and not bShowResponse:
-    oHTTPServer.fAddCallback("request received",
-      lambda oHTTPServer, oConnection, oRequest: (
-        fOutputHTTPRequest(
-          oRequest,
-          bShowDetails = bShowDetails,
-          bDecodeBody = bDecodeBodyOfHTTPMessages,
-          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
-          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
-          xPrefix = "",
-        ),
-      ),
-    );
-  elif bShowResponse:
-    oHTTPServer.fAddCallback("request received and response sent",
-      lambda oHTTPServer, oConnection, oRequest, oResponse: (
-        bShowRequest and fOutputHTTPRequest(
-          oRequest,
-          bShowDetails = bShowDetails,
-          bDecodeBody = bDecodeBodyOfHTTPMessages,
-          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
-          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
-          xPrefix = "",
-        ),
-        fOutputHTTPResponse(
-          oResponse,
-          bShowDetails = bShowDetails,
-          bDecodeBody = bDecodeBodyOfHTTPMessages,
-          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
-          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
-          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
-          xPrefix = "",
-        ),
-      ),
-    );
   oConsole.fOutput(
     COLOR_NORMAL, "Server URL:  ",
     COLOR_INFO, str(oHTTPServer.foGetURL())

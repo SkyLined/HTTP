@@ -17,8 +17,9 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputResponseSent(oConnection, oResponse):
-  (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
+from .fasOutputRemoteAddressForConnection import fasOutputRemoteAddressForConnection;
+
+def fOutputResponseSent(sFromChar, sToChar, sToDescription, oConnection, oResponse):
   if 100 <= oResponse.uStatusCode <= 199:
     COLOR_RESPONSE = COLOR_RESPONSE_1XX;
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_1XX;
@@ -40,28 +41,24 @@ def fOutputResponseSent(oConnection, oResponse):
   
   sb0MediaType = oResponse.sb0MediaType; # Getter; this takes time, so cache it.
   oConsole.fOutput(
-    [
-      COLOR_ACTIVE,       "S",
-      COLOR_RESPONSE,     STR_RESPONSE_SENT_SECURELY3 if oConnection.bSecure else STR_RESPONSE_SENT3,
-      COLOR_ACTIVE,       "C",
-    ],
-    COLOR_NORMAL, " Sent ",
+    COLOR_ACTIVE,       sFromChar,
+    COLOR_RESPONSE,     STR_RESPONSE_SENT_SECURELY3 if oConnection.bSecure else STR_RESPONSE_SENT3,
+    COLOR_ACTIVE,       sToChar,
+    COLOR_NORMAL,       " Sent ",
     COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
-    COLOR_NORMAL, " response (",
-    COLOR_INFO, fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
-    COLOR_NORMAL,
+    COLOR_NORMAL,       " response (",
+    COLOR_INFO,         fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
     [
-      " ", fsCP437FromBytesString(sb0MediaType),
+      COLOR_NORMAL,     " ",
+      COLOR_INFO,       fsCP437FromBytesString(sb0MediaType),
     ] if sb0MediaType else [],
-    ") ",
+    COLOR_NORMAL,       ") ",
     [
-      COLOR_INFO, "securely ",
+      COLOR_INFO, "securely",
     ] if oConnection.bSecure else [
-      COLOR_WARNING, "in plain text ",
+      COLOR_WARNING, "in plain text",
     ],
-    COLOR_NORMAL, "from client at ",
-    COLOR_INFO, sRemoteIPAddress,
-    COLOR_NORMAL, ":",
-    COLOR_INFO, str(uRemotePortNumber),
+    COLOR_NORMAL, " to ", sToDescription, " ",
+    fasOutputRemoteAddressForConnection(oConnection),
     COLOR_NORMAL, ".",
   );

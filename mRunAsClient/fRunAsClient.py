@@ -18,6 +18,7 @@ from mExitCodes import (
 );
 oConsole = foConsoleLoader();
 
+from .fApplyHeaderSettingsToRequest import fApplyHeaderSettingsToRequest;
 from .fProcessM3UFile import fProcessM3UFile;
 from .fProcessSegmentedVideo import fProcessSegmentedVideo;
 from .foGetHTTPClient import foGetHTTPClient;
@@ -37,12 +38,14 @@ def fRunAsClient(
   bSaveHTTPResponsesToFiles,
   bUseProxy,
   bVerifyCertificates,
-  bzShowDetails,
-  bzShowProgress,
-  bzShowRequest,
-  bzShowResponse,
+  bShowDetails,
+  bShowProgress,
+  bShowRequest,
+  bShowResponse,
   d0SetForm_sValue_by_sName,
-  dsbAddOrRemoveHeaders,
+  asbRemoveHeadersForLowerNames,
+  dtsbReplaceHeaderNameAndValue_by_sLowerName,
+  atsbAddHeadersNameAndValue,
   dsbSpoofedHost_by_sbHost,
   n0zTimeoutInSeconds,
   nSendDelayPerByteInSeconds,
@@ -60,7 +63,6 @@ def fRunAsClient(
   u0MaxRedirects,
   uHexOutputCharsPerLine,
 ):
-  ### DONE PARSING ARGUMENTS #################################################
   if o0HTTPRequestFileSystemItem:
     oHTTPRequestFileSystemItem = o0HTTPRequestFileSystemItem;
     if bProcessSegmentedVideo:
@@ -126,15 +128,14 @@ def fRunAsClient(
       oHTTPRequest.sbHTTPVersion = sbzSetHTTPVersion;
     if fbIsProvided(sbzSetMethod):
       oHTTPRequest.sbMethod = sbzSetMethod;
+    # When setting the body, we automatically set the `Content-Length` header.
+    # This can be removed or modified using the header arguments immediately after
     if sb0SetHTTPRequestBody is not None:
-      oHTTPRequest.fSetBody(sb0SetHTTPRequestBody);
+      oHTTPRequest.fSetBody(sb0SetHTTPRequestBody, bAddContentLengthHeader = True);
     if s0SetHTTPRequestData is not None:
-      oHTTPRequest.fSetData(s0SetHTTPRequestData);
-    for (sbName, sbValue) in dsbAddOrRemoveHeaders.items():
-      if sbValue is None:
-        oHTTPRequest.oHeaders.fbRemoveHeadersForName(sbName);
-      else:
-        oHTTPRequest.oHeaders.fbReplaceHeadersForNameAndValue(sbName, sbValue);
+      oHTTPRequest.fSetData(s0SetHTTPRequestData, bAddContentLengthHeader = True);
+    # Apply header arguments:
+    fApplyHeaderSettingsToRequest(asbRemoveHeadersForLowerNames, dtsbReplaceHeaderNameAndValue_by_sLowerName, atsbAddHeadersNameAndValue);
     if o0URL is None:
       s0Extension = oHTTPRequestFileSystemItem.s0Extension.lower() if oHTTPRequestFileSystemItem.s0Extension else None;
       if s0Extension not in ["http", "https"]:
@@ -173,14 +174,6 @@ def fRunAsClient(
     fOutputUsageInformation(bOutputAllOptions = False);
     sys.exit(guExitCodeSuccess);
   
-  # If not explicitly set, show progress
-  bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
-  # If not explicitly set, only show requests and responses when we are not downloading.
-  bShowRequestResponseDefault = not (bDownloadToFile or bSaveHTTPResponsesToFiles);
-  bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDefault;
-  bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
-  bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
-  
   ### HTTP CLIENT #############################################################
   oHTTPClient = foGetHTTPClient(
     bUseProxy = bUseProxy,
@@ -214,7 +207,9 @@ def fRunAsClient(
         sbzSetMethod = sbzSetMethod,
         sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
         s0SetHTTPRequestData = s0SetHTTPRequestData,
-        dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+        asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
+        dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
+        atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
@@ -235,7 +230,9 @@ def fRunAsClient(
         sbzSetMethod = sbzSetMethod,
         sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
         s0SetHTTPRequestData = s0SetHTTPRequestData,
-        dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+        asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
+        dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
+        atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
@@ -255,7 +252,9 @@ def fRunAsClient(
         sbzSetMethod = sbzSetMethod,
         sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
         s0SetHTTPRequestData = s0SetHTTPRequestData,
-        dsbAddOrRemoveHeaders = dsbAddOrRemoveHeaders,
+        asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
+        dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
+        atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,

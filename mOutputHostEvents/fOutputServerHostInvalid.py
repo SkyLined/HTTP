@@ -8,7 +8,7 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputServerHostInvalid(oHTTPClient_unused, sbHost):
+def fOutputServerHostInvalid(oHTTPClient_unused, *, sbHost):
   sHost = fsCP437FromBytesString(sbHost);
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",

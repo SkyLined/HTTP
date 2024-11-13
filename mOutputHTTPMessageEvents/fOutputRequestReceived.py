@@ -13,25 +13,25 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputRequestReceived(oConnection, oRequest):
+from .fasOutputRemoteAddressForConnection import fasOutputRemoteAddressForConnection;
+
+def fOutputRequestReceived(sToChar, sFromChar, sFromDescription, oConnection, oRequest):
   (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
   oConsole.fOutput(
-    COLOR_ACTIVE,       "S",
+    COLOR_ACTIVE,       sToChar,
     COLOR_REQUEST,      STR_REQUEST_RECEIVED_SECURELY3 if oConnection.bSecure else STR_REQUEST_RECEIVED3,
-    COLOR_ACTIVE,       "C",
+    COLOR_ACTIVE,       sFromChar,
     COLOR_NORMAL,       " Received ",
     COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
     COLOR_NORMAL,       " request (",
     COLOR_INFO, fsBytesToHumanReadableString(len(oRequest.fsbSerialize())),
     COLOR_NORMAL,       ") ",
     [
-      COLOR_INFO,       "securely ",
+      COLOR_INFO,       "securely",
     ] if oConnection.bSecure else [
-      COLOR_WARNING,    "in plain text ",
+      COLOR_WARNING,    "in plain text",
     ],
-    COLOR_NORMAL,       "from client at ",
-    COLOR_INFO,         sRemoteIPAddress,
-    COLOR_NORMAL,       ":",
-    COLOR_INFO,         str(uRemotePortNumber),
+    COLOR_NORMAL,       " from ", sFromDescription, " at ",
+    fasOutputRemoteAddressForConnection(oConnection),
     COLOR_NORMAL,       ".",
   );

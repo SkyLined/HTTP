@@ -11,6 +11,7 @@ from mColorsAndChars import (
 from mExitCodes import guExitCodeRequestDataInFileIsNotUTF8;
 oConsole = foConsoleLoader();
 
+from .fApplyHeaderSettingsToRequest import fApplyHeaderSettingsToRequest;
 from .foGetResponseForRequestAndURL import foGetResponseForRequestAndURL;
 
 def foGetResponseForURL(
@@ -21,7 +22,9 @@ def foGetResponseForURL(
   sbzSetMethod,
   sb0SetHTTPRequestBody,
   s0SetHTTPRequestData,
-  dsbAddOrRemoveHeaders,
+  asbRemoveHeadersForLowerNames,
+  dtsbReplaceHeaderNameAndValue_by_sLowerName,
+  atsbAddHeadersNameAndValue,
   d0SetForm_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
@@ -42,6 +45,7 @@ def foGetResponseForURL(
       sbzMethod = sbzSetMethod,
       sb0Body = sb0SetHTTPRequestBody,
       s0Data = s0SetHTTPRequestData,
+      bAddContentLengthHeader = True, # This header can be removed/modified later through the header arguments
     );
   except oHTTPClient.cHTTPInvalidEncodedDataException as oException:
     oConsole.fOutput(
@@ -53,11 +57,12 @@ def foGetResponseForURL(
     sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
 
   # Apply headers provided through arguments to request
-  for (sbName, sbValue) in dsbAddOrRemoveHeaders.items():
-    if sbValue is None:
-      oRequest.oHeaders.fbRemoveHeadersForName(sbName);
-    else:
-      oRequest.oHeaders.fbReplaceHeadersForNameAndValue(sbName, sbValue);
+  fApplyHeaderSettingsToRequest(
+    asbRemoveHeadersForLowerNames,
+    dtsbReplaceHeaderNameAndValue_by_sLowerName,
+    atsbAddHeadersNameAndValue,
+    oRequest,
+  );
   if d0SetForm_sValue_by_sName:
     oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
     for (sName, sValue) in d0SetForm_sValue_by_sName.items():

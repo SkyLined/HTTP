@@ -25,14 +25,20 @@ from mExitCodes import (
   guExitCodeBadArgument,
 );
 from mOutputConnectionEvents import (
-  fOutputConnectionToProxyCreated,
-  fOutputConnectingToProxyIPAddress,
-  fOutputConnectingToProxyIPAddressFailed,
-  fOutputConnectionToProxyTerminated,
-  fOutputConnectionToServerCreated,
-  fOutputConnectingToServerIPAddress,
-  fOutputConnectingToServerIPAddressFailed,
-  fOutputConnectionToServerTerminated,
+  fOutputFromClientToServerConnecting,
+  fOutputFromClientToServerConnectingFailed,
+  fOutputFromClientToServerConnectionCreated,
+  fOutputFromClientToServerConnectionTerminated,
+  
+  fOutputFromClientToProxyConnecting,
+  fOutputFromClientToProxyConnectingFailed,
+  fOutputFromClientToProxyConnectionCreated,
+  fOutputFromClientToProxyConnectionTerminated,
+  
+  fOutputFromClientToServerThroughProxyConnecting,
+  fOutputFromClientToServerThroughProxyConnectingFailed,
+  fOutputFromClientToServerThroughProxyConnectionCreated,
+  fOutputFromClientToServerThroughProxyConnectionTerminated,
 );
 from mOutputHostEvents import (
   fOutputProxyHostInvalid,
@@ -46,24 +52,35 @@ from mOutputHostEvents import (
   fOutputServerHostSpoofed,
 );
 from mOutputHTTPMessageEvents import (
-  fOutputSendingRequest,
-  fOutputRequestSent,
-  fOutputReceivingResponse,
-  fOutputResponseReceived,
+  fOutputFromClientToServerSendingRequest,
+  fOutputFromClientToServerSendingRequestFailed,
+  fOutputFromClientToServerRequestSent,  
+  fOutputToClientFromServerReceivingResponse,
+  fOutputToClientFromServerReceivingResponseFailed,
+  fOutputToClientFromServerResponseReceived,
+  fOutputFromClientToProxySendingRequest,
+  fOutputFromClientToProxySendingRequestFailed,
+  fOutputFromClientToProxyRequestSent,
+  fOutputToClientFromProxyReceivingResponse,
+  fOutputToClientFromProxyReceivingResponseFailed,
+  fOutputToClientFromProxyResponseReceived,
 );
 from mOutputHTTPMessageComponents import (
   fOutputHTTPRequest,
   fOutputHTTPResponse,
 );
 from mOutputSecureConnectionEvents import (
-  fOutputSecuringConnectionToServer,
-  fOutputSecuringConnectionToServerFailed,
-  fOutputConnectionToServerSecured,
-  fOutputSecuringConnectionToProxy,
-  fOutputSecuringConnectionToProxyFailed,
-  fOutputConnectionToProxySecured,
-  fOutputConnectionToServerThroughProxySecured,
-  fOutputSecureConnectionToServerThroughProxyTerminated,
+  fOutputFromClientToServerSecuringConnection,
+  fOutputFromClientToServerSecuringConnectionFailed,
+  fOutputFromClientToServerConnectionSecured,
+  
+  fOutputFromClientToProxySecuringConnection,
+  fOutputFromClientToProxySecuringConnectionFailed,
+  fOutputFromClientToProxyConnectionSecured,
+
+  fOutputFromClientToServerThroughProxySecuringConnection,
+  fOutputFromClientToServerThroughProxySecuringConnectionFailed,
+  fOutputFromClientToServerThroughProxyConnectionSecured,
 );
 from mOutputCookieEvents import (
   fOutputInvalidCookieAttribute,
@@ -77,14 +94,14 @@ def foGetHTTPClient(
   o0HTTPProxyServerURL,
   n0zTimeoutInSeconds,
   nSendDelayPerByteInSeconds,
+  bDecodeBodyOfHTTPMessages,
+  bFailOnDecodeBodyErrors,
+  bForceHexOutputOfHTTPMessageBody,
   bVerifyCertificates,
   bShowProgress,
   bShowRequest,
   bShowResponse,
   bShowDetails,
-  bDecodeBodyOfHTTPMessages,
-  bFailOnDecodeBodyErrors,
-  bForceHexOutputOfHTTPMessageBody,
   uHexOutputCharsPerLine,
   o0NetscapeCookiesFileSystemItem,
   bSaveCookieStore,
@@ -223,109 +240,27 @@ def foGetHTTPClient(
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       bVerifyCertificates = bVerifyCertificates,
     );
-  if bShowProgress:
-    oHTTPClient.fAddCallback("sending request", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      oConnection,
-      oRequest:
-        fOutputSendingRequest(
-          oConnection,
-          oRequest,
-          o0HTTPProxyServerURL,
+  if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
+    oHTTPClient.fAddCallbacks({
+      "sending request to server": lambda oHTTPClient, *, oConnection, oRequest: (
+        bShowProgress and fOutputFromClientToServerSendingRequest(
+          oConnection = oConnection,
+          oRequest = oRequest,
         ),
-    );
-    oHTTPClient.fAddCallback("request sent", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      oConnection,
-      oRequest:
-        fOutputRequestSent(
-          oConnection,
-          oRequest,
-          o0HTTPProxyServerURL,
+      ),
+      "sending request to server failed": lambda oHTTPClient, *, oConnection, oRequest, oException: (
+        bShowProgress and fOutputFromClientToServerSendingRequestFailed(
+          oConnection = oConnection,
+          oRequest = oRequest,
+          oException = oException,
         ),
-    );
-    oHTTPClient.fAddCallback("request sent and receiving response", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      oConnection,
-      oRequest:
-        fOutputReceivingResponse(
-          oConnection,
-          oRequest,
-          o0HTTPProxyServerURL,
+      ),
+      "sent request to server": lambda oHTTPClient, *, oConnection, oRequest: (
+        bShowProgress and fOutputFromClientToServerRequestSent(
+          oConnection = oConnection,
+          oRequest = oRequest,
         ),
-    );
-    oHTTPClient.fAddCallback("request sent and response received", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      oConnection,
-      oRequest,
-      oResponse:
-        fOutputResponseReceived(
-          oConnection,
-          oRequest,
-          oResponse,
-          o0HTTPProxyServerURL,
-        ),
-    );
-    if isinstance(oHTTPClient, (cHTTPClient,)):
-      oHTTPClient.fAddCallbacks({
-        "spoofing server host": fOutputServerHostSpoofed,
-      });
-    if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
-      oHTTPClient.fAddCallbacks({
-        "server host invalid": fOutputServerHostInvalid,
-        
-        "resolving server hostname": fOutputResolvingServerHostname,
-        "resolving server hostname failed": fOutputResolvingServerHostnameFailed,
-        "server hostname resolved to ip address": fOutputServerHostnameResolvedToIPAddress,
-        
-        "connecting to server": fOutputConnectingToServerIPAddress,
-        "connecting to server failed": fOutputConnectingToServerIPAddressFailed,
-        "connection to server created": fOutputConnectionToServerCreated,
-        "connection to server terminated": fOutputConnectionToServerTerminated,
-
-        "securing connection to server": fOutputSecuringConnectionToServer,
-        "securing connection to server failed": fOutputSecuringConnectionToServerFailed,
-        "connection to server secured": fOutputConnectionToServerSecured,
-      });
-    if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
-      oHTTPClient.fAddCallbacks({
-        "proxy host invalid": fOutputProxyHostInvalid,
-        "resolving proxy hostname": fOutputResolvingProxyHostname,
-        "resolving proxy hostname failed": fOutputResolvingProxyHostnameFailed,
-        "proxy hostname resolved to ip address": fOutputProxyHostnameResolvedToIPAddress,
-        
-        "connecting to proxy": fOutputConnectingToProxyIPAddress,
-        "connecting to proxy failed": fOutputConnectingToProxyIPAddressFailed,
-        "connection to proxy created": fOutputConnectionToProxyCreated,
-        "connection to proxy terminated": fOutputConnectionToProxyTerminated,
-
-        "securing connection to proxy": fOutputSecuringConnectionToProxy,
-        "securing connection to proxy failed": fOutputSecuringConnectionToProxyFailed,
-        "connection to proxy secured": fOutputConnectionToProxySecured,
-
-        "connection to server through proxy secured": fOutputConnectionToServerThroughProxySecured,
-      });
-  if bShowRequest:
-    oHTTPClient.fAddCallback("request sent", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      o0ProxyServerURL = None, # Only provided by cHTTPClientUsingAutomaticProxyServer
-      oConnection,
-      oRequest:
-        fOutputHTTPRequest(
+        bShowRequest and fOutputHTTPRequest(
           oRequest,
           bShowDetails = bShowDetails,
           bDecodeBody = bDecodeBodyOfHTTPMessages,
@@ -334,18 +269,24 @@ def foGetHTTPClient(
           uHexOutputCharsPerLine = uHexOutputCharsPerLine,
           xPrefix = "",
         ),
-    );
-  if bShowResponse:
-    # If we do this with "response received" event, it will fire before we have shown progress (above)
-    oHTTPClient.fAddCallback("request sent and response received", lambda
-      oHTTPClient,
-      *,
-      oSecondaryClient = None,
-      o0ProxyServerURL = None,
-      oConnection,
-      oRequest,
-      oResponse:
-        fOutputHTTPResponse(
+      ),
+      "receiving response from server": lambda oHTTPClient, *, oConnection, o0Request: (
+        bShowProgress and fOutputToClientFromServerReceivingResponse(
+          oConnection = oConnection,
+        ),
+      ),
+      "receiving response from server failed": lambda oHTTPClient, *, oConnection, o0Request, oException: (
+        bShowProgress and fOutputToClientFromServerReceivingResponseFailed(
+          oConnection = oConnection,
+          oException = oException,
+        ),
+      ),
+      "received response from server": lambda oHTTPClient, *, oConnection, o0Request, oResponse: (
+        bShowProgress and fOutputToClientFromServerResponseReceived(
+          oConnection = oConnection,
+          oResponse = oResponse,
+        ),
+        bShowResponse and fOutputHTTPResponse(
           oResponse,
           bShowDetails = bShowDetails,
           bDecodeBody = bDecodeBodyOfHTTPMessages,
@@ -354,7 +295,129 @@ def foGetHTTPClient(
           uHexOutputCharsPerLine = uHexOutputCharsPerLine,
           xPrefix = "",
         ),
-    );
+      ),
+    });
+  if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
+    oHTTPClient.fAddCallbacks({
+      "sending request to proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest: (
+        bShowProgress and fOutputFromClientToProxySendingRequest(
+          oConnection = oConnection,
+          oRequest = oRequest,
+          oProxyServerURL = oProxyServerURL,
+        ),
+      ),
+      "sending request to proxy failed": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest, oException: (
+        bShowProgress and fOutputFromClientToProxySendingRequestFailed(
+          oConnection = oConnection,
+          oRequest = oRequest,
+          oProxyServerURL = oProxyServerURL,
+          oException = oException,
+        ),
+      ),
+      "sent request to proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest: (
+        bShowProgress and fOutputFromClientToProxyRequestSent(
+          oConnection = oConnection,
+          oRequest = oRequest,
+          oProxyServerURL = oProxyServerURL,
+        ),
+        # We'll show the request now if we don't also show the response
+        bShowRequest and not bShowResponse and fOutputHTTPRequest(
+          oRequest,
+          bShowDetails = bShowDetails,
+          bDecodeBody = bDecodeBodyOfHTTPMessages,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+          xPrefix = "",
+        ),
+      ),
+      "receiving response from proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request: (
+        bShowProgress and fOutputToClientFromProxyReceivingResponse(
+          oConnection = oConnection,
+          oProxyServerURL = oProxyServerURL,
+        ),
+      ),
+      "receiving response from proxy failed": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request, oException: (
+        bShowProgress and fOutputToClientFromProxyReceivingResponseFailed(
+          oConnection = oConnection,
+          oProxyServerURL = oProxyServerURL,
+          oException = oException,
+        ),
+      ),
+      "received response from proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request, oResponse: (
+        bShowProgress and fOutputToClientFromProxyResponseReceived(
+          oConnection = oConnection,
+          oResponse = oResponse,
+          oProxyServerURL = oProxyServerURL,
+        ),
+        # We'll show the request right before the response if we show both
+        bShowRequest and bShowResponse and fOutputHTTPRequest(
+          o0Request,
+          bShowDetails = bShowDetails,
+          bDecodeBody = bDecodeBodyOfHTTPMessages,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+          xPrefix = "",
+        ),
+        bShowResponse and fOutputHTTPResponse(
+          oResponse,
+          bShowDetails = bShowDetails,
+          bDecodeBody = bDecodeBodyOfHTTPMessages,
+          bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+          bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+          uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+          xPrefix = "",
+        ),
+      ),
+    });
+
+  if isinstance(oHTTPClient, (cHTTPClient,)):
+    oHTTPClient.fAddCallbacks({
+      "spoofing server host": fOutputServerHostSpoofed,
+    });
+  if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
+    oHTTPClient.fAddCallbacks({
+      "server host invalid": fOutputServerHostInvalid,
+      
+      "resolving server hostname to ip address": fOutputResolvingServerHostname,
+      "resolving server hostname to ip address failed": fOutputResolvingServerHostnameFailed,
+      "resolved server hostname to ip address": fOutputServerHostnameResolvedToIPAddress,
+      
+      "connecting to server": fOutputFromClientToServerConnecting,
+      "connecting to server failed": fOutputFromClientToServerConnectingFailed,
+      "created connection to server": fOutputFromClientToServerConnectionCreated,
+      "terminated connection to server": fOutputFromClientToServerConnectionTerminated,
+
+      "securing connection to server": fOutputFromClientToServerSecuringConnection,
+      "securing connection to server failed": fOutputFromClientToServerSecuringConnectionFailed,
+      "secured connection to server": fOutputFromClientToServerConnectionSecured,
+    });
+  if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
+    oHTTPClient.fAddCallbacks({
+      "proxy host invalid": fOutputProxyHostInvalid,
+      "resolving proxy hostname to ip address": fOutputResolvingProxyHostname,
+      "resolving proxy hostname to ip address failed": fOutputResolvingProxyHostnameFailed,
+      "resolved proxy hostname to ip address": fOutputProxyHostnameResolvedToIPAddress,
+      
+      "connecting to proxy": fOutputFromClientToProxyConnecting,
+      "connecting to proxy failed": fOutputFromClientToProxyConnectingFailed,
+      "created connection to proxy": fOutputFromClientToProxyConnectionCreated,
+      "terminated connection to proxy": fOutputFromClientToProxyConnectionTerminated,
+
+      "securing connection to proxy": fOutputFromClientToProxySecuringConnection,
+      "securing connection to proxy failed": fOutputFromClientToProxySecuringConnectionFailed,
+      "secured connection to proxy": fOutputFromClientToProxyConnectionSecured,
+
+      "connecting to server through proxy": fOutputFromClientToServerThroughProxyConnecting,
+      "connecting to server through proxy failed": fOutputFromClientToServerThroughProxyConnectingFailed,
+      "created connection to server through proxy": fOutputFromClientToServerThroughProxyConnectionCreated,
+      "terminated connection to server through proxy": fOutputFromClientToServerThroughProxyConnectionTerminated,
+
+      "securing connection to server through proxy": fOutputFromClientToServerThroughProxySecuringConnection,
+      "securing connection to server through proxy failed": fOutputFromClientToServerThroughProxySecuringConnectionFailed,
+      "secured connection to server through proxy": fOutputFromClientToServerThroughProxyConnectionSecured,
+    });
 
   if bSaveCookieStore:
     if bCookieStoreFileExists:

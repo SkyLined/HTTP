@@ -70,7 +70,7 @@ try:
     );
     sys.exit(guExitCodeBadArgument);
 
-  rShouldBeAURL = re.compile(r"^https?://.*$", re.I);
+  rURL = re.compile(r"^https?://.*$", re.I);
   rMethod = re.compile(r"^[A-Z]+$", re.I);
   rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
   rCharEncoding = re.compile(r"([^\\]+)|\\(?:x([0-9a-f]{2}))?", re.I);
@@ -99,7 +99,9 @@ try:
   bzShowRequest = zNotProvided;
   bzShowResponse = zNotProvided;
   bzShowDetails = zNotProvided;
-  dsbClientShouldAddOrRemoveHeaders = {};
+  asbClientShouldRemoveHeadersForLowerNames = [];
+  dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName = {};
+  atsbClientShouldAddHeadersNameAndValue = [];
   dsbSpoofedHost_by_sbHost = {};
   d0ClientShouldSetForm_sValue_by_sName = None;
   n0zTimeoutInSeconds = zNotProvided;
@@ -136,7 +138,7 @@ try:
       );
       sys.exit(guExitCodeBadArgument);
     if not s0LowerName:
-      if o0ClientShouldUseURL is None and rShouldBeAURL.match(sArgument):
+      if o0ClientShouldUseURL is None and rURL.match(sArgument):
         asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
         try:
           o0ClientShouldUseURL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
@@ -169,7 +171,10 @@ try:
     elif s0LowerName in ["bl", "basic-login"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(ord(s) for s in (s0Value or "")));
-      dsbClientShouldAddOrRemoveHeaders[b"Authorization"] = b"basic %s" % sbBase64EncodedUserNameColonPassword;
+      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"authorization"] = (
+        b"Authorization",
+        b"basic %s" % sbBase64EncodedUserNameColonPassword
+      );
     elif s0LowerName in ["c", "cookies", "netscape-cookies"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       o0ClientShouldUseNetscapeCookiesFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
@@ -273,14 +278,27 @@ try:
     elif s0LowerName in ["header"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
-      tsbNameAndValue = sbValue.split(b":", 1);
-      if len(tsbNameAndValue) == 1:
-        sbName = sbValue; sb0Value = None;
+      tsbHeaderNameAndValue = sbValue.split(b":", 1);
+      if len(tsbHeaderNameAndValue) == 1:
+        sbHeaderName = sbValue;
+        sb0HeaderValue = None;
       else:
-        sbName, sb0Value = tsbNameAndValue;
-        if sb0Value.strip() == "":
-          sb0Value = None;
-      dsbClientShouldAddOrRemoveHeaders[sbName] = sb0Value;
+        sbHeaderName, sb0HeaderValue = tsbHeaderNameAndValue;
+      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sb0HeaderValue);
+    elif s0LowerName in ["header-"]:
+      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      sbHeaderName = bytes(ord(s) for s in fsRequireArgumentValue());
+      asbClientShouldRemoveHeadersForLowerNames.append(sbHeaderName.lower());
+    elif s0LowerName in ["header+"]:
+      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
+      tsbHeaderNameAndValue = sbValue.split(b":", 1);
+      if len(tsbHeaderNameAndValue) == 1:
+        sbHeaderName = sbValue;
+        sb0HeaderValue = b"";
+      else:
+        sbHeaderName, sb0HeaderValue = tsbHeaderNameAndValue;
+      atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sb0HeaderValue));
     elif s0LowerName in ["hex", "hex-output", "hex-output-body"]:
       # This argument makes sense for client, server and proxy
       bForceHexOutputOfHTTPMessageBody = True;
@@ -518,6 +536,18 @@ try:
     );
     sys.exit(guExitCodeBadArgument);
   sRunAs = asRunAsTypes[0];
+  # If not explicitly set, show progress
+  bShowProgress = bzShowProgress if fbIsProvided(bzShowProgress) else True;
+  # If not explicitly set, only show requests and responses when we are not downloading.
+  bShowRequestResponseDefault = (
+    not (bClientShouldDownloadToFile or bClientShouldSaveHTTPResponsesToFiles)
+  ) if sRunAs == "client" else (
+    True
+  );
+  bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDefault;
+  bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
+  bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
+
   if sRunAs == "client":
     fRunAsClient(
       bDecodeBodyOfHTTPMessages = bDecodeBodyOfHTTPMessages,
@@ -529,14 +559,16 @@ try:
       bProcessSegmentedVideo = bClientShouldProcessSegmentedVideo,
       bSaveCookieStore = bClientShouldSaveCookieStore,
       bSaveHTTPResponsesToFiles = bClientShouldSaveHTTPResponsesToFiles,
+      bShowDetails = bShowDetails,
+      bShowProgress = bShowProgress,
+      bShowRequest = bShowRequest,
+      bShowResponse = bShowResponse,
       bUseProxy = bClientShouldUseProxy,
       bVerifyCertificates = False if bzSecureConnections is False else True, # default to secure connections
-      bzShowDetails = bzShowDetails,
-      bzShowProgress = bzShowProgress,
-      bzShowRequest = bzShowRequest,
-      bzShowResponse = bzShowResponse,
       d0SetForm_sValue_by_sName = d0ClientShouldSetForm_sValue_by_sName,
-      dsbAddOrRemoveHeaders = dsbClientShouldAddOrRemoveHeaders,
+      asbRemoveHeadersForLowerNames = asbClientShouldRemoveHeadersForLowerNames,
+      dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName,
+      atsbAddHeadersNameAndValue = atsbClientShouldAddHeadersNameAndValue,
       dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
       n0zTimeoutInSeconds = n0zTimeoutInSeconds,
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
@@ -560,9 +592,10 @@ try:
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bForceHexOutputOfHTTPMessageBody = bForceHexOutputOfHTTPMessageBody,
       bSecureConnections = True if bzSecureConnections is True else False, # default to insecure connections.
-      bzShowDetails = bzShowDetails,
-      bzShowRequest = bzShowRequest,
-      bzShowResponse = bzShowResponse,
+      bShowDetails = bShowDetails,
+      bShowProgress = bShowProgress,
+      bShowRequest = bShowRequest,
+      bShowResponse = bShowResponse,
       n0zTimeoutInSeconds = n0zTimeoutInSeconds,
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       o0BaseFolderFileSystemItem = o0InputFileSystemItem,

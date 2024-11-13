@@ -1,31 +1,28 @@
-﻿from mHumanReadable import fsBytesToHumanReadableString;
-
-from foConsoleLoader import foConsoleLoader;
+﻿from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
   COLOR_ACTIVE,
   COLOR_INFO,
   COLOR_NORMAL,
-  COLOR_REQUEST,
+  COLOR_RESPONSE,
   COLOR_WARNING,
-  STR_RECEIVING_REQUEST3, STR_RECEIVING_REQUEST_SECURELY3
+  STR_RECEIVING_RESPONSE3, STR_RECEIVING_RESPONSE_SECURELY3,
 );
 oConsole = foConsoleLoader();
 
-def fOutputReceivingRequest(oConnection):
-  (sRemoteIPAddress, uRemotePortNumber) = oConnection.txRemoteAddress[:2];
+from .fasOutputRemoteAddressForConnection import fasOutputRemoteAddressForConnection;
+
+def fOutputReceivingRequest(sToChar, sFromChar, sFromDescription, oConnection):
   oConsole.fStatus(
-    COLOR_ACTIVE,       "S",
-    COLOR_REQUEST,      STR_RECEIVING_REQUEST_SECURELY3 if oConnection.bSecure else STR_RECEIVING_REQUEST3,
-    COLOR_ACTIVE,       "C",
-    COLOR_NORMAL,       " Receiving request ",
+    COLOR_ACTIVE,       sToChar,
+    COLOR_RESPONSE,     STR_RECEIVING_RESPONSE_SECURELY3 if oConnection.bSecure else STR_RECEIVING_RESPONSE3,
+    COLOR_ACTIVE,       sFromChar,
+    COLOR_NORMAL,       " Receiving response ",
     [
-      COLOR_INFO,       "securely ",
+      COLOR_INFO,       "securely",
     ] if oConnection.bSecure else [
-      COLOR_WARNING,    "in plain text ",
+      COLOR_WARNING,    "in plain text",
     ],
-    COLOR_NORMAL,       "from client at ",
-    COLOR_INFO,         sRemoteIPAddress,
-    COLOR_NORMAL,       ":",
-    COLOR_INFO,         str(uRemotePortNumber),
-    COLOR_NORMAL,       ".",
+    COLOR_NORMAL,       " from ", sFromDescription, " ",
+    fasOutputRemoteAddressForConnection(oConnection),
+    COLOR_NORMAL,       "...",
   );

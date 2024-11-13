@@ -9,7 +9,7 @@ from mColorsAndChars import (
 );
 oConsole = foConsoleLoader();
 
-def fOutputResolvingProxyHostnameFailed(oHTTPClient_unused, oProxyServerURL):
+def fOutputResolvingProxyHostnameFailed(oHTTPClient_unused, *, oProxyServerURL):
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_ERROR,      CHAR_RESOLVING_ERROR,

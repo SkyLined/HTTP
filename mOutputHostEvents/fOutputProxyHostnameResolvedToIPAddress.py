@@ -9,7 +9,7 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputProxyHostnameResolvedToIPAddress(oHTTPClient_unused, oProxyServerURL, sbIPAddress, sCanonicalName):
+def fOutputProxyHostnameResolvedToIPAddress(oHTTPClient_unused, *, oProxyServerURL, sbIPAddress, sCanonicalName):
   sHost = fsCP437FromBytesString(oProxyServerURL.sbHost);
   sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(

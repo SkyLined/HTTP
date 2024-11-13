@@ -8,7 +8,7 @@ from mColorsAndChars import (
 );
 oConsole = foConsoleLoader();
 
-def fOutputProxyHostInvalid(oHTTPClient_unused, oProxyServerURL):
+def fOutputProxyHostInvalid(oHTTPClient_unused, *, oProxyServerURL):
   oConsole.fOutput(
     COLOR_ACTIVE,     "C",
     COLOR_ERROR,      CHAR_ERROR,

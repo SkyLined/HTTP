@@ -8,7 +8,7 @@ from mColorsAndChars import (
 from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
-def fOutputServerHostnameResolvedToIPAddress(oHTTPClient_unused, sbHostname, sbIPAddress, sCanonicalName):
+def fOutputServerHostnameResolvedToIPAddress(oHTTPClient_unused, *, sbHostname, sbIPAddress, sCanonicalName):
   sHostname = fsCP437FromBytesString(sbHostname);
   sIPAddress = fsCP437FromBytesString(sbIPAddress);
   oConsole.fOutput(

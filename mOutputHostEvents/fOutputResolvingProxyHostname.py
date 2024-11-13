@@ -7,7 +7,7 @@ from mColorsAndChars import (
 );
 oConsole = foConsoleLoader();
 
-def fOutputResolvingProxyHostname(oHTTPClient_unused, oProxyServerURL):
+def fOutputResolvingProxyHostname(oHTTPClient_unused, *, oProxyServerURL):
   oConsole.fStatus(
     COLOR_ACTIVE,     "C",
     COLOR_RESOLVING,  STR_RESOLVING3,
