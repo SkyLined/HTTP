@@ -19,6 +19,9 @@
 [submodule "modules/mHTTPProtocol"]
 	path = modules/mHTTPProtocol
 	url = https://github.com/SkyLined/mHTTPProtocol
+[submodule "modules/mHTTPServer"]
+	path = modules/mHTTPServer
+	url = https://github.com/SkyLined/mHTTPServer
 [submodule "modules/mHumanReadable"]
 	path = modules/mHumanReadable
 	url = https://github.com/SkyLined/mHumanReadable
