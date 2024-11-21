@@ -21,6 +21,7 @@ guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need
 try:
   from mFileSystemItem import cFileSystemItem;
   from mHTTPClient import cURL;
+  from mHTTPProtocol import fsb0GetMediaTypeForExtension;
   from mNotProvided import fbIsProvided, zNotProvided;
   try: # mSSL support is optional
     import mSSL as m0SSL;
@@ -384,6 +385,20 @@ try:
           sys.exit(guExitCodeBadArgument);
       else:
         uzServerShouldUsePortNumber = zNotProvided;
+    elif s0LowerName in ["media-type", "mime-type"]:
+      sExtension = fsRequireArgumentValue();
+      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      sb0MediaType = fsb0GetMediaTypeForExtension(sExtension);
+      if not sb0MediaType:
+        oConsole.fOutput(
+          "The media type for ",
+          COLOR_INFO, sExtension,
+          COLOR_NORMAL, " is not known.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", sb0MediaType);
+
+      s0MediaType = s0Value;
     elif s0LowerName in ["proxy", "http-proxy"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       bClientShouldUseProxy = True;
