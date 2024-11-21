@@ -6,7 +6,7 @@ oConsole = foConsoleLoader();
   
 def ftxHandleRequest_GET(oHTTPServer, oRequest, oBaseFolder):
   oRequestURL = oHTTPServer.foGetURLForRequest(oRequest);
-  sRequestedPath = oRequestURL.sURLDecodedPath[1:].replace("\\", "/").replace("/", os.sep);
+  sRequestedPath = oRequestURL.sURLDecodedPath.replace(os.altsep, os.sep).lstrip(os.sep);
   if sRequestedPath:
     o0RequestedFileOrFolder = oBaseFolder.fo0GetDescendant(sRequestedPath, bThrowErrors = False);
   else:
