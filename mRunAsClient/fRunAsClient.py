@@ -199,6 +199,7 @@ def fRunAsClient(
       oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
     
     if bProcessM3UFile:
+      assert not o0HTTPRequest; # This should have been prevented when parsing the arguments.
       ### M3U ######################################################################
       fProcessM3UFile(
         oHTTPClient = oHTTPClient,
@@ -221,6 +222,7 @@ def fRunAsClient(
         bProcessSegmentedM3U = bProcessSegmentedM3U,
       );
     elif bProcessSegmentedVideo:
+      assert not o0HTTPRequest; # This should have been prevented when parsing the arguments.
       ### SEGMENTED VIDEO ##########################################################
       # Multiple request to URL with increasing index until we get a response that is not "200 Ok"
       fProcessSegmentedVideo(
