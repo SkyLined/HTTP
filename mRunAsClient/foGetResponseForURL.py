@@ -56,6 +56,11 @@ def foGetResponseForURL(
     );
     sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
 
+  if d0SetForm_sValue_by_sName:
+    # The user can overwrite or remove this content-type later.
+    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
+    for (sName, sValue) in d0SetForm_sValue_by_sName.items():
+      oRequest.fSetFormValue(sName, sValue);
   # Apply headers provided through arguments to request
   fApplyHeaderSettingsToRequest(
     asbRemoveHeadersForLowerNames,
@@ -63,10 +68,6 @@ def foGetResponseForURL(
     atsbAddHeadersNameAndValue,
     oRequest,
   );
-  if d0SetForm_sValue_by_sName:
-    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
-    for (sName, sValue) in d0SetForm_sValue_by_sName.items():
-      oRequest.fSetFormValue(sName, sValue);
   
   return foGetResponseForRequestAndURL(
     oHTTPClient = oHTTPClient,
