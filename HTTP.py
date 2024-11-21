@@ -295,10 +295,10 @@ try:
       tsbHeaderNameAndValue = sbValue.split(b":", 1);
       if len(tsbHeaderNameAndValue) == 1:
         sbHeaderName = sbValue;
-        sb0HeaderValue = None;
+        sbHeaderValue = b"";
       else:
-        sbHeaderName, sb0HeaderValue = tsbHeaderNameAndValue;
-      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sb0HeaderValue);
+        sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
+      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sbHeaderValue);
     elif s0LowerName in ["header-"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       sbHeaderName = bytes(ord(s) for s in fsRequireArgumentValue());
@@ -309,10 +309,10 @@ try:
       tsbHeaderNameAndValue = sbValue.split(b":", 1);
       if len(tsbHeaderNameAndValue) == 1:
         sbHeaderName = sbValue;
-        sb0HeaderValue = b"";
+        sbHeaderValue = b"";
       else:
-        sbHeaderName, sb0HeaderValue = tsbHeaderNameAndValue;
-      atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sb0HeaderValue));
+        sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
+      atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sbHeaderValue));
     elif s0LowerName in ["hex", "hex-output", "hex-output-body"]:
       # This argument makes sense for client, server and proxy
       bForceHexOutputOfHTTPMessageBody = True;
