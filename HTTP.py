@@ -170,6 +170,18 @@ try:
             COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing file/folder.",
           );
           sys.exit(guExitCodeBadArgument);
+        if bClientShouldProcessM3UFile:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You cannot use a HTTP request file as input and process a .m3u file response at the same time.",
+          );
+          sys.exit(guExitCodeBadArgument);
+        if bClientShouldProcessSegmentedVideo:
+          oConsole.fOutput(
+            COLOR_ERROR, CHAR_ERROR,
+            COLOR_NORMAL, " You cannot use a HTTP request file as input and process a segmented video response at the same time.",
+          );
+          sys.exit(guExitCodeBadArgument);
     elif s0LowerName in ["bl", "basic-login"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(ord(s) for s in (s0Value or "")));
