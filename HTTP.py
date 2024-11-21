@@ -363,26 +363,27 @@ try:
       if s0Value is not None:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
     elif s0LowerName in ["p", "port", "port-number"]:
-        if fbIsProvided(uzServerShouldUsePortNumber):
+      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      if fbIsProvided(uzServerShouldUsePortNumber):
+        oConsole.fOutput(
+          "A ",
+          COLOR_INFO, "port number",
+          COLOR_NORMAL, " can only be provided once!",
+        );
+        sys.exit(guExitCodeBadArgument);
+      if s0Value:
+        try:
+          uzServerShouldUsePortNumber = int(s0Value);
+          assert 0 < uzServerShouldUsePortNumber < 0x10000;
+        except:
           oConsole.fOutput(
-            "A ",
-            COLOR_INFO, "port number",
-            COLOR_NORMAL, " can only be provided once!",
+            "The ",
+            COLOR_INFO, s0LowerName,
+            COLOR_NORMAL, " argument must contain a valid port number (1-65535)!",
           );
           sys.exit(guExitCodeBadArgument);
-        if s0Value:
-          try:
-            uzServerShouldUsePortNumber = int(s0Value);
-            assert 0 < uzServerShouldUsePortNumber < 0x10000;
-          except:
-            oConsole.fOutput(
-              "The ",
-              COLOR_INFO, s0LowerName,
-              COLOR_NORMAL, " argument must contain a valid port number (1-65535)!",
-            );
-            sys.exit(guExitCodeBadArgument);
-        else:
-          uzServerShouldUsePortNumber = zNotProvided;
+      else:
+        uzServerShouldUsePortNumber = zNotProvided;
     elif s0LowerName in ["proxy", "http-proxy"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       bClientShouldUseProxy = True;
