@@ -49,6 +49,8 @@ try:
   from mRunAsServer import fRunAsServer;
   oConsole = foConsoleLoader();
 
+  if __name__ != "__main__":
+    sys.exit(0);
   if len(sys.argv) == 1:
     fOutputUsageInformation(bOutputAllOptions = False);
     sys.exit(guExitCodeSuccess);
