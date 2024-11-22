@@ -204,6 +204,7 @@ def foGetResponseForRequestAndURL(
           fsCP437FromBytesString(oURL.sbHost),
           ".%s" % s0Extension if s0Extension else "",
         );
+      return sTargetFileName;
     # Determine target file for download/save
     if o0TargetFileSystemItem is None:
       # User provided no input; generate a file name from the URL and response
