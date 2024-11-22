@@ -58,23 +58,15 @@ def fRunAsServer(
     uHexOutputCharsPerLine,
     uzPortNumber,
 ):
+  sbHost = sbzHost if fbIsProvided(sbzHost) else cHTTPServer.sbDefaultHost;
   if bSecureConnections:
     assert m0SSL, \
         "mSSL is not available!?";
-    if not fbIsProvided(sbzHost):
-      oConsole.fOutput(
-        COLOR_ERROR, CHAR_ERROR,
-        COLOR_NORMAL, " To create a secure server, you must provide a ",
-        COLOR_INFO, "host",
-        COLOR_NORMAL, " to use in the certificate.",
-      );
-      sys.exit(guExitCodeBadArgument);
-
-    sCertificateAuthorityFolderPath = os.path.join(os.getenv("TEMP"), "srv.py CA");
-    oCertificateAuthority = m0SSL.cCertificateAuthority(sCertificateAuthorityFolderPath, "srv.py");
-    o0ServerSideSSLContext = oCertificateAuthority.fo0GetServersideSSLContextForHost(sbzHost);
+    sCertificateAuthorityFolderPath = os.path.join(os.getenv("TEMP"), "HTTP.py CA");
+    oCertificateAuthority = m0SSL.cCertificateAuthority(sCertificateAuthorityFolderPath, "HTTP.py");
+    o0ServerSideSSLContext = oCertificateAuthority.fo0GetServersideSSLContextForHost(sbHost);
     if o0ServerSideSSLContext is None:
-      o0ServerSideSSLContext = oCertificateAuthority.foGenerateServersideSSLContextForHost(sbzHost);
+      o0ServerSideSSLContext = oCertificateAuthority.foGenerateServersideSSLContextForHost(sbHost);
   else:
     o0ServerSideSSLContext = None;
   oBaseFolderFileSystemItem = o0BaseFolderFileSystemItem or cFileSystemItem(".");
@@ -86,7 +78,7 @@ def fRunAsServer(
           oRequest,
           oBaseFolderFileSystemItem,
         ),
-      sbzHost = sbzHost,
+      sbzHost = sbHost,
       uzPortNumber = uzPortNumber,
       o0SSLContext = o0ServerSideSSLContext,
       n0zTransactionTimeoutInSeconds = n0zTimeoutInSeconds,
