@@ -159,19 +159,27 @@ try:
         sbzClientShouldSetMethod = bytes(ord(s) for s in sArgument);
       elif rHTTPVersion.match(sArgument):
         sbzSetHTTPVersion = bytes(ord(s) for s in sArgument);
-      elif not o0InputFileSystemItem:
+      elif o0InputFileSystemItem:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Superfluous argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+      elif not cFileSystemItem.fbIsValidPath(sArgument) or not cFileSystemItem(sArgument).fbExists():
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Unrecognized argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        oConsole.fOutput(
+          COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing file/folder.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      else:
         o0InputFileSystemItem = cFileSystemItem(sArgument);
-        if not o0InputFileSystemItem.fbExists():
-          oConsole.fOutput(
-            COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " Superfluous argument \"",
-            COLOR_INFO, sArgument,
-            COLOR_NORMAL, "\".",
-          );
-          oConsole.fOutput(
-            COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing file/folder.",
-          );
-          sys.exit(guExitCodeBadArgument);
         if bClientShouldProcessM3UFile:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
@@ -183,7 +191,6 @@ try:
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " You cannot use a HTTP request file as input and process a segmented video response at the same time.",
           );
-          sys.exit(guExitCodeBadArgument);
     elif s0LowerName in ["bl", "basic-login"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(ord(s) for s in (s0Value or "")));
