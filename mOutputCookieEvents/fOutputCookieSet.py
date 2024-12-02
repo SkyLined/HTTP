@@ -10,7 +10,11 @@ from mColorsAndChars import (
   COLOR_REMOVE, CHAR_REMOVE,
 );
 from mCP437 import fsCP437FromBytesString;
+from mOutputHelpers import faxGetDecodedValuesOutput;
+
 oConsole = foConsoleLoader();
+
+u0MaxValueLength = None;
 
 def fOutputCookieSet(oCookieStore_unused, oCookie, o0PreviousCookie):
   bCookieExpired = oCookie.fbIsExpired();
@@ -46,8 +50,8 @@ def fOutputCookieSet(oCookieStore_unused, oCookie, o0PreviousCookie):
     COLOR_NORMAL, " = ",
     [
       COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue),
-    ] if len(oCookie.sbValue) < 30 else [
-      COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue[:30]),
+    ] if u0MaxValueLength is None or len(oCookie.sbValue) < u0MaxValueLength else [
+      COLOR_INFO, fsCP437FromBytesString(oCookie.sbValue[:u0MaxValueLength]),
       COLOR_NORMAL, "...(",
       COLOR_INFO, str(len(oCookie.sbValue)),
       COLOR_NORMAL, " bytes)"
@@ -76,3 +80,5 @@ def fOutputCookieSet(oCookieStore_unused, oCookie, o0PreviousCookie):
     ] if oCookie.sbSameSite != "Lax" else [],
     COLOR_NORMAL, ").",
   );
+  for xDecodedValueOutput in faxGetDecodedValuesOutput(oCookie.sbValue, u0MaxLength = 80):
+    oConsole.fOutput("        ", xDecodedValueOutput);

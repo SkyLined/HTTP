@@ -6,6 +6,7 @@ from mColorsAndChars import (
   COLOR_NORMAL,
 );
 from mCP437 import fsCP437FromBytesString;
+from mOutputHelpers import faxGetDecodedValuesOutput;
 oConsole = foConsoleLoader();
 
 def fOutputHTTPMessageHeaders(oHeaders, bShowDetails, xPrefix = []):
@@ -24,3 +25,7 @@ def fOutputHTTPMessageHeaders(oHeaders, bShowDetails, xPrefix = []):
         COLOR_HEADER_VALUE, fsCP437FromBytesString(sbValueLine),
         [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
       );
+    sbValue = b" ".join(asbValueLines);
+    for xDecodedValueOutput in faxGetDecodedValuesOutput(sbValue):
+      oConsole.fOutput("  ", xDecodedValueOutput);
+
