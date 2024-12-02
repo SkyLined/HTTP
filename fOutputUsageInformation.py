@@ -119,6 +119,8 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "--show-details", axBoolean);
     oConsole.fOutput("    Show request headers/body and response headers. Set to \"false\" to hide");
     oConsole.fOutput("    them. Does not affect whether the response body is shown or not.");
+    oConsole.fOutput("  ", COLOR_INFO, "--show-body", axBoolean);
+    oConsole.fOutput("    Show the request/response bodies (default). Set to \"false\" to hide them.");
     oConsole.fOutput("  ", COLOR_INFO, "--show-progress", axBoolean);
     oConsole.fOutput("    Show progress output (default). Set to \"false\" to hide it.");
     oConsole.fOutput("  ", COLOR_INFO, "--show-proxy", axBoolean);

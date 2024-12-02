@@ -98,6 +98,7 @@ try:
   bForceHexOutputOfHTTPMessageBody = False;
   bRunAsServer = False;
   bzSecureConnections = zNotProvided;
+  bzShowMessageBody = zNotProvided;
   bzShowProgress = zNotProvided;
   bzShowRequest = zNotProvided;
   bzShowResponse = zNotProvided;
@@ -477,6 +478,8 @@ try:
           sys.exit(guExitCodeBadArgument);
     elif s0LowerName in ["show-details"]:
       bzShowDetails = fbParseBooleanArgument(s0Value);
+    elif s0LowerName in ["show-body", "show-message-body"]:
+      bzShowMessageBody = fbParseBooleanArgument(s0Value);
     elif s0LowerName in ["show-progress"]:
       bzShowProgress = fbParseBooleanArgument(s0Value);
     elif s0LowerName in ["show-request"]:
@@ -574,6 +577,7 @@ try:
   ) if sRunAs == "client" else (
     True
   );
+  bShowMessageBody = bzShowMessageBody if fbIsProvided(bzShowMessageBody) else True;
   bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDefault;
   bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
   bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
@@ -590,6 +594,7 @@ try:
       bSaveCookieStore = bClientShouldSaveCookieStore,
       bSaveHTTPResponsesToFiles = bClientShouldSaveHTTPResponsesToFiles,
       bShowDetails = bShowDetails,
+      bShowMessageBody = bShowMessageBody,
       bShowProgress = bShowProgress,
       bShowRequest = bShowRequest,
       bShowResponse = bShowResponse,
@@ -623,6 +628,7 @@ try:
       bForceHexOutputOfHTTPMessageBody = bForceHexOutputOfHTTPMessageBody,
       bSecureConnections = True if bzSecureConnections is True else False, # default to insecure connections.
       bShowDetails = bShowDetails,
+      bShowMessageBody = bShowMessageBody,
       bShowProgress = bShowProgress,
       bShowRequest = bShowRequest,
       bShowResponse = bShowResponse,

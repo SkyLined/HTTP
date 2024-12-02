@@ -19,11 +19,12 @@ from .fOutputHTTPMessageHeaders import fOutputHTTPMessageHeaders;
 def fOutputHTTPRequest(
   oRequest,
   *,
-  bShowDetails = None,
-  bDecodeBody = None,
-  bFailOnDecodeBodyErrors = None,
-  bForceHexOutputOfBody = False,
-  uHexOutputCharsPerLine = 16,
+  bShowDetails,
+  bShowMessageBody,
+  bDecodeBody,
+  bFailOnDecodeBodyErrors,
+  bForceHexOutputOfBody,
+  uHexOutputCharsPerLine,
   xPrefix = [],
 ):
   oConsole.fOutput(
@@ -52,7 +53,7 @@ def fOutputHTTPRequest(
     [COLOR_EOF, CHAR_EOF] if bShowDetails and not oRequest.sb0Body and not oRequest.o0AdditionalHeaders else [],
   );
   # Output request body if any
-  if oRequest.sb0Body:
+  if bShowMessageBody and oRequest.sb0Body:
     if bDecodeBody:
       fOutputHTTPMessageData(
         oRequest.fs0GetData(
@@ -67,8 +68,8 @@ def fOutputHTTPRequest(
       fOutputHTTPMessageBody(
         oRequest.sb0Body,
         bShowDetails = bShowDetails,
-        bOutputEOF = not oRequest.o0AdditionalHeaders,
         bForceHexOutput = bForceHexOutputOfBody,
+        bOutputEOF = not oRequest.o0AdditionalHeaders,
         uHexOutputCharsPerLine = uHexOutputCharsPerLine,
         xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
       );

@@ -24,11 +24,12 @@ from .fOutputHTTPMessageHeaders import fOutputHTTPMessageHeaders;
 def fOutputHTTPResponse(
     oResponse,
     *,
-    bShowDetails,
     bDecodeBody,
     bFailOnDecodeBodyErrors,
-    bForceHexOutputOfBody = False,
-    uHexOutputCharsPerLine = 16,
+    bForceHexOutputOfBody,
+    bShowDetails,
+    bShowMessageBody,
+    uHexOutputCharsPerLine,
     xPrefix = [],
   ):
   if 100 <= oResponse.uStatusCode <= 199:
@@ -71,7 +72,7 @@ def fOutputHTTPResponse(
     [COLOR_EOF, CHAR_EOF] if bShowDetails and not oResponse.sb0Body and not oResponse.o0AdditionalHeaders else [],
   );
   # Output response body if any
-  if oResponse.sb0Body:
+  if bShowMessageBody and oResponse.sb0Body:
     if bDecodeBody:
       fOutputHTTPMessageData(
         oResponse.fs0GetData(
@@ -85,9 +86,9 @@ def fOutputHTTPResponse(
     else:
       fOutputHTTPMessageBody(
         oResponse.sb0Body,
-        bShowDetails = bShowDetails,
-        bOutputEOF = not oResponse.o0AdditionalHeaders,
         bForceHexOutput = bForceHexOutputOfBody,
+        bOutputEOF = not oResponse.o0AdditionalHeaders,
+        bShowDetails = bShowDetails,
         uHexOutputCharsPerLine = uHexOutputCharsPerLine,
         xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
       );
