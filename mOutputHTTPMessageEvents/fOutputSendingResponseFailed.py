@@ -40,7 +40,7 @@ def fOutputSendingResponseFailed(sFromChar, sToChar, sToDescription, oConnection
     COLOR_RESPONSE_STATUS_LINE = COLOR_RESPONSE_STATUS_LINE_INVALID;
   
   sb0MediaType = oResponse.sb0MediaType; # Getter; this takes time, so cache it.
-  oConsole.fStatus(
+  oConsole.fOutput(
     COLOR_ACTIVE,       sFromChar,
     COLOR_RESPONSE,     STR_SENDING_RESPONSE_SECURELY3 if oConnection.bSecure else STR_SENDING_RESPONSE3,
     COLOR_ACTIVE,       sToChar,
@@ -60,7 +60,7 @@ def fOutputSendingResponseFailed(sFromChar, sToChar, sToDescription, oConnection
     ],
     COLOR_NORMAL,       " to ", sToDescription, " ",
     fasOutputRemoteAddressForConnection(oConnection),
-    COLOR_NORMAL, "...",
+    COLOR_NORMAL, " failed.",
   );
   oConsole.fOutput(
     COLOR_NORMAL,       "     ",
