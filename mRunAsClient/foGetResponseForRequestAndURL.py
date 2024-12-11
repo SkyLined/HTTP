@@ -1,12 +1,39 @@
 import sys;
 
 from mFileSystemItem import cFileSystemItem;
+from mHTTPClient import (
+  cHTTPClientFailedToConnectToServerThroughProxyException,
+);
+from mHTTPConnection import (
+  cHTTPMaximumNumberOfConnectionsToServerReachedException,
+);
 from mHTTPProtocol import (
-  cURL,
+  cHTTPInvalidMessageException,
+  cHTTPInvalidURLException,
   fs0GetExtensionForMediaType,
   fsb0GetMediaTypeForExtension,
 );
+try:
+  from mSSL import (
+    cSSLException as c0SSLException,
+  );
+except ModuleNotFoundError as oException:
+  if oException.args[0] != "No module named 'mSSL'":
+    raise;
+  c0SSLException = None;
+from mTCPIPConnection import (
+  cTCPIPConnectionDisconnectedException,
+  cTCPIPConnectionRefusedException,
+  cTCPIPConnectionShutdownException,
+  cTCPIPDataTimeoutException,
+  cTCPIPDNSNameCannotBeResolvedException,
+  cTCPIPInvalidAddressException,
+);
 from mHumanReadable import fsBytesToHumanReadableString;
+from mTCPIPConnection import (
+  cTCPIPConnectTimeoutException,
+  cTCPIPNetworkErrorException,
+)
 
 from foConsoleLoader import foConsoleLoader;
 from fOutputExceptionAndExit import fOutputExceptionAndExit;
@@ -45,22 +72,22 @@ def foGetResponseForRequestAndURL(
   try:
     o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
   except Exception as oException:
-    if isinstance(oException, oHTTPClient.cTCPIPConnectTimeoutException):
+    if isinstance(oException, cTCPIPConnectTimeoutException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Connecting to server timed out.",
       );
-    elif isinstance(oException, oHTTPClient.cTCPIPNetworkErrorException):
+    elif isinstance(oException, cTCPIPNetworkErrorException):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " A network error occurred.",
       );
     elif isinstance(oException, (
-      oHTTPClient.cTCPIPConnectionRefusedException,
-      oHTTPClient.cTCPIPInvalidAddressException,
-      oHTTPClient.cTCPIPDNSNameCannotBeResolvedException,
+      cTCPIPConnectionRefusedException,
+      cTCPIPInvalidAddressException,
+      cTCPIPDNSNameCannotBeResolvedException,
     )):
       oConsole.fOutput(
         "      ",
@@ -68,45 +95,49 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " Could not connect to server.",
       );
     elif isinstance(oException, (
-      oHTTPClient.cTCPIPConnectionDisconnectedException,
-      oHTTPClient.cTCPIPConnectionShutdownException,
+      cTCPIPConnectionDisconnectedException,
+      cTCPIPConnectionShutdownException,
     )):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server did not respond to our request.",
       );
-    elif isinstance(oException, oHTTPClient.cHTTPClientFailedToConnectToServerThroughProxyException):
+    elif isinstance(oException, (
+      cHTTPClientFailedToConnectToServerThroughProxyException,
+    )):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server through proxy.",
       );
     elif isinstance(oException, (
-      oHTTPClient.cHTTPMaxConnectionsToServerReachedException,
+      cHTTPMaximumNumberOfConnectionsToServerReachedException,
     )):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Could not connect to server.",
       );
-    elif isinstance(oException, oHTTPClient.cTCPIPDataTimeoutException):
+    elif isinstance(oException, (
+      cTCPIPDataTimeoutException,
+    )):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The server was unable to respond in a timely manner.",
       );
     elif isinstance(oException, (
-      oHTTPClient.cHTTPInvalidMessageException,
+      cHTTPInvalidMessageException,
     )):
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " There was a protocol error while talking to the server.",
       );
-    elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLSecureTimeoutException):
-      pass; # We have already provided enough output
-    elif oHTTPClient.bSSLIsSupported and isinstance(oException, oHTTPClient.cSSLException):
+    elif c0SSLException is not None and isinstance(oException, (
+      c0SSLException,
+    )):
       pass; # We have already provided enough output
     else:
       raise;
@@ -136,7 +167,7 @@ def foGetResponseForRequestAndURL(
     sbRedirectToURL = o0LocationHeader.sbValue;
     try:
       oRedirectToURL = oURL.foFromAbsoluteOrRelativeBytesString(sbRedirectToURL);
-    except cURL.cHTTPInvalidURLException as oException:
+    except cHTTPInvalidURLException as oException:
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,

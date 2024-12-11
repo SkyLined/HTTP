@@ -1,7 +1,10 @@
 import sys;
 
-from mHTTPClient import cURL;
-from mHTTPProtocol import cHTTPRequest;
+from mHTTPProtocol import (
+  cHTTPInvalidMessageException,
+  cHTTPRequest,
+  cURL,
+);
 from mNotProvided import fbIsProvided;
   
 from foConsoleLoader import foConsoleLoader;
@@ -104,7 +107,7 @@ def fRunAsClient(
       sys.exit(guExitCodeBadArgument);
     try:
       oHTTPRequest = cHTTPRequest.foFromBytesString(sbHTTPRequest);
-    except cHTTPRequest.cHTTPInvalidMessageException as oException:
+    except cHTTPInvalidMessageException as oException:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The HTTP request input file ",

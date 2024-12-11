@@ -20,9 +20,15 @@ except ModuleNotFoundError as oException:
 guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need this later.
 try:
   from mFileSystemItem import cFileSystemItem;
-  from mHTTPClient import cURL;
-  from mHTTPProtocol import fsb0GetMediaTypeForExtension;
-  from mNotProvided import fbIsProvided, zNotProvided;
+  from mHTTPProtocol import (
+    cHTTPInvalidURLException,
+    cURL,
+    fsb0GetMediaTypeForExtension,
+  );
+  from mNotProvided import (
+    fbIsProvided,
+    zNotProvided
+  );
   try: # mSSL support is optional
     import mSSL as m0SSL;
   except ModuleNotFoundError as oException:
@@ -146,7 +152,7 @@ try:
         asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
         try:
           o0ClientShouldUseURL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
-        except cURL.cHTTPInvalidURLException:
+        except cHTTPInvalidURLException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " The value \"",

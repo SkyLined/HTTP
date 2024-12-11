@@ -9,6 +9,10 @@ except ModuleNotFoundError as oException:
   if oException.args[0] != "No module named 'mSSL'":
     raise;
   m0SSL = None;
+from mTCPIPConnection import (
+  cTCPIPPortAlreadyInUseAsAcceptorException,
+  cTCPIPPortNotPermittedException,
+);
 
 from foConsoleLoader import foConsoleLoader;
 from mColorsAndChars import (
@@ -86,7 +90,7 @@ def fRunAsServer(
       n0zIdleTimeoutInSeconds = n0zTimeoutInSeconds,
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
     );
-  except cHTTPServer.cTCPIPPortAlreadyInUseAsAcceptorException:
+  except cTCPIPPortAlreadyInUseAsAcceptorException:
     oConsole.fOutput(
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " Could not bind to ",
@@ -99,7 +103,7 @@ def fRunAsServer(
       COLOR_NORMAL, " to accept connections because the port is already in use.",
     );
     sys.exit(guExitCodeBadArgument);
-  except cHTTPServer.cTCPIPPortNotPermittedException:
+  except cTCPIPPortNotPermittedException:
     oConsole.fOutput(
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " Could not bind to ",

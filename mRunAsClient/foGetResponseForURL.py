@@ -1,5 +1,8 @@
 import sys;
 
+from mHTTPProtocol import (
+  cHTTPInvalidEncodedDataException,
+);
 from mNotProvided import fbIsProvided;
 
 from foConsoleLoader import foConsoleLoader;
@@ -47,7 +50,7 @@ def foGetResponseForURL(
       s0Data = s0SetHTTPRequestData,
       bAddContentLengthHeader = True, # This header can be removed/modified later through the header arguments
     );
-  except oHTTPClient.cHTTPInvalidEncodedDataException as oException:
+  except cHTTPInvalidEncodedDataException as oException:
     oConsole.fOutput(
       COLOR_ERROR, CHAR_ERROR,
       COLOR_NORMAL, " The provided utf-8 encoded data cannot be encoded: ",
