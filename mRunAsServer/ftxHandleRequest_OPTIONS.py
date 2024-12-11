@@ -60,6 +60,5 @@ def ftxHandleRequest_OPTIONS(oHTTPServer, oRequest, oBaseFolder):
     oResponse.oHeaders.foAddHeaderForNameAndValue(b"Access-Control-Max-Age", b"86400"); # 1 day, the max allowed by Firefox
   return (
     oResponse,
-    oRequest.bIndicatesConnectionShouldBeClosed,
     None, # No next connection handler
   );

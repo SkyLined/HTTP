@@ -12,6 +12,5 @@ def ftxHandleRequest_PROPFIND(oHTTPServer, oRequest, oBaseFolder):
   oResponse.oHeaders.foAddHeaderForNameAndValue(b"WWW-Authenticate", b"NTLM");
   return (
     oResponse,
-    oRequest.bIndicatesConnectionShouldBeClosed,
     None, # No next connection handler
   );
