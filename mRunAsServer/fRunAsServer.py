@@ -159,8 +159,20 @@ def fRunAsServer(
       ),
     ),
     "sending response to client failed": lambda oHTTPServer, oConnection, o0Request, oResponse, oException: (
+      # We'll show the request right before the error if we haven't showed it yet
+      bShowRequest and bShowResponse and fOutputHTTPRequest(
+        o0Request,
+        bDecodeBody = bDecodeBodyOfHTTPMessages,
+        bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
+        bForceHexOutputOfBody = bForceHexOutputOfHTTPMessageBody,
+        bShowDetails = bShowDetails,
+        bShowMessageBody = bShowMessageBody,
+        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
+        xPrefix = "",
+      ),
       bShowProgress and fOutputFromServerToClientSendingResponseFailed(
         oConnection = oConnection,
+        o0Request = o0Request,
         oResponse = oResponse,
         oException = oException,
       ),
