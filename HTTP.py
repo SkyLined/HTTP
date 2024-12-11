@@ -114,6 +114,7 @@ try:
   atsbClientShouldAddHeadersNameAndValue = [];
   dsbSpoofedHost_by_sbHost = {};
   d0ClientShouldSetForm_sValue_by_sName = None;
+  d0ClientShouldSetJSON_sValue_by_sName = None;
   n0zTimeoutInSeconds = zNotProvided;
   nSendDelayPerByteInSeconds = 0;
   o0ClientShouldDownloadToFileSystemItem = None;
@@ -363,6 +364,17 @@ try:
             sys.exit(guExitCodeBadArgument);
         else:
           sbzServerShouldUseHost = zNotProvided;
+    elif s0LowerName in ["json"]:
+      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      sValue = fsRequireArgumentValue();
+      tsJSONNameAndValue = sValue.split(":", 1);
+      if len(tsJSONNameAndValue) == 1:
+        sName = sValue; sValue = "";
+      else:
+        sName, sValue = tsFormNameAndValue;
+      if d0ClientShouldSetJSON_sValue_by_sName is None:
+        d0ClientShouldSetJSON_sValue_by_sName = {};
+      d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
     elif s0LowerName in ["m3u"]:
       asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
       bClientShouldProcessM3UFile = True;
@@ -614,6 +626,7 @@ try:
       bUseProxy = bClientShouldUseProxy,
       bVerifyCertificates = False if bzSecureConnections is False else True, # default to secure connections
       d0SetForm_sValue_by_sName = d0ClientShouldSetForm_sValue_by_sName,
+      d0SetJSON_sValue_by_sName = d0ClientShouldSetJSON_sValue_by_sName,
       asbRemoveHeadersForLowerNames = asbClientShouldRemoveHeadersForLowerNames,
       dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName,
       atsbAddHeadersNameAndValue = atsbClientShouldAddHeadersNameAndValue,

@@ -47,6 +47,7 @@ def fRunAsClient(
   bShowRequest,
   bShowResponse,
   d0SetForm_sValue_by_sName,
+  d0SetJSON_sValue_by_sName,
   asbRemoveHeadersForLowerNames,
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
@@ -85,6 +86,12 @@ def fRunAsClient(
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Providing form values while using a HTTP request as input is not implemented.",
+      );
+      sys.exit(guExitCodeBadArgument);
+    if d0SetJSON_sValue_by_sName is not None:
+      oConsole.fOutput(
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " Providing JSON values while using a HTTP request as input is not implemented.",
       );
       sys.exit(guExitCodeBadArgument);
     if not oHTTPRequestFileSystemItem.fbIsFile():
@@ -178,6 +185,12 @@ def fRunAsClient(
     fOutputUsageInformation(bOutputAllOptions = False);
     sys.exit(guExitCodeSuccess);
   
+  if d0SetForm_sValue_by_sName and d0SetJSON_sValue_by_sName is not None:
+    oConsole.fOutput(
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " Providing form and JSON values simultaneously is not implemented.",
+    );
+    sys.exit(guExitCodeBadArgument);
   ### HTTP CLIENT #############################################################
   oHTTPClient = foGetHTTPClient(
     bUseProxy = bUseProxy,
@@ -217,6 +230,7 @@ def fRunAsClient(
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
+        d0SetJSON_sValue_by_sName = d0SetJSON_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
         bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
@@ -241,6 +255,7 @@ def fRunAsClient(
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
+        d0SetJSON_sValue_by_sName = d0SetJSON_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
         bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
@@ -263,6 +278,7 @@ def fRunAsClient(
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
         d0SetForm_sValue_by_sName = d0SetForm_sValue_by_sName,
+        d0SetJSON_sValue_by_sName = d0SetJSON_sValue_by_sName,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
         bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,

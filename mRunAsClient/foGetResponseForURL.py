@@ -29,6 +29,7 @@ def foGetResponseForURL(
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
   d0SetForm_sValue_by_sName,
+  d0SetJSON_sValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
@@ -38,8 +39,9 @@ def foGetResponseForURL(
   bConcatenateDownload,
   bShowProgress,
 ):
-  if d0SetForm_sValue_by_sName is not None and not fbIsProvided(sbzSetMethod):
-    sbzSetMethod = b"POST";
+  if not fbIsProvided(sbzSetMethod):
+    if d0SetForm_sValue_by_sName is not None or d0SetJSON_sValue_by_sName is not None:
+      sbzSetMethod = b"POST";
   # Construct the HTTP request
   try:
     oRequest = oHTTPClient.foGetRequestForURL(
@@ -64,6 +66,11 @@ def foGetResponseForURL(
     oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
     for (sName, sValue) in d0SetForm_sValue_by_sName.items():
       oRequest.fSetFormValue(sName, sValue);
+  if d0SetJSON_sValue_by_sName:
+    # The user can overwrite or remove this content-type later.
+    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/json; charset=utf-8");
+    for (sName, sValue) in d0SetJSON_sValue_by_sName.items():
+      oRequest.fSetJSONValue(sName, sValue);
   # Apply headers provided through arguments to request
   fApplyHeaderSettingsToRequest(
     asbRemoveHeadersForLowerNames,
