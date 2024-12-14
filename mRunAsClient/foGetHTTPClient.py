@@ -389,8 +389,8 @@ def foGetHTTPClient(
       "resolving server hostname to ip address failed": fOutputResolvingServerHostnameFailed,
       "resolved server hostname to ip address": fOutputServerHostnameResolvedToIPAddress,
       
-      "connecting to server": fOutputFromClientToServerConnecting,
-      "connecting to server failed": fOutputFromClientToServerConnectingFailed,
+      "creating connection to server": fOutputFromClientToServerConnecting,
+      "creating connection to server failed": fOutputFromClientToServerConnectingFailed,
       "created connection to server": fOutputFromClientToServerConnectionCreated,
       "terminated connection to server": fOutputFromClientToServerConnectionTerminated,
 
@@ -405,8 +405,8 @@ def foGetHTTPClient(
       "resolving proxy hostname to ip address failed": fOutputResolvingProxyHostnameFailed,
       "resolved proxy hostname to ip address": fOutputProxyHostnameResolvedToIPAddress,
       
-      "connecting to proxy": fOutputFromClientToProxyConnecting,
-      "connecting to proxy failed": fOutputFromClientToProxyConnectingFailed,
+      "creating connection to proxy": fOutputFromClientToProxyConnecting,
+      "creating connection to proxy failed": fOutputFromClientToProxyConnectingFailed,
       "created connection to proxy": fOutputFromClientToProxyConnectionCreated,
       "terminated connection to proxy": fOutputFromClientToProxyConnectionTerminated,
 
@@ -414,8 +414,8 @@ def foGetHTTPClient(
       "securing connection to proxy failed": fOutputFromClientToProxySecuringConnectionFailed,
       "secured connection to proxy": fOutputFromClientToProxyConnectionSecured,
 
-      "connecting to server through proxy": fOutputFromClientToServerThroughProxyConnecting,
-      "connecting to server through proxy failed": fOutputFromClientToServerThroughProxyConnectingFailed,
+      "creating connection to server through proxy": fOutputFromClientToServerThroughProxyConnecting,
+      "creating connection to server through proxy failed": fOutputFromClientToServerThroughProxyConnectingFailed,
       "created connection to server through proxy": fOutputFromClientToServerThroughProxyConnectionCreated,
       "terminated connection to server through proxy": fOutputFromClientToServerThroughProxyConnectionTerminated,
 
