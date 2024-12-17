@@ -61,14 +61,13 @@ def foGetResponseForURL(
     );
     sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
 
+  # Applying form and JSON values sets the Content-Type header. This must be
+  # done before we call `fApplyHeaderSettingsToRequest` so the user can
+  # overwrite or remove this header later.
   if d0SetForm_sValue_by_sName:
-    # The user can overwrite or remove this content-type later.
-    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/x-www-form-urlencoded");
     for (sName, sValue) in d0SetForm_sValue_by_sName.items():
       oRequest.fSetFormValue(sName, sValue);
   if d0SetJSON_sValue_by_sName:
-    # The user can overwrite or remove this content-type later.
-    oRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Content-Type", b"application/json; charset=utf-8");
     for (sName, sValue) in d0SetJSON_sValue_by_sName.items():
       oRequest.fSetJSONValue(sName, sValue);
   # Apply headers provided through arguments to request
