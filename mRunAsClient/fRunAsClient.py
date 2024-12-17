@@ -125,7 +125,7 @@ def fRunAsClient(
         COLOR_NORMAL, "  ",
         COLOR_INFO, oException.sMessage,
       );
-      for (sName, xValue) in oException.dxDetails:
+      for (sName, xValue) in oException.dxDetails.items():
         oConsole.fOutput(
           COLOR_NORMAL, "  ",
           COLOR_LIST, CHAR_LIST,
