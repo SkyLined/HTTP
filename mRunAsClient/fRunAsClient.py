@@ -146,7 +146,12 @@ def fRunAsClient(
     if s0SetHTTPRequestData is not None:
       oHTTPRequest.fSetData(s0SetHTTPRequestData, bAddContentLengthHeader = True);
     # Apply header arguments:
-    fApplyHeaderSettingsToRequest(asbRemoveHeadersForLowerNames, dtsbReplaceHeaderNameAndValue_by_sLowerName, atsbAddHeadersNameAndValue);
+    fApplyHeaderSettingsToRequest(
+      asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
+      dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
+      atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
+      oHTTPRequest = oHTTPRequest,
+    );
     if o0URL is None:
       s0Extension = oHTTPRequestFileSystemItem.s0Extension.lower() if oHTTPRequestFileSystemItem.s0Extension else None;
       if s0Extension not in ["http", "https"]:

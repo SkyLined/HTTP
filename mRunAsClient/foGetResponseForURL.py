@@ -73,10 +73,10 @@ def foGetResponseForURL(
       oRequest.fSetJSONValue(sName, sValue);
   # Apply headers provided through arguments to request
   fApplyHeaderSettingsToRequest(
-    asbRemoveHeadersForLowerNames,
-    dtsbReplaceHeaderNameAndValue_by_sLowerName,
-    atsbAddHeadersNameAndValue,
-    oRequest,
+    asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
+    dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
+    atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
+    oRequest = oRequest,
   );
   
   return foGetResponseForRequestAndURL(

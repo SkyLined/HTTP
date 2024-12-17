@@ -1,13 +1,14 @@
 def fApplyHeaderSettingsToRequest(
+  *,
   asbRemoveHeadersForLowerNames,
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
-  oHTTPRequest,
+  oRequest,
 ):
   for sbHeaderLowerName in asbRemoveHeadersForLowerNames:
-    oHTTPRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
+    oRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
   for (sbHeaderLowerName, (sbHeaderName, sbHeaderValue)) in dtsbReplaceHeaderNameAndValue_by_sLowerName.items():
-    oHTTPRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
-    oHTTPRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
+    oRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
+    oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
   for (sbHeaderName, sbHeaderValue) in atsbAddHeadersNameAndValue:
-    oHTTPRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
+    oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
