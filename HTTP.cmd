@@ -4,6 +4,11 @@ IF DEFINED PYTHON (
   CALL :CHECK_PYTHON
   IF NOT ERRORLEVEL 1 GOTO :RUN_PYTHON
 )
+IF DEFINED PYTHONPATH (
+  SET PYTHON=%PYTHONPATH%\python.exe
+  CALL :CHECK_PYTHON
+  IF NOT ERRORLEVEL 1 GOTO :RUN_PYTHON
+)
 REM Try to detect the location of python automatically
 FOR /F "usebackq delims=" %%I IN (`where "python" 2^>nul`) DO (
   SET PYTHON="%%~fI"
