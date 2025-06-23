@@ -22,12 +22,12 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "--arguments", COLOR_NORMAL, "=<", COLOR_INFO, "file path", COLOR_NORMAL, ">");
     oConsole.fOutput("    Load additional arguments from the provided value and insert them in place");
     oConsole.fOutput("    of this argument.");
-    
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Login", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-bl", COLOR_NORMAL, ",  ", COLOR_INFO, "--basic-login=username:password");
     oConsole.fOutput("    Add an `Authorization: basic ...` header with the base64 encoded username and password.");
-    
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Cookies", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-c=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--cookies=<file path>");
@@ -37,25 +37,48 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    provided by servers are saved to this file. Expired cookies are deleted.");
     oConsole.fOutput("    If no file is provided, a file named 'HTTPCookieStore.json' in the current");
     oConsole.fOutput("    folder is used. If the file does not exist, it will be created.");
-    
     oConsole.fOutput("");
-    oConsole.fOutput("  ", COLOR_HILITE, "Request options", COLOR_NORMAL, ":");
-    oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
-    oConsole.fOutput("    Send utf-8 encoded \"<text>\" as data in the body of the request.");
-    oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
-    oConsole.fOutput("    Send the content of the given file in the body of the request.");
-    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
-    oConsole.fOutput("    Send the utf-8 encoded content of the given file as data in the body of the request.");
-    oConsole.fOutput("  ", COLOR_INFO, "--header=<name[:value]>");
+                      ################################################################### 80 chars ###
+    oConsole.fOutput("  ", COLOR_HILITE, "Request options: headers/body", COLOR_NORMAL, ":");
+    oConsole.fOutput("  ", COLOR_INFO, "--header=<name>[:<value>]");
     oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
     oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
     oConsole.fOutput("    for each request. This argument can be used to modify them.");
-    oConsole.fOutput("  ", COLOR_INFO, "--form=<name[=value]>");
-    oConsole.fOutput("    POST the given name-value pair as a `application/x-www-form-urlencoded` form. Use multiple");
-    oConsole.fOutput("    arguments to add multiple name-value pairs. A `Content-Type` header will automatically be");
-    oConsole.fOutput("    added and the default HTTP method will be POST.");
-    
-
+    oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
+    oConsole.fOutput("    Use utf-8 encoded \"<text>\" as data in the request body after applying the");
+    oConsole.fOutput("    compression and encoding selected in the headers.");
+    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
+    oConsole.fOutput("    Use the utf-8 encoded content of the given file as data in the request body");
+    oConsole.fOutput("    after applying the compression and encoding selected in the headers.");
+    oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
+    oConsole.fOutput("    Use the content of the given file in the request body as-is (without");
+    oConsole.fOutput("    applying any encoding/compression).");
+    oConsole.fOutput("");
+                      ################################################################### 80 chars ###
+    oConsole.fOutput("  ", COLOR_HILITE, "Request options: forms/json data", COLOR_NORMAL, ":");
+    oConsole.fOutput("  When the below options are used, an appropriate `Content-Length` header will");
+    oConsole.fOutput("  be added automatically and the HTTP method will be set to POST unless one or");
+    oConsole.fOutput("  the other is provided through the other arguments.");
+    oConsole.fOutput("  ", COLOR_INFO, "--form=<name>[=<value>]");
+    oConsole.fOutput("    Set the default `Content-Type` header to `application/x-www-form-urlencoded`");
+    oConsole.fOutput("    and add the given name-value pair to the request body. This argument can be");
+    oConsole.fOutput("    provided multiple times to add multiple name-value pairs to the form.");
+    oConsole.fOutput("  ", COLOR_INFO, "--form-data=<name>[=<value>]");
+    oConsole.fOutput("    Set the default `Content-Type` header to `multipart/form-data` and add the");
+    oConsole.fOutput("    given name-value pair to the request body. This argument can be provided");
+    oConsole.fOutput("    multiple times to add multiple name-value pairs to the form. This argument");
+    oConsole.fOutput("    can be combined with `--form-data-file`.");
+    oConsole.fOutput("  ", COLOR_INFO, "--form-data-file=<name>=<file path>");
+    oConsole.fOutput("    Set the default `Content-Type` header to `multipart/form-data` and add the");
+    oConsole.fOutput("    contents of the given file as a name-value pair to the request body. This");
+    oConsole.fOutput("    argument can be provided multiple times and to add multiple files. This");
+    oConsole.fOutput("    arguments can be combined with `--form-data` arguments.");
+    oConsole.fOutput("  ", COLOR_INFO, "--json=<name>[:<value>]");
+    oConsole.fOutput("    Set the default `Content-Type` header to `application/json` and add the");
+    oConsole.fOutput("    given name-value pair to a dictionary in the request body.  This argument");
+    oConsole.fOutput("    can be provided multiple times to add multiple name-value pairs to the");
+    oConsole.fOutput("    dictionary.");
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Response options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-db", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode", COLOR_NORMAL, ",  ", COLOR_INFO, "--decode-body");
@@ -72,7 +95,7 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Save the entire response in the file specified by \"<path>\". If no path");
     oConsole.fOutput("    is provided, it is saved in the current folder in a file named based on");
     oConsole.fOutput("    the request URL.");
-    
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Multiple request options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-r", COLOR_NORMAL, ", ", COLOR_INFO, "--max-redirects=<integer>", COLOR_NORMAL, ", ", COLOR_INFO, "--follow-redirects=<integer>");
@@ -92,7 +115,7 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    streamed from multiple segments. The names of subsequent segments is");
     oConsole.fOutput("    guessed from the initial URL and all of the segments are downloaded");
     oConsole.fOutput("    into a single video file.");
-
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Connection options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-s", COLOR_NORMAL, ", ", COLOR_INFO, "--secure", axBoolean);
@@ -113,7 +136,7 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    host instead, without modification. The \"Host\" header, cookies, and HTTPS");
     oConsole.fOutput("    certificate checks are unaffected. This allows you to \"spoof\" the server");
     oConsole.fOutput("    at the first host (DNS name or IP address) using the server at the second.");
-
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Output options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "--show-details", axBoolean);
@@ -131,7 +154,7 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Show responses (default). Set to \"false\" to hide them.");
     oConsole.fOutput("  ", COLOR_INFO, "--debug", axBoolean);
     oConsole.fOutput("    Show debug output. Set to \"false\" to hide them (default).");
-    
+                      ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "General options", COLOR_NORMAL, ":");
     oConsole.fOutput("  ", COLOR_INFO, "-h", COLOR_NORMAL, ", ", COLOR_INFO, "--help");
@@ -144,7 +167,7 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Show version information.");
     oConsole.fOutput("  ", COLOR_INFO, "--version-check");
     oConsole.fOutput("    Check for updates and show version information.");
-    
+                      ################################################################### 80 chars ###
     oConsole.fOutput();
     oConsole.fOutput("You can encode characters using \"\\x##\" (e.g. \"\\x41\" == \"A\") in the value of the arguments");
     oConsole.fOutput(COLOR_INFO, "--data", COLOR_NORMAL, ", ",
@@ -167,5 +190,6 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_ERROR, "14", COLOR_NORMAL, "  = A secure connection could not be established.");
     oConsole.fOutput("  ", COLOR_ERROR, "15", COLOR_NORMAL, "  = The server did not return a valid response.");
     oConsole.fOutput("  ", COLOR_ERROR, "16", COLOR_NORMAL, " = There were too many consecutive redirects.");
+                      ################################################################### 80 chars ###
   finally:             
     oConsole.fUnlock();
