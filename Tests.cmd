@@ -1,28 +1,29 @@
 @ECHO OFF
-SETLOCAL
-IF EXIST "%~dpn0\%~nx0" (
-  CALL "%~dpn0\%~nx0" %*
-  IF ERRORLEVEL 1 GOTO :ERROR
-)
-SET TEST_FULL=FALSE
-SET TEST_PYTHON=MAYBE
-SET TEST_PHP=MAYBE
-SET TEST_JAVASCRIPT=MAYBE
+SETLOCAL ENABLEDELAYEDEXPANSION
+
 :GET_RANDOM_FILE
-SET REDIRECT_STDOUT_FILE_PATH=%TEMP%\Test stdout %RANDOM%.txt
-IF EXIST "%REDIRECT_STDOUT_FILE_PATH%" GOTO :GET_RANDOM_FILE
+SET REDIRECT_STDOUT_FILE_PATH=!TEMP!\Test stdout !RANDOM!.txt
+IF EXIST "!REDIRECT_STDOUT_FILE_PATH!" GOTO :GET_RANDOM_FILE
 
 CALL :PARSE_ARGUMENTS %*
 
-IF NOT "%TEST_PYTHON%" == "FALSE" (
+REM If there is a Tests\Tests.cmd file, execute it first
+IF EXIST "%~dpn0\%~nx0" (
+  CALL "%~dpn0\%~nx0" !TEST_ARGUMENTS!
+  IF ERRORLEVEL 1 GOTO :ERROR
+)
+
+REM Execute more general tests:
+
+IF NOT "!TEST_PYTHON!" == "FALSE" (
   IF NOT EXIST "%~dpn0\%~n0.py" (
-    IF NOT "%TEST_PYTHON%" == "MAYBE" (
+    IF NOT "!TEST_PYTHON!" == "MAYBE" (
       ECHO - There is no file "%~dpn0\%~n0.py" for testing!
       ENDLOCAL
       EXIT /B 1
     )
   ) ELSE (
-    CALL :TEST_PYTHON %*
+    CALL :TEST_PYTHON
     IF ERRORLEVEL 1 (
       ENDLOCAL
       EXIT /B 1
@@ -38,15 +39,15 @@ IF NOT "%TEST_PYTHON%" == "FALSE" (
     )
   )
 )
-IF NOT "%TEST_PHP%" == "FALSE" (
+IF NOT "!TEST_PHP!" == "FALSE" (
   IF NOT EXIST "%~dpn0\%~n0.php" (
-    IF NOT "%TEST_PHP%" == "MAYBE" (
+    IF NOT "!TEST_PHP!" == "MAYBE" (
       ECHO - There is no file "%~dpn0\%~n0.php" for testing!
       ENDLOCAL
       EXIT /B 1
     )
   ) ELSE (
-    CALL :TEST_PHP %*
+    CALL :TEST_PHP
     IF ERRORLEVEL 1 (
       ENDLOCAL
       EXIT /B 1
@@ -62,15 +63,15 @@ IF NOT "%TEST_PHP%" == "FALSE" (
     )
   )
 )
-IF NOT "%TEST_JAVASCRIPT%" == "FALSE" (
+IF NOT "!TEST_JAVASCRIPT!" == "FALSE" (
   IF NOT EXIST "%~dpn0\%~n0.js" (
-    IF NOT "%TEST_JAVASCRIPT%" == "MAYBE" (
+    IF NOT "!TEST_JAVASCRIPT!" == "MAYBE" (
       ECHO - There is no file "%~dpn0\%~n0.js" for testing!
       ENDLOCAL
       EXIT /B 1
     )
   ) ELSE (
-    CALL :TEST_JAVASCRIPT %*
+    CALL :TEST_JAVASCRIPT
     IF ERRORLEVEL 1 (
       ENDLOCAL
       EXIT /B 1
@@ -90,30 +91,35 @@ ENDLOCAL
 EXIT /B 0
 
 :PARSE_ARGUMENTS
-  IF "%~1" == "--all" (
-    SET TEST_FULL=TRUE
-  ) ELSE IF "%~1" == "--python" (
+  SET TEST_PYTHON=MAYBE
+  SET TEST_PHP=MAYBE
+  SET TEST_JAVASCRIPT=MAYBE
+  SET TEST_ARGUMENTS=
+  IF "%~1" == "--python" (
     SET TEST_PYTHON=TRUE
   ) ELSE IF "%~1" == "--php" (
     SET TEST_PHP=TRUE
   ) ELSE IF "%~1" == "--javascript" (
     SET TEST_JAVASCRIPT=TRUE
+  ) ELSE (
+    SET TEST_ARGUMENTS=!TEST_ARGUMENTS! %1
   )
   SHIFT
   IF NOT "%~1" == "" GOTO :PARSE_ARGUMENTS
   IF "%TEST_PYTHON%" == "MAYBE" IF "%TEST_PHP%" == "MAYBE" IF "%TEST_JAVASCRIPT%" == "MAYBE" (
     REM The user did not pick a specific language to test, so test all of them:
-    EXIT /B 0
+  ) ELSE (
+    REM The user picked one or more specific languages to test, so do not test those that they did not select:
+    IF "%TEST_PYTHON%" == "MAYBE" SET TEST_PYTHON=FALSE
+    IF "%TEST_PHP%" == "MAYBE" SET TEST_PHP=FALSE
+    IF "%TEST_JAVASCRIPT%" == "MAYBE" SET TEST_JAVASCRIPT=FALSE
   )
-  REM The user picked one or more specific languages to test, so do not test those that they did not select:
-  IF "%TEST_PYTHON%" == "MAYBE" SET TEST_PYTHON=FALSE
-  IF "%TEST_PHP%" == "MAYBE" SET TEST_PHP=FALSE
-  IF "%TEST_JAVASCRIPT%" == "MAYBE" SET TEST_JAVASCRIPT=FALSE
+   = 
   EXIT /B 0
   
 
 :TEST_PYTHON
-  IF "%TEST_FULL%" == "TRUE" (
+  IF "%RELEASE%" == "TRUE" (
     REM If you can add the x86 and x64 binaries of python to the path, or add links to the local folder, tests will be run
     REM in both
     WHERE PYTHON_X86 >nul 2>&1
@@ -157,29 +163,29 @@ EXIT /B 0
   EXIT /B 0
 
 :RUN_PYTHON
-  CALL %PYTHON% -Werror "%~dpn0\%~n0.py" %*
+  CALL %PYTHON% -Werror "%~dpn0\%~n0.py" !TEST_ARGUMENTS!
   IF ERRORLEVEL 1 GOTO :ERROR
   ECHO + Completed tests using %PYTHON%.
   EXIT /B 0
 
 :RUN_PYTHON_FOR_BOTH_ISAS
   ECHO + Testing using Python for x86 ISA...
-  CALL %PYTHON_X86% "%~dpn0\%~n0.py" %*
+  CALL %PYTHON_X86% "%~dpn0\%~n0.py" !TEST_ARGUMENTS!
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X86% -Werror "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %PYTHON_X86% -Werror "%~dpn0\%~n0.py" !TEST_ARGUMENTS! >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
   ECHO + Completed tests using %PYTHON_X86%.
   ECHO.
   ECHO + Testing using Python for x64 ISA...
-  CALL %PYTHON_X64% "%~dpn0\%~n0.py" %*
+  CALL %PYTHON_X64% "%~dpn0\%~n0.py" !TEST_ARGUMENTS!
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PYTHON_X64% -Werror "%~dpn0\%~n0.py" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %PYTHON_X64% -Werror "%~dpn0\%~n0.py" !TEST_ARGUMENTS! >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
@@ -200,11 +206,11 @@ EXIT /B 0
   )
 :FOUND_PHP
   ECHO * Testing PHP...
-  CALL %PHP% "%~dpn0\%~n0.php" %*
+  CALL %PHP% "%~dpn0\%~n0.php" !TEST_ARGUMENTS!
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %PHP% "%~dpn0\%~n0.php" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %PHP% "%~dpn0\%~n0.php" !TEST_ARGUMENTS! >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
@@ -228,11 +234,11 @@ EXIT /B 0
   )
 :FOUND_NODE
   ECHO * Testing NODE...
-  CALL %NODE% "%~dpn0\%~n0.js" %*
+  CALL %NODE% "%~dpn0\%~n0.js" !TEST_ARGUMENTS!
   IF ERRORLEVEL 1 GOTO :ERROR
   IF EXIST "%~dpn0\TEST_WITH_REDIRECTED_OUTPUT" (
     ECHO   + ...with redirected output...
-    ECHO.|CALL %NODE% "%~dpn0\%~n0.js" %* >"%REDIRECT_STDOUT_FILE_PATH%"
+    ECHO.|CALL %NODE% "%~dpn0\%~n0.js" !TEST_ARGUMENTS! >"%REDIRECT_STDOUT_FILE_PATH%"
     IF ERRORLEVEL 1 GOTO :ERROR
     DEL "%REDIRECT_STDOUT_FILE_PATH%" /Q
   )
