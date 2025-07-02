@@ -2,14 +2,14 @@ import sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHTTPClient import (
-  cHTTPClientFailedToConnectToServerThroughProxyException,
+  cClientFailedToConnectToServerThroughProxyException,
 );
 from mHTTPConnection import (
-  cHTTPMaximumNumberOfConnectionsToServerReachedException,
+  cMaximumNumberOfConnectionsToServerReachedException,
 );
 from mHTTPProtocol import (
-  cHTTPInvalidMessageException,
-  cHTTPInvalidURLException,
+  cInvalidMessageException,
+  cInvalidURLException,
   fs0GetExtensionForMediaType,
   fsb0GetMediaTypeForExtension,
 );
@@ -56,7 +56,7 @@ oConsole = foConsoleLoader();
 
 def foGetResponseForRequestAndURL(
   *, 
-  oHTTPClient,
+  oClient,
   oRequest,
   oURL,
   u0MaxRedirects,
@@ -70,7 +70,7 @@ def foGetResponseForRequestAndURL(
 ):
   # Send the request and get the response.
   try:
-    o0Response = oHTTPClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
+    o0Response = oClient.fo0GetResponseForRequestAndURL(oRequest, oURL);
   except Exception as oException:
     if isinstance(oException, cTCPIPConnectTimeoutException):
       oConsole.fOutput(
@@ -104,7 +104,7 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " The server did not respond to our request.",
       );
     elif isinstance(oException, (
-      cHTTPClientFailedToConnectToServerThroughProxyException,
+      cClientFailedToConnectToServerThroughProxyException,
     )):
       oConsole.fOutput(
         "      ",
@@ -112,7 +112,7 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " Could not connect to server through proxy.",
       );
     elif isinstance(oException, (
-      cHTTPMaximumNumberOfConnectionsToServerReachedException,
+      cMaximumNumberOfConnectionsToServerReachedException,
     )):
       oConsole.fOutput(
         "      ",
@@ -128,7 +128,7 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, " The server was unable to respond in a timely manner.",
       );
     elif isinstance(oException, (
-      cHTTPInvalidMessageException,
+      cInvalidMessageException,
     )):
       oConsole.fOutput(
         "      ",
@@ -154,8 +154,8 @@ def foGetResponseForRequestAndURL(
   oResponse = o0Response;
   # Handle redirects if needed
   if u0MaxRedirects is not None and oResponse.uStatusCode in [301, 302, 303, 307, 308]:
-    o0LocationHeader = oResponse.oHeaders.fo0GetUniqueHeaderForName(b"Location");
-    if not o0LocationHeader:
+    aoLocationHeaders = oResponse.oHeaders.faoGetForNormalizedName(b"Location");
+    if len(aoLocationHeaders) == 0:
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
@@ -164,15 +164,37 @@ def foGetResponseForRequestAndURL(
         COLOR_NORMAL, "\" header.",
       );
       sys.exit(guExitCodeNoValidResponseReceived);
-    sbRedirectToURL = o0LocationHeader.sbValue;
+    if len(aoLocationHeaders) > 1:
+      oConsole.fOutput(
+        "      ",
+        COLOR_WARNING, CHAR_WARNING,
+        COLOR_NORMAL, " Redirected with multiple \"",
+        COLOR_INFO, "Location",
+        COLOR_NORMAL, "\" headers:",
+      );
+      for oLocationHeader in aoLocationHeaders[:-1]:
+        oConsole.fOutput(
+          "        ",
+          COLOR_NORMAL, "• ",
+          COLOR_INFO, fsCP437FromBytesString(oLocationHeader.sbValue),
+          COLOR_NORMAL, " (ignored)",
+        );
+      oConsole.fOutput(
+        "        ",
+        COLOR_NORMAL, "► ",
+        COLOR_INFO, fsCP437FromBytesString(aoLocationHeaders[-1].sbValue),
+        COLOR_NORMAL, " (used for redirect).",
+      );
+    oLocationHeader = aoLocationHeaders[-1];
+    sbRedirectToURL = oLocationHeader.sbValue;
     try:
       oRedirectToURL = oURL.foFromAbsoluteOrRelativeBytesString(sbRedirectToURL);
-    except cHTTPInvalidURLException as oException:
+    except cInvalidURLException as oException:
       oConsole.fOutput(
         "      ",
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " Redirect to invalid URL ",
-        COLOR_INFO, sbRedirectToURL,
+        COLOR_INFO, fsCP437FromBytesString(sbRedirectToURL),
         COLOR_NORMAL, ":",
       );
     if bShowProgress:
@@ -193,22 +215,22 @@ def foGetResponseForRequestAndURL(
     # Create a new request based on the last one:
     oRedirectedRequest = oRequest.foClone();
     # Update the `Host` header and path in the request to reflect the new URL:
-    oRedirectedRequest.oHeaders.fbReplaceHeadersForNameAndValue(b"Host", oRedirectToURL.sbHostAndOptionalPort);
+    oRedirectedRequest.oHeaders.foReplaceOrAddUniqueNameAndValue(b"Host", oRedirectToURL.sbHostAndOptionalPort);
     oRedirectedRequest.sbURL = oRedirectToURL.sbRelative;
     # Delete existing cookies:
-    oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Cookie");
+    oRedirectedRequest.oHeaders.fbRemoveForNormalizedName(b"Cookie");
     # Apply appropriate cookies if we have a cookie store.
-    if oHTTPClient.o0CookieStore:
-      oHTTPClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
+    if oClient.o0CookieStore:
+      oClient.o0CookieStore.fApplyToRequestForURL(oRedirectedRequest, oRedirectToURL);
     if oResponse.uStatusCode in [303]: # AFAIK this only applies to 303.
       oRedirectedRequest.sbMethod = b"GET";
-      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Transfer-Encoding");
-      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Content-Encoding");
-      oRedirectedRequest.oHeaders.fbRemoveHeadersForName(b"Content-Type");
+      oRedirectedRequest.oHeaders.fbRemoveForNormalizedName(b"Transfer-Encoding");
+      oRedirectedRequest.oHeaders.fbRemoveForNormalizedName(b"Content-Encoding");
+      oRedirectedRequest.oHeaders.fbRemoveForNormalizedName(b"Content-Type");
       oRedirectedRequest.o0AdditionalHeaders = None;
       oResponse.sbBody = b"";
     return foGetResponseForRequestAndURL(
-      oHTTPClient = oHTTPClient,
+      oClient = oClient,
       oRequest = oRedirectedRequest,
       oURL = oRedirectToURL,
       u0MaxRedirects = u0MaxRedirects - 1,
@@ -305,10 +327,14 @@ def foGetResponseForRequestAndURL(
         COLOR_INFO, "HTTP %s" % oResponse.uStatusCode,
         COLOR_NORMAL, " response; the downloaded file may not contain what you expect!",
       );
+    if bFailOnDecodeBodyErrors:
+      sbResponseData = oResponse.fsbGetOptionallyChunkedDecodedAndDecompressedBody();
+    else:
+      (sbResponseData, asbActualCompressionTypes) = oResponse.ftxGetOptionallyChunkedDecodedAndDecompressedBodyAndActualCompressionTypes();
     fSaveToFile(
       sMessage = "Downloading",
       o0TargetFileSystemItem = o0DownloadToFileSystemItem,
       s0PostfixFileName = None,
-      sbData = oResponse.fsb0GetDecompressedBody(bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors) or b"",
+      sbData = sbResponseData,
     );
   return oResponse;

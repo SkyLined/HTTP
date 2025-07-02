@@ -45,7 +45,7 @@ def fOutputResponseSent(sFromChar, sToChar, sToDescription, oConnection, oRespon
     COLOR_RESPONSE,     STR_RESPONSE_SENT_SECURELY3 if oConnection.bSecure else STR_RESPONSE_SENT3,
     COLOR_ACTIVE,       sToChar,
     COLOR_NORMAL,       " Sent ",
-    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
+    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStartLine()),
     COLOR_NORMAL,       " response (",
     COLOR_INFO,         fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
     [

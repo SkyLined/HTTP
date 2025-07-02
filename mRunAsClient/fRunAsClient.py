@@ -1,8 +1,7 @@
 import sys;
 
 from mHTTPProtocol import (
-  cHTTPInvalidMessageException,
-  cHTTPRequest,
+  cRequest,
   cURL,
 );
 from mNotProvided import fbIsProvided;
@@ -21,15 +20,19 @@ from mExitCodes import (
 );
 oConsole = foConsoleLoader();
 
+from .fApplyBodyToRequest import fApplyBodyToRequest;
 from .fApplyHeaderSettingsToRequest import fApplyHeaderSettingsToRequest;
 from .fProcessM3UFile import fProcessM3UFile;
 from .fProcessSegmentedVideo import fProcessSegmentedVideo;
-from .foGetHTTPClient import foGetHTTPClient;
+from .foGetClient import foGetClient;
 from .foGetResponseForURL import foGetResponseForURL;
 from .foGetResponseForRequestAndURL import foGetResponseForRequestAndURL;
 
 def fRunAsClient(
   *,
+  bAddContentLengthHeaderForBody,
+  bApplyChunkedEncodingToBody,
+  bCompressBody,
   bDecodeBodyOfHTTPMessages,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
@@ -56,20 +59,19 @@ def fRunAsClient(
   nSendDelayPerByteInSeconds,
   o0CookieStoreJSONFileSystemItem,
   o0DownloadToFileSystemItem,
-  o0HTTPRequestFileSystemItem,
-  o0HTTPProxyServerURL,
+  o0RequestFileSystemItem,
+  o0ProxyServerURL,
   o0SaveHTTPResponsesToFileSystemItem,
   o0URL,
   o0NetscapeCookiesFileSystemItem,
-  s0SetHTTPRequestData,
-  sb0SetHTTPRequestBody,
-  sbzSetHTTPVersion,
-  sbzSetMethod,
+  sx0Body,
+  sbzHTTPVersion,
+  sbzMethod,
   u0MaxRedirects,
   uHexOutputCharsPerLine,
 ):
-  if o0HTTPRequestFileSystemItem:
-    oHTTPRequestFileSystemItem = o0HTTPRequestFileSystemItem;
+  if o0RequestFileSystemItem:
+    oRequestFileSystemItem = o0RequestFileSystemItem;
     if bProcessSegmentedVideo:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
@@ -94,31 +96,31 @@ def fRunAsClient(
         COLOR_NORMAL, " Providing JSON values while using a HTTP request as input is not implemented.",
       );
       sys.exit(guExitCodeBadArgument);
-    if not oHTTPRequestFileSystemItem.fbIsFile():
+    if not oRequestFileSystemItem.fbIsFile():
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The HTTP request input file ",
-        COLOR_INFO, oHTTPRequestFileSystemItem.sWindowsPath,
+        COLOR_INFO, oRequestFileSystemItem.sWindowsPath,
         COLOR_NORMAL, " was not found.",
       );
       sys.exit(guExitCodeBadArgument);
     try:
-      sbHTTPRequest = oHTTPRequestFileSystemItem.fsbRead();
+      sbHTTPRequest = oRequestFileSystemItem.fsbRead();
     except:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The HTTP request input file ",
-        COLOR_INFO, oHTTPRequestFileSystemItem.sWindowsPath,
+        COLOR_INFO, oRequestFileSystemItem.sWindowsPath,
         COLOR_NORMAL, " could not be read.",
       );
       sys.exit(guExitCodeBadArgument);
     try:
-      oHTTPRequest = cHTTPRequest.foFromBytesString(sbHTTPRequest);
-    except cHTTPInvalidMessageException as oException:
+      oRequest = cRequest.foFromBytesString(sbHTTPRequest);
+    except cInvalidMessageException as oException:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The HTTP request input file ",
-        COLOR_INFO, oHTTPRequestFileSystemItem.sWindowsPath,
+        COLOR_INFO, oRequestFileSystemItem.sWindowsPath,
         COLOR_NORMAL, " could not be parsed.",
       );
       oConsole.fOutput(
@@ -135,28 +137,32 @@ def fRunAsClient(
           COLOR_INFO, str(xValue),
         );
       sys.exit(guExitCodeBadArgument);
-    if fbIsProvided(sbzSetHTTPVersion):
-      oHTTPRequest.sbHTTPVersion = sbzSetHTTPVersion;
-    if fbIsProvided(sbzSetMethod):
-      oHTTPRequest.sbMethod = sbzSetMethod;
+    if fbIsProvided(sbzHTTPVersion):
+      oRequest.sbHTTPVersion = sbzHTTPVersion;
+    if fbIsProvided(sbzMethod):
+      oRequest.sbMethod = sbzMethod;
     # When setting the body, we automatically set the `Content-Length` header.
     # This can be removed or modified using the header arguments immediately after
-    if sb0SetHTTPRequestBody is not None:
-      oHTTPRequest.fSetBody(sb0SetHTTPRequestBody, bAddContentLengthHeader = True);
-    if s0SetHTTPRequestData is not None:
-      oHTTPRequest.fSetData(s0SetHTTPRequestData, bAddContentLengthHeader = True);
+    if sx0Body is not None:
+      fApplyBodyToRequest(
+        oRequest = oRequest,
+        sxBody = sx0Body,
+        bCompress = bCompressBody,
+        bApplyChunkedEncoding = bApplyChunkedEncodingToBody,
+        bSetContentLengthHeader = bSetContentLengthHeaderForBody,
+      );
     # Apply header arguments:
     fApplyHeaderSettingsToRequest(
       asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
       dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
       atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
-      oHTTPRequest = oHTTPRequest,
+      oRequest = oRequest,
     );
     if o0URL is None:
-      s0Extension = oHTTPRequestFileSystemItem.s0Extension.lower() if oHTTPRequestFileSystemItem.s0Extension else None;
+      s0Extension = oRequestFileSystemItem.s0Extension.lower() if oRequestFileSystemItem.s0Extension else None;
       if s0Extension not in ["http", "https"]:
         oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
+          COLOR_ERROR,  CHAR_ERROR,
           COLOR_NORMAL, " Cannot determine the protocol to use because the HTTP request input file does",
         );
         oConsole.fOutput(
@@ -164,28 +170,35 @@ def fRunAsClient(
         );
         sys.exit(guExitCodeBadArgument);
       sbProtocol = bytes(ord(s) for s in s0Extension);
-      o0HostHeader = oHTTPRequest.oHeaders.fo0GetUniqueHeaderForName(b"Host");
-      if o0HostHeader is None:
+      aoHostHeaders = oRequest.oHeaders.faoGetForNormalizedName(b"Host");
+      if len(aoHostHeaders) == 0:
         oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
+          COLOR_ERROR,  CHAR_ERROR,
           COLOR_NORMAL, " Cannot determine the server to connect to because the HTTP request input file",
         );
         oConsole.fOutput(
           "  does not contain a 'Host' header and no URL was provided.",
         );
         sys.exit(guExitCodeBadArgument);
+      elif len(aoHostHeaders) > 1 and len(set([oHostHeader.sbNormalizedValue for oHostHeader in aoHostHeaders])) > 1:
+        oConsole.fOutput(
+          COLOR_WARNING,  CHAR_WARNING,
+          COLOR_NORMAL,   " Selected the server name found in the first Host header out of ",
+          COLOR_INFO,     str(len(aoHostHeaders)),
+          COLOR_NORMAL,   "."
+        );
       sbURL = b"%s://%s%s" % (
         sbProtocol,
-        o0HostHeader.sbValue,
-        oHTTPRequest.sbURL,
+        aoHostHeaders[0].sbValue,
+        oRequest.sbURL,
       );
       oURL = cURL.foFromBytesString(sbURL);
     else:
       oURL = o0URL;
-    o0HTTPRequest = oHTTPRequest;
+    o0Request = oRequest;
   elif o0URL:
     oURL = o0URL;
-    o0HTTPRequest = None;
+    o0Request = None;
   else:
     fOutputUsageInformation(bOutputAllOptions = False);
     sys.exit(guExitCodeSuccess);
@@ -197,9 +210,9 @@ def fRunAsClient(
     );
     sys.exit(guExitCodeBadArgument);
   ### HTTP CLIENT #############################################################
-  oHTTPClient = foGetHTTPClient(
+  oClient = foGetClient(
     bUseProxy = bUseProxy,
-    o0HTTPProxyServerURL = o0HTTPProxyServerURL,
+    o0ProxyServerURL = o0ProxyServerURL,
     n0zTimeoutInSeconds = n0zTimeoutInSeconds,
     nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
     bVerifyCertificates = bVerifyCertificates,
@@ -218,19 +231,21 @@ def fRunAsClient(
     dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
   );
   try:
-    if oHTTPClient.o0CookieStore and o0HTTPRequest:
-      oHTTPClient.o0CookieStore.fApplyToRequestForURL(o0HTTPRequest, oURL);
+    if oClient.o0CookieStore and o0Request:
+      oClient.o0CookieStore.fApplyToRequestForURL(o0Request, oURL);
     
     if bProcessM3UFile:
-      assert not o0HTTPRequest; # This should have been prevented when parsing the arguments.
+      assert not o0Request; # This should have been prevented when parsing the arguments.
       ### M3U ######################################################################
       fProcessM3UFile(
-        oHTTPClient = oHTTPClient,
+        oClient = oClient,
         oURL = oURL,
-        sbzSetHTTPVersion = sbzSetHTTPVersion,
-        sbzSetMethod = sbzSetMethod,
-        sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
-        s0SetHTTPRequestData = s0SetHTTPRequestData,
+        sbzHTTPVersion = sbzHTTPVersion,
+        sbzMethod = sbzMethod,
+        sx0Body = sx0Body,
+        bAddContentLengthHeaderForBody = bAddContentLengthHeaderForBody,
+        bApplyChunkedEncodingToBody = bApplyChunkedEncodingToBody,
+        bCompressBody = bCompressBody,
         asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
@@ -246,16 +261,18 @@ def fRunAsClient(
         bProcessSegmentedM3U = bProcessSegmentedM3U,
       );
     elif bProcessSegmentedVideo:
-      assert not o0HTTPRequest; # This should have been prevented when parsing the arguments.
+      assert not o0Request; # This should have been prevented when parsing the arguments.
       ### SEGMENTED VIDEO ##########################################################
       # Multiple request to URL with increasing index until we get a response that is not "200 Ok"
       fProcessSegmentedVideo(
-        oHTTPClient = oHTTPClient,
+        oClient = oClient,
         oURL = oURL,
-        sbzSetHTTPVersion = sbzSetHTTPVersion,
-        sbzSetMethod = sbzSetMethod,
-        sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
-        s0SetHTTPRequestData = s0SetHTTPRequestData,
+        sbzHTTPVersion = sbzHTTPVersion,
+        sbzMethod = sbzMethod,
+        sx0Body = sx0Body,
+        bAddContentLengthHeaderForBody = bAddContentLengthHeaderForBody,
+        bApplyChunkedEncodingToBody = bApplyChunkedEncodingToBody,
+        bCompressBody = bCompressBody,
         asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
@@ -269,16 +286,18 @@ def fRunAsClient(
         o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
         bShowProgress = bShowProgress,
       );
-    elif o0HTTPRequest is None:
+    elif o0Request is None:
       ### URL ######################################################################
       # Single request from URL
       foGetResponseForURL(
-        oHTTPClient = oHTTPClient,
+        oClient = oClient,
         oURL = oURL,
-        sbzSetHTTPVersion = sbzSetHTTPVersion,
-        sbzSetMethod = sbzSetMethod,
-        sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
-        s0SetHTTPRequestData = s0SetHTTPRequestData,
+        sbzHTTPVersion = sbzHTTPVersion,
+        sbzMethod = sbzMethod,
+        sx0Body = sx0Body,
+        bAddContentLengthHeaderForBody = bAddContentLengthHeaderForBody,
+        bApplyChunkedEncodingToBody = bApplyChunkedEncodingToBody,
+        bCompressBody = bCompressBody,
         asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
         dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
         atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
@@ -297,8 +316,8 @@ def fRunAsClient(
       ### .HTTP(S) FILE ############################################################
       # Single request
       foGetResponseForRequestAndURL(
-        oHTTPClient = oHTTPClient,
-        oRequest = o0HTTPRequest,
+        oClient = oClient,
+        oRequest = o0Request,
         oURL = oURL,
         u0MaxRedirects = u0MaxRedirects,
         bDownloadToFile = bDownloadToFile,
@@ -310,4 +329,4 @@ def fRunAsClient(
         bShowProgress = bShowProgress,
       );
   finally:
-    oHTTPClient.fStop();
+    oClient.fStop();

@@ -19,6 +19,6 @@ def ftxHandleRequest(oHTTPServer, oRequest, oBaseFolder):
   if f0txHandleRequest:
     return f0txHandleRequest(oHTTPServer, oRequest, oBaseFolder);
   return (
-    oRequest.foCreateResponse(uzStatusCode = 405,), # Method not allowed.
+    oRequest.foCreateResponse(uzStatusCode = 405), # Method not allowed.
     None, # No next connection handler
   );

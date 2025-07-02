@@ -2,11 +2,11 @@ import json, sys;
 
 from mFileSystemItem import cFileSystemItem;
 from mHTTPClient import (
-  cHTTPClient,
-  cHTTPClientUsingAutomaticProxyServer,
-  cHTTPClientUsingProxyServer,
+  cClient,
+  cClientUsingAutomaticProxyServer,
+  cClientUsingProxyServer,
 );
-from mHTTPCookieStore import cHTTPCookieStore;
+from mHTTPCookieStore import cCookieStore;
 from mNotProvided import fbIsProvided;
 
 from foConsoleLoader import foConsoleLoader;
@@ -88,10 +88,10 @@ from mOutputCookieEvents import (
 );
 oConsole = foConsoleLoader();
 
-def foGetHTTPClient(
+def foGetClient(
   *,
   bUseProxy,
-  o0HTTPProxyServerURL,
+  o0ProxyServerURL,
   n0zTimeoutInSeconds,
   nSendDelayPerByteInSeconds,
   bDecodeBodyOfHTTPMessages,
@@ -140,7 +140,7 @@ def foGetHTTPClient(
       fOutputCookieSet(oCookieStore, oCookie, o0PreviousCookie);
   else:
     bCookieStoreFileExists = False;
-  oCookieStore = cHTTPCookieStore(
+  oCookieStore = cCookieStore(
     f0InvalidCookieAttributeCallback = fOutputInvalidCookieAttribute,
     f0SetCookieCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookieStore else fOutputCookieSet,
     f0CookieExpiredCallback = fSaveCookiesToDiskAndOutputSetCookie if bSaveCookieStore else fOutputCookieSet,
@@ -210,7 +210,7 @@ def foGetHTTPClient(
   # two generic functions for reporting the requests/responses:
   if not bUseProxy:
     # Create a HTTP client instance that uses no proxy
-    oHTTPClient = cHTTPClient(
+    oClient = cClient(
       o0CookieStore = oCookieStore,
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -219,10 +219,10 @@ def foGetHTTPClient(
       bVerifyCertificates = bVerifyCertificates,
       dsbSpoofedHost_by_sbHost = dsbSpoofedHost_by_sbHost,
     );
-  elif o0HTTPProxyServerURL:
+  elif o0ProxyServerURL:
     # Create a HTTP client instance that uses a static proxy
-    oHTTPClient = cHTTPClientUsingProxyServer(
-      o0HTTPProxyServerURL, 
+    oClient = cClientUsingProxyServer(
+      o0ProxyServerURL, 
       o0CookieStore = oCookieStore,
       n0zConnectToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureConnectionToProxyTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -233,7 +233,7 @@ def foGetHTTPClient(
     );
   else:
     # Create a HTTP client instance that uses dynamic proxies.
-    oHTTPClient = cHTTPClientUsingAutomaticProxyServer(
+    oClient = cClientUsingAutomaticProxyServer(
       o0CookieStore = oCookieStore,
       n0zConnectTimeoutInSeconds = n0zTimeoutInSeconds,
       n0zSecureTimeoutInSeconds = n0zTimeoutInSeconds,
@@ -241,22 +241,22 @@ def foGetHTTPClient(
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       bVerifyCertificates = bVerifyCertificates,
     );
-  if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
-    oHTTPClient.fAddCallbacks({
-      "sending request to server": lambda oHTTPClient, *, oConnection, oRequest: (
+  if isinstance(oClient, (cClient, cClientUsingAutomaticProxyServer)):
+    oClient.fAddCallbacks({
+      "sending request to server": lambda oClient, *, oConnection, oRequest: (
         bShowProgress and fOutputFromClientToServerSendingRequest(
           oConnection = oConnection,
           oRequest = oRequest,
         ),
       ),
-      "sending request to server failed": lambda oHTTPClient, *, oConnection, oRequest, oException: (
+      "sending request to server failed": lambda oClient, *, oConnection, oRequest, oException: (
         bShowProgress and fOutputFromClientToServerSendingRequestFailed(
           oConnection = oConnection,
           oRequest = oRequest,
           oException = oException,
         ),
       ),
-      "sent request to server": lambda oHTTPClient, *, oConnection, oRequest: (
+      "sent request to server": lambda oClient, *, oConnection, oRequest: (
         bShowProgress and fOutputFromClientToServerRequestSent(
           oConnection = oConnection,
           oRequest = oRequest,
@@ -272,18 +272,18 @@ def foGetHTTPClient(
           xPrefix = "",
         ),
       ),
-      "receiving response from server": lambda oHTTPClient, *, oConnection, o0Request: (
+      "receiving response from server": lambda oClient, *, oConnection, o0Request: (
         bShowProgress and fOutputToClientFromServerReceivingResponse(
           oConnection = oConnection,
         ),
       ),
-      "receiving response from server failed": lambda oHTTPClient, *, oConnection, o0Request, oException: (
+      "receiving response from server failed": lambda oClient, *, oConnection, o0Request, oException: (
         bShowProgress and fOutputToClientFromServerReceivingResponseFailed(
           oConnection = oConnection,
           oException = oException,
         ),
       ),
-      "received response from server": lambda oHTTPClient, *, oConnection, o0Request, oResponse: (
+      "received response from server": lambda oClient, *, oConnection, o0Request, oResponse: (
         bShowProgress and fOutputToClientFromServerResponseReceived(
           oConnection = oConnection,
           oResponse = oResponse,
@@ -300,16 +300,16 @@ def foGetHTTPClient(
         ),
       ),
     });
-  if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
-    oHTTPClient.fAddCallbacks({
-      "sending request to proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest: (
+  if isinstance(oClient, (cClientUsingProxyServer, cClientUsingAutomaticProxyServer)):
+    oClient.fAddCallbacks({
+      "sending request to proxy": lambda oClient, *, oProxyServerURL, oConnection, oRequest: (
         bShowProgress and fOutputFromClientToProxySendingRequest(
           oConnection = oConnection,
           oRequest = oRequest,
           oProxyServerURL = oProxyServerURL,
         ),
       ),
-      "sending request to proxy failed": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest, oException: (
+      "sending request to proxy failed": lambda oClient, *, oProxyServerURL, oConnection, oRequest, oException: (
         bShowProgress and fOutputFromClientToProxySendingRequestFailed(
           oConnection = oConnection,
           oRequest = oRequest,
@@ -317,7 +317,7 @@ def foGetHTTPClient(
           oException = oException,
         ),
       ),
-      "sent request to proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, oRequest: (
+      "sent request to proxy": lambda oClient, *, oProxyServerURL, oConnection, oRequest: (
         bShowProgress and fOutputFromClientToProxyRequestSent(
           oConnection = oConnection,
           oRequest = oRequest,
@@ -335,20 +335,20 @@ def foGetHTTPClient(
           xPrefix = "",
         ),
       ),
-      "receiving response from proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request: (
+      "receiving response from proxy": lambda oClient, *, oProxyServerURL, oConnection, o0Request: (
         bShowProgress and fOutputToClientFromProxyReceivingResponse(
           oConnection = oConnection,
           oProxyServerURL = oProxyServerURL,
         ),
       ),
-      "receiving response from proxy failed": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request, oException: (
+      "receiving response from proxy failed": lambda oClient, *, oProxyServerURL, oConnection, o0Request, oException: (
         bShowProgress and fOutputToClientFromProxyReceivingResponseFailed(
           oConnection = oConnection,
           oProxyServerURL = oProxyServerURL,
           oException = oException,
         ),
       ),
-      "received response from proxy": lambda oHTTPClient, *, oProxyServerURL, oConnection, o0Request, oResponse: (
+      "received response from proxy": lambda oClient, *, oProxyServerURL, oConnection, o0Request, oResponse: (
         bShowProgress and fOutputToClientFromProxyResponseReceived(
           oConnection = oConnection,
           oResponse = oResponse,
@@ -377,12 +377,12 @@ def foGetHTTPClient(
       ),
     });
 
-  if isinstance(oHTTPClient, (cHTTPClient,)):
-    oHTTPClient.fAddCallbacks({
+  if isinstance(oClient, (cClient,)):
+    oClient.fAddCallbacks({
       "spoofing server host": fOutputServerHostSpoofed,
     });
-  if isinstance(oHTTPClient, (cHTTPClient, cHTTPClientUsingAutomaticProxyServer)):
-    oHTTPClient.fAddCallbacks({
+  if isinstance(oClient, (cClient, cClientUsingAutomaticProxyServer)):
+    oClient.fAddCallbacks({
       "server host invalid": fOutputServerHostInvalid,
       
       "resolving server hostname to ip address": fOutputResolvingServerHostname,
@@ -398,8 +398,8 @@ def foGetHTTPClient(
       "securing connection to server failed": fOutputFromClientToServerSecuringConnectionFailed,
       "secured connection to server": fOutputFromClientToServerConnectionSecured,
     });
-  if isinstance(oHTTPClient, (cHTTPClientUsingProxyServer, cHTTPClientUsingAutomaticProxyServer)):
-    oHTTPClient.fAddCallbacks({
+  if isinstance(oClient, (cClientUsingProxyServer, cClientUsingAutomaticProxyServer)):
+    oClient.fAddCallbacks({
       "proxy host invalid": fOutputProxyHostInvalid,
       "resolving proxy hostname to ip address": fOutputResolvingProxyHostname,
       "resolving proxy hostname to ip address failed": fOutputResolvingProxyHostnameFailed,
@@ -487,4 +487,4 @@ def foGetHTTPClient(
         COLOR_NORMAL, " or the folder in which it is located.",
       );
       sys.exit(guExitCodeBadArgument);
-  return oHTTPClient;
+  return oClient;

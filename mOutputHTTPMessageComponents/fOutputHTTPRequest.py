@@ -13,14 +13,13 @@ from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
 from .fOutputHTTPMessageBody import fOutputHTTPMessageBody;
-from .fOutputHTTPMessageData import fOutputHTTPMessageData;
-from .fOutputHTTPMessageHeaders import fOutputHTTPMessageHeaders;
+from .fOutputHTTPMessageHeadersOrTrailers import fOutputHTTPMessageHeadersOrTrailers;
 
 def fOutputHTTPRequest(
   oRequest,
   *,
-  bShowDetails,
-  bShowMessageBody,
+  bShowDetails: bool,
+  bShowMessageBody: bool,
   bDecodeBody,
   bFailOnDecodeBodyErrors,
   bForceHexOutputOfBody,
@@ -37,75 +36,33 @@ def fOutputHTTPRequest(
   oConsole.fOutput(
     xPrefix,
     [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
+    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStartLine()),
     [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
   );
   # Output request headers
-  fOutputHTTPMessageHeaders(
+  fOutputHTTPMessageHeadersOrTrailers(
     oRequest.oHeaders,
     bShowDetails = bShowDetails,
     xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
   );
+  # Output headers/body separator:
   oConsole.fOutput(
     xPrefix,
     [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
     [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
-    [COLOR_EOF, CHAR_EOF] if bShowDetails and not oRequest.sb0Body and not oRequest.o0AdditionalHeaders else [],
+    [COLOR_EOF, CHAR_EOF] if bShowDetails and not oRequest.sbBody else [],
   );
   # Output request body if any
-  if bShowMessageBody and oRequest.sb0Body:
-    if bDecodeBody:
-      fOutputHTTPMessageData(
-        oRequest.fs0GetData(
-          bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors,
-          bIgnoreDecompressionFailures = not bFailOnDecodeBodyErrors,
-        ),
-        bShowDetails = bShowDetails,
-        bOutputEOF = not oRequest.o0AdditionalHeaders,
-        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
-      );
-    else:
-      fOutputHTTPMessageBody(
-        oRequest.sb0Body,
-        bShowDetails = bShowDetails,
-        bForceHexOutput = bForceHexOutputOfBody,
-        bOutputEOF = not oRequest.o0AdditionalHeaders,
-        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
-        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
-      );
-  if oRequest.o0AdditionalHeaders:
-    # Output response additional headers
-    fOutputHTTPMessageHeaders(
-      oRequest.o0AdditionalHeaders,
+  if bShowMessageBody:
+    fOutputHTTPMessageBody(
+      oMessage = oRequest,
+      bDecodeBody = bDecodeBody,
+      bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bShowDetails = bShowDetails,
+      bForceHexOutput = bForceHexOutputOfBody,
+      uHexOutputCharsPerLine = uHexOutputCharsPerLine,
       xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
     );
-    oConsole.fOutput(
-      xPrefix,
-      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-      [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
-      [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
-    );
-  if oRequest.asbCompressionTypes and oRequest.asbActualCompressionTypes != oRequest.asbCompressionTypes:
-    if oRequest.asbActualCompressionTypes:
-      oConsole.fOutput(
-        xPrefix,
-        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-        COLOR_WARNING, CHAR_WARNING, " NOTE",
-        COLOR_NORMAL, ": The body was compressed using ",
-        faxListOutput(
-          asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oRequest.asbActualCompressionTypes],
-          sAndOr = "and",
-        ),
-        COLOR_NORMAL, " compression!",
-      );
-    else:
-      oConsole.fOutput(
-        xPrefix,
-        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-        COLOR_WARNING, CHAR_WARNING, " NOTE",
-        COLOR_NORMAL, ": The body could not be decompressed!",
-      );
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",

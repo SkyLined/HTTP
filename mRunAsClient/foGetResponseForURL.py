@@ -1,8 +1,3 @@
-import sys;
-
-from mHTTPProtocol import (
-  cHTTPInvalidEncodedDataException,
-);
 from mNotProvided import fbIsProvided;
 
 from foConsoleLoader import foConsoleLoader;
@@ -11,20 +6,22 @@ from mColorsAndChars import (
   COLOR_INFO,
   COLOR_NORMAL,
 );
-from mExitCodes import guExitCodeRequestDataInFileIsNotUTF8;
 oConsole = foConsoleLoader();
 
 from .fApplyHeaderSettingsToRequest import fApplyHeaderSettingsToRequest;
+from .fApplyBodyToRequest import fApplyBodyToRequest;
 from .foGetResponseForRequestAndURL import foGetResponseForRequestAndURL;
 
 def foGetResponseForURL(
   *, 
-  oHTTPClient,
+  oClient,
   oURL,
-  sbzSetHTTPVersion,
-  sbzSetMethod,
-  sb0SetHTTPRequestBody,
-  s0SetHTTPRequestData,
+  sbzHTTPVersion,
+  sbzMethod,
+  sx0Body,
+  bAddContentLengthHeaderForBody,
+  bApplyChunkedEncodingToBody,
+  bCompressBody,
   asbRemoveHeadersForLowerNames,
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
@@ -39,27 +36,23 @@ def foGetResponseForURL(
   bConcatenateDownload,
   bShowProgress,
 ):
-  if not fbIsProvided(sbzSetMethod):
+  if not fbIsProvided(sbzMethod):
     if d0SetForm_sValue_by_sName is not None or d0SetJSON_sValue_by_sName is not None:
-      sbzSetMethod = b"POST";
+      sbzMethod = b"POST";
   # Construct the HTTP request
-  try:
-    oRequest = oHTTPClient.foGetRequestForURL(
-      oURL = oURL,
-      sbzVersion = sbzSetHTTPVersion,
-      sbzMethod = sbzSetMethod,
-      sb0Body = sb0SetHTTPRequestBody,
-      s0Data = s0SetHTTPRequestData,
-      bAddContentLengthHeader = True, # This header can be removed/modified later through the header arguments
+  oRequest = oClient.foGetRequestForURL(
+    oURL = oURL,
+    sbzVersion = sbzHTTPVersion,
+    sbzMethod = sbzMethod,
+  );
+  if sx0Body is not None:
+    fApplyBodyToRequest(
+      oRequest = oRequest,
+      sxBody = sx0Body,
+      bCompressBody = bCompressBody,
+      bApplyChunkedEncoding = bApplyChunkedEncodingToBody,
+      bSetContentLengthHeader = bAddContentLengthHeaderForBody,
     );
-  except cHTTPInvalidEncodedDataException as oException:
-    oConsole.fOutput(
-      COLOR_ERROR, CHAR_ERROR,
-      COLOR_NORMAL, " The provided utf-8 encoded data cannot be encoded: ",
-      COLOR_INFO, oException.sMessage,
-      COLOR_NORMAL, ".",
-    );
-    sys.exit(guExitCodeRequestDataInFileIsNotUTF8);
 
   # Applying form and JSON values sets the Content-Type header. This must be
   # done before we call `fApplyHeaderSettingsToRequest` so the user can
@@ -79,7 +72,7 @@ def foGetResponseForURL(
   );
   
   return foGetResponseForRequestAndURL(
-    oHTTPClient = oHTTPClient,
+    oClient = oClient,
     oRequest = oRequest,
     oURL = oURL,
     u0MaxRedirects = u0MaxRedirects,

@@ -18,8 +18,7 @@ from mCP437 import fsCP437FromBytesString;
 oConsole = foConsoleLoader();
 
 from .fOutputHTTPMessageBody import fOutputHTTPMessageBody;
-from .fOutputHTTPMessageData import fOutputHTTPMessageData;
-from .fOutputHTTPMessageHeaders import fOutputHTTPMessageHeaders;
+from .fOutputHTTPMessageHeadersOrTrailers import fOutputHTTPMessageHeadersOrTrailers;
 
 def fOutputHTTPResponse(
     oResponse,
@@ -56,75 +55,33 @@ def fOutputHTTPResponse(
   oConsole.fOutput(
     xPrefix,
     [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
+    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStartLine()),
     [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
   );
   # Output response headers
-  fOutputHTTPMessageHeaders(
+  fOutputHTTPMessageHeadersOrTrailers(
     oResponse.oHeaders,
     bShowDetails = bShowDetails,
     xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
   );
+  # Output headers/body separator:
   oConsole.fOutput(
     xPrefix,
     [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
     [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
-    [COLOR_EOF, CHAR_EOF] if bShowDetails and not oResponse.sb0Body and not oResponse.o0AdditionalHeaders else [],
+    [COLOR_EOF, CHAR_EOF] if bShowDetails and not oResponse.sbBody else [],
   );
   # Output response body if any
-  if bShowMessageBody and oResponse.sb0Body:
-    if bDecodeBody:
-      fOutputHTTPMessageData(
-        oResponse.fs0GetData(
-          bTryOtherCompressionTypesOnFailure = not bFailOnDecodeBodyErrors,
-          bIgnoreDecompressionFailures = not bFailOnDecodeBodyErrors,
-        ),
-        bShowDetails = bShowDetails,
-        bOutputEOF = not oResponse.o0AdditionalHeaders,
-        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
-      );
-    else:
-      fOutputHTTPMessageBody(
-        oResponse.sb0Body,
-        bForceHexOutput = bForceHexOutputOfBody,
-        bOutputEOF = not oResponse.o0AdditionalHeaders,
-        bShowDetails = bShowDetails,
-        uHexOutputCharsPerLine = uHexOutputCharsPerLine,
-        xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
-      );
-  if oResponse.o0AdditionalHeaders:
-    # Output response additional headers
-    fOutputHTTPMessageHeaders(
-      oResponse.o0AdditionalHeaders,
+  if bShowMessageBody:
+    fOutputHTTPMessageBody(
+      oMessage = oResponse,
+      bDecodeBody = bDecodeBody,
+      bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
       bShowDetails = bShowDetails,
+      bForceHexOutput = bForceHexOutputOfBody,
+      uHexOutputCharsPerLine = uHexOutputCharsPerLine,
       xPrefix = [xPrefix, COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else xPrefix,
     );
-    oConsole.fOutput(
-      xPrefix,
-      [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-      [COLOR_CRLF, CHAR_CRLF] if bShowDetails else [],
-      [COLOR_EOF, CHAR_EOF] if bShowDetails else [],
-    );
-  if oResponse.asbCompressionTypes and oResponse.asbActualCompressionTypes != oResponse.asbCompressionTypes:
-    if oResponse.asbActualCompressionTypes:
-      oConsole.fOutput(
-        xPrefix,
-        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-        COLOR_WARNING, CHAR_WARNING, " NOTE",
-        COLOR_NORMAL, ": The body was compressed using ",
-        faxListOutput(
-          asData = [str(sbCompressionType, "ascii", "strict") for sbCompressionType in oResponse.asbActualCompressionTypes],
-          sAndOr = "and",
-        ),
-        COLOR_NORMAL, " compression!",
-      );
-    else:
-      oConsole.fOutput(
-        xPrefix,
-        [COLOR_REQUEST_RESPONSE_BOX, "│ "] if bShowDetails else [], 
-        COLOR_WARNING, CHAR_WARNING, " NOTE",
-        COLOR_NORMAL, ": The body could not be decompressed!",
-      );
   oConsole.fOutput(
     xPrefix,
     COLOR_REQUEST_RESPONSE_BOX, "└" if bShowDetails else "─", sPadding = "─",

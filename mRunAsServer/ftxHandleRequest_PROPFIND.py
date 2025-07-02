@@ -1,10 +1,7 @@
-from mHTTPProtocol import cHTTPHeader, cHTTPHeaders;
-
 from foConsoleLoader import foConsoleLoader;
 oConsole = foConsoleLoader();
 
-
-def ftxHandleRequest_PROPFIND(oHTTPServer, oRequest, oBaseFolder):
+def ftxHandleRequest_PROPFIND(oServer, oRequest, oBaseFolder):
   oResponse = oRequest.foCreateResponse(
     uzStatusCode = 403, # Forbidden
     bAddContentLengthHeader = True,

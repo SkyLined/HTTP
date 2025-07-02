@@ -1,7 +1,7 @@
 import os, sys;
 
 from mFileSystemItem import cFileSystemItem;
-from mHTTPServer import cHTTPServer;
+from mHTTPServer import cServer;
 from mNotProvided import fbIsProvided;
 try: # mSSL support is optional
   import mSSL as m0SSL;
@@ -63,7 +63,7 @@ def fRunAsServer(
     uHexOutputCharsPerLine,
     uzPortNumber,
 ):
-  sbHost = sbzHost if fbIsProvided(sbzHost) else cHTTPServer.sbDefaultHost;
+  sbHost = sbzHost if fbIsProvided(sbzHost) else cServer.sbDefaultHost;
   if bSecureConnections:
     assert m0SSL, \
         "mSSL is not available!?";
@@ -76,10 +76,10 @@ def fRunAsServer(
     o0ServerSideSSLContext = None;
   oBaseFolderFileSystemItem = o0BaseFolderFileSystemItem or cFileSystemItem(".");
   try:
-    oHTTPServer = cHTTPServer(
-      ftxRequestHandler = lambda oHTTPServer, oConnection_unused, oRequest:
+    oServer = cServer(
+      ftxRequestHandler = lambda oServer, oConnection_unused, oRequest:
         ftxHandleRequest(
-          oHTTPServer, 
+          oServer, 
           oRequest,
           oBaseFolderFileSystemItem,
         ),
@@ -117,25 +117,25 @@ def fRunAsServer(
     );
     sys.exit(guExitCodeBadArgument);
 
-  oHTTPServer.fAddCallbacks({
+  oServer.fAddCallbacks({
     "received connection from client": fOutputToServerFromClientConnectionCreated,
     "securing connection from client": fOutputToServerFromClientSecuringConnection,
     "securing connection from client failed": fOutputToServerFromClientSecuringConnectionFailed,
     "secured connection from client": fOutputToServerFromClientConnectionSecured,
     "terminated connection from client": fOutputToServerFromClientConnectionTerminated,
     
-    "receiving request from client": lambda oHTTPServer, oConnection: (
+    "receiving request from client": lambda oServer, oConnection: (
       bShowProgress and fOutputToServerFromClientReceivingRequest(
         oConnection = oConnection,
       ),
     ),
-    "receiving request from client failed": lambda oHTTPServer, oConnection, oException: (
+    "receiving request from client failed": lambda oServer, oConnection, oException: (
       bShowProgress and fOutputToServerFromClientReceivingRequestFailed(
         oConnection = oConnection,
         oException = oException,
       ),
     ),
-    "received request from client": lambda oHTTPServer, oConnection, oRequest: (
+    "received request from client": lambda oServer, oConnection, oRequest: (
       bShowProgress and fOutputToServerFromClientRequestReceived(
         oConnection = oConnection,
         oRequest = oRequest,
@@ -152,13 +152,13 @@ def fRunAsServer(
         xPrefix = "",
       ),
     ),
-    "sending response to client": lambda oHTTPServer, oConnection, o0Request, oResponse: (
+    "sending response to client": lambda oServer, oConnection, o0Request, oResponse: (
       bShowProgress and fOutputFromServerToClientSendingResponse(
         oConnection = oConnection,
         oResponse = oResponse,
       ),
     ),
-    "sending response to client failed": lambda oHTTPServer, oConnection, o0Request, oResponse, oException: (
+    "sending response to client failed": lambda oServer, oConnection, o0Request, oResponse, oException: (
       # We'll show the request right before the error if we haven't showed it yet
       bShowRequest and bShowResponse and fOutputHTTPRequest(
         o0Request,
@@ -177,7 +177,7 @@ def fRunAsServer(
         oException = oException,
       ),
     ),
-    "sent response to client": lambda oHTTPServer, oConnection, o0Request, oResponse: (
+    "sent response to client": lambda oServer, oConnection, o0Request, oResponse: (
       bShowProgress and fOutputFromServerToClientResponseSent(
         oConnection = oConnection,
         oResponse = oResponse,
@@ -207,10 +207,10 @@ def fRunAsServer(
   });
   oConsole.fOutput(
     COLOR_NORMAL, "Server URL:  ",
-    COLOR_INFO, str(oHTTPServer.foGetURL())
+    COLOR_INFO, str(oServer.foGetURL())
   );
   oConsole.fOutput(
     COLOR_NORMAL, "Root folder: ",
     COLOR_INFO, oBaseFolderFileSystemItem.sPath,
   );
-  oHTTPServer.fWait();
+  oServer.fWait();

@@ -4,17 +4,16 @@ from mHTTPProtocol import fsb0GetMediaTypeForExtension;
 from foConsoleLoader import foConsoleLoader;
 oConsole = foConsoleLoader();
 
+
 def foCreateResponseForRequestAndFile(oRequest, oFile):
-  sbContent = oFile.fsbRead();
-  return oRequest.foCreateResponse(
+  oResponse = oRequest.foCreateResponse(
     uzStatusCode = 200,
-    sb0Body = sbContent,
-    sb0MediaType = (
-      (oFile.s0Extension and fsb0GetMediaTypeForExtension(oFile.s0Extension))
-      or b"application/octet-stream"
-    ),
-    bAddContentLengthHeader = True,
+    sb0Body = oFile.fsbRead(),
   );
+  oResponse.fSetContentTypeHeader(
+    sbMediaType = (oFile.s0Extension and fsb0GetMediaTypeForExtension(oFile.s0Extension)) or b"application/octet-stream",
+  );
+  return oResponse;
 
 def ftxHandleRequest_GET(oHTTPServer, oRequest, oBaseFolder):
   oRequestURL = oHTTPServer.foGetURLForRequest(oRequest);
@@ -38,16 +37,16 @@ def ftxHandleRequest_GET(oHTTPServer, oRequest, oBaseFolder):
       oResponse = oRequest.foCreateResponse(
         uzStatusCode = 404,
         sb0Body = b"Not found",
-        sb0MediaType = b"text/plain",
         bAddContentLengthHeader = True,
       );
+      oResponse.fSetContentTypeHeader("text/plain");
   else:
     oResponse = oRequest.foCreateResponse(
       uzStatusCode = 404,
       sb0Body = b"Not found",
-      sb0MediaType = b"text/plain",
       bAddContentLengthHeader = True,
     );
+    oResponse.fSetContentTypeHeader("text/plain");
   return (
     oResponse,
     None, # No next connection handler

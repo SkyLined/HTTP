@@ -45,7 +45,7 @@ def fOutputSendingResponseFailed(sFromChar, sToChar, sToDescription, oConnection
     COLOR_RESPONSE,     STR_SENDING_RESPONSE_SECURELY3 if oConnection.bSecure else STR_SENDING_RESPONSE3,
     COLOR_ACTIVE,       sToChar,
     COLOR_NORMAL,       " Sending ",
-    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
+    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStartLine()),
     COLOR_NORMAL,       " response (",
     COLOR_INFO,         fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
     [

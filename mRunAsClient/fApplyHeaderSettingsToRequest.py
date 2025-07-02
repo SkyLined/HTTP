@@ -6,9 +6,9 @@ def fApplyHeaderSettingsToRequest(
   oRequest,
 ):
   for sbHeaderLowerName in asbRemoveHeadersForLowerNames:
-    oRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
+    oRequest.oHeaders.fbRemoveForNormalizedName(sbHeaderLowerName);
   for (sbHeaderLowerName, (sbHeaderName, sbHeaderValue)) in dtsbReplaceHeaderNameAndValue_by_sLowerName.items():
-    oRequest.oHeaders.fbRemoveHeadersForName(sbHeaderLowerName);
+    oRequest.oHeaders.fbRemoveForNormalizedName(sbHeaderLowerName);
     oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
   for (sbHeaderName, sbHeaderValue) in atsbAddHeadersNameAndValue:
     oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);

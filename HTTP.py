@@ -3,7 +3,7 @@
                     ║╠══╣║    ║║     ║║    ║╠══╩╝    ╱╱  ╱╱                   
          ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄▀┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
                                                     ‾   ‾                  """;
-import base64, os, re, sys;
+import base64, os, re, sys, urllib;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -21,7 +21,7 @@ guExitCodeInternalError = 1; # Just in case mExitCodes is not loaded, as we need
 try:
   from mFileSystemItem import cFileSystemItem;
   from mHTTPProtocol import (
-    cHTTPInvalidURLException,
+    cInvalidURLException,
     cURL,
     fsb0GetMediaTypeForExtension,
   );
@@ -41,15 +41,16 @@ try:
   from foConsoleLoader import foConsoleLoader;
   from fOutputExceptionAndExit import fOutputExceptionAndExit;
   from fOutputUsageInformation import fOutputUsageInformation;
+  from fsbEncodeHTMLEntities import fsbEncodeHTMLEntities;
   from mColorsAndChars import (
     COLOR_ERROR, CHAR_ERROR,
     COLOR_INFO, 
+    COLOR_LIST, CHAR_LIST,
     COLOR_NORMAL
   );
   from mExitCodes import (
     guExitCodeBadArgument,
     guExitCodeCannotReadRequestBodyFromFile,
-    guExitCodeRequestDataInFileIsNotUTF8,
     guExitCodeSuccess,
   );
   from mRunAsClient import fRunAsClient;
@@ -91,7 +92,8 @@ try:
   asRunAsClientArguments = [];
   asRunAsServerArguments = [];
   asRunAsProxyArguments = [];
-
+  
+  asbClientShouldRemoveHeadersForLowerNames = [];
   bClientShouldDownloadToFile = False;
   bClientShouldProcessM3UFile = False;
   bClientShouldProcessSegmentedM3U = False;
@@ -109,12 +111,12 @@ try:
   bzShowRequest = zNotProvided;
   bzShowResponse = zNotProvided;
   bzShowDetails = zNotProvided;
-  asbClientShouldRemoveHeadersForLowerNames = [];
+  d0ClientShouldSetForm_sValue_by_sName = None;
+  d0ClientShouldSetJSON_sValue_by_sName = None;
+  d0ClientShouldSetFormData_dxValue_by_sName = None;
   dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName = {};
   atsbClientShouldAddHeadersNameAndValue = [];
   dsbSpoofedHost_by_sbHost = {};
-  d0ClientShouldSetForm_sValue_by_sName = None;
-  d0ClientShouldSetJSON_sValue_by_sName = None;
   n0zTimeoutInSeconds = zNotProvided;
   nSendDelayPerByteInSeconds = 0;
   o0ClientShouldDownloadToFileSystemItem = None;
@@ -124,16 +126,46 @@ try:
   o0ClientShouldUseURL = None;
   o0InputFileSystemItem = None;
   o0SaveHTTPResponsesToFileSystemItem = None;
-  s0ClientShouldSetHTTPRequestData = None;
-  sb0ClientShouldSetHTTPRequestBody = None;
+  sx0ClientShouldUseBody = None;
+  bClientShouldCompressBody = True;
+  bClientShouldApplyChunkedEncodingToBody = True;
+  bClientShouldAddContentLengthHeaderForBody = True;
   sbzServerShouldUseHost = zNotProvided;
-  sbzSetHTTPVersion = zNotProvided;
-  sbzClientShouldSetMethod = zNotProvided;
+  sbzHTTPVersion = zNotProvided;
+  sbzClientShouldUseMethod = zNotProvided;
   u0ClientShouldUseMaxRedirects = None;
   uzServerShouldUsePortNumber = zNotProvided;
   uHexOutputCharsPerLine = 16;
+  asProvidedArgumentsThatSetBody = [];
 
   for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
+    def fsbConvertToBytes(sValue):
+      auBytes = [ord(s) for s in sValue];
+      uBadCharsCount = False;
+      for uIndex in range(len(auBytes)):
+        if auBytes[uIndex] > 255:
+          uBadCharsCount += 1;
+          if uBadCharsCount == 1:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You must provide an ASCII value for \"",
+              COLOR_INFO, sArgument,
+              COLOR_NORMAL, "\".",
+            );
+          if uBadCharsCount < 4:
+            oConsole.fOutput(
+              COLOR_NORMAL, "  • Character #",
+              COLOR_INFO, str(uIndex),
+              COLOR_NORMAL, " (",
+              COLOR_INFO, repr(sValue[uIndex]),
+              COLOR_NORMAL, ") is not an ASCII character.",
+            );
+      if uBadCharsCount > 3:
+        oConsole.fOutput(
+          COLOR_NORMAL, "  ...and ", str(uBadCharsCount), " more characters.",
+        );
+        sys.exit(guExitCodeBadArgument);
+      return bytes(auBytes);
     def fsRequireArgumentValue():
       if s0Value:
         return "".join([
@@ -150,10 +182,10 @@ try:
       sys.exit(guExitCodeBadArgument);
     if not s0LowerName:
       if o0ClientShouldUseURL is None and rURL.match(sArgument):
-        asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+        asRunAsClientArguments.append(sArgument);
         try:
-          o0ClientShouldUseURL = cURL.foFromBytesString(bytes(ord(s) for s in sArgument));
-        except cHTTPInvalidURLException:
+          o0ClientShouldUseURL = cURL.foFromBytesString(fsbConvertToBytes(sArgument));
+        except cInvalidURLException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " The value \"",
@@ -161,11 +193,12 @@ try:
             COLOR_NORMAL, "\" is not a valid URL.",
           );
           sys.exit(guExitCodeBadArgument);
-      elif not fbIsProvided(sbzClientShouldSetMethod) and rMethod.match(sArgument):
-        asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-        sbzClientShouldSetMethod = bytes(ord(s) for s in sArgument);
+      elif not fbIsProvided(sbzClientShouldUseMethod) and rMethod.match(sArgument):
+        asRunAsClientArguments.append(sArgument);
+        sbzClientShouldUseMethod = fsbConvertToBytes(sArgument);
+
       elif rHTTPVersion.match(sArgument):
-        sbzSetHTTPVersion = bytes(ord(s) for s in sArgument);
+        sbzHTTPVersion = fsbConvertToBytes(sArgument);
       elif o0InputFileSystemItem:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -198,27 +231,33 @@ try:
             COLOR_ERROR, CHAR_ERROR,
             COLOR_NORMAL, " You cannot use a HTTP request file as input and process a segmented video response at the same time.",
           );
+    ############################################################################
     elif s0LowerName in ["bl", "basic-login"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sbBase64EncodedUserNameColonPassword = base64.b64encode(bytes(ord(s) for s in (s0Value or "")));
+      asRunAsClientArguments.append(sArgument);
+      sbBase64EncodedUserNameColonPassword = base64.b64encode(fsbConvertToBytes(s0Value or ""));
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"authorization"] = (
         b"Authorization",
         b"basic %s" % sbBase64EncodedUserNameColonPassword
       );
+    ############################################################################
     elif s0LowerName in ["c", "cookies", "netscape-cookies"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       o0ClientShouldUseNetscapeCookiesFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+    ############################################################################
     elif s0LowerName in ["cs", "cookie-store"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldSaveCookieStore = True;
       if s0Value:
         o0ClientShouldUseCookieStoreJSONFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["data"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sb0ClientShouldSetHTTPRequestBody = None;
-      s0ClientShouldSetHTTPRequestData = fsRequireArgumentValue();
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
+      sx0ClientShouldUseBody = fsRequireArgumentValue();
+    ############################################################################
     elif s0LowerName in ["bf", "body-file"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
       oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -229,8 +268,7 @@ try:
         );
         sys.exit(guExitCodeBadArgument);
       try:
-        sb0ClientShouldSetHTTPRequestBody = oDataFileSystemItem.fsbRead();
-        s0ClientShouldSetHTTPRequestData = None;
+        sx0ClientShouldUseBody = oDataFileSystemItem.fsbRead();
       except Exception as oException:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -239,8 +277,13 @@ try:
           COLOR_NORMAL, ".",
         );
         fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
+      # We are adding a raw body; don't apply compression or chunked encoding
+      bClientShouldCompressBody = False;
+      bClientShouldApplyChunkedEncodingToBody = False;
+    ############################################################################
     elif s0LowerName in ["df", "data-file"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
       oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -261,18 +304,17 @@ try:
         );
         fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
       try:
-        sb0ClientShouldSetHTTPRequestBody = None;
-        s0ClientShouldSetHTTPRequestData = str(sbFileContent, "utf-8", "strict");
-      except Exception as oException:
+        sx0ClientShouldUseBody = str(sbFileContent, "utf-8", "strict");
+      except UnicodeDecodeError as oException:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " File ",
-          COLOR_INFO, oDataFileSystemItem.sPath,
-          COLOR_NORMAL, " does not contain utf-8 encoded data.",
+          COLOR_NORMAL, " Cannot decode file content as UTF-8: ",
+          COLOR_INFO, oException.reason,
+          COLOR_NORMAL, ".",
         );
-        fOutputExceptionAndExit(oException, guExitCodeRequestDataInFileIsNotUTF8);
+        sys.exit(guExitCodeCannotReadRequestBodyFromFile);
+    ############################################################################
     elif s0LowerName in ["debug"]:
-      # This argument makes sense for client, server and proxy
       if fbParseBooleanArgument(s0Value):
         if not m0DebugOutput:
           oConsole.fOutput(
@@ -283,19 +325,22 @@ try:
           );
           sys.exit(guExitCodeBadArgument);
         m0DebugOutput.fEnableAllDebugOutput();
+    ############################################################################
     elif s0LowerName in ["db", "decode", "decode-body"]:
-      # This argument makes sense for client, server and proxy
       bDecodeBodyOfHTTPMessages = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["fail-on-decode-errors", "report-decode-body-errors"]:
-      # This argument makes sense for client, server and proxy
       bFailOnDecodeBodyErrors = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["dl", "download"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldDownloadToFile = True;
       if s0Value:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["form"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
       sValue = fsRequireArgumentValue();
       tsFormNameAndValue = sValue.split("=", 1);
       if len(tsFormNameAndValue) == 1:
@@ -305,9 +350,76 @@ try:
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
       d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
+    ############################################################################
+    elif s0LowerName in ["form-data"]:
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
+      sValue = fsRequireArgumentValue();
+      tsFormDataNameAndValue = sValue.split("=", 1);
+      if len(tsFormDataNameAndValue) == 1:
+        sName = sValue; sValue = "";
+      else:
+        sName, sValue = tsFormNameAndValue;
+      if d0ClientShouldSetForm_sValue_by_sName is None:
+        d0ClientShouldSetForm_sValue_by_sName = {};
+      d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
+      if d0ClientShouldSetFormData_dxValue_by_sName is None:
+        d0ClientShouldSetFormData_dxValue_by_sName = {};
+      sbName = fsbEncodeHTMLEntities(sName);
+      sbValue = fsbEncodeHTMLEntities(sValue);
+      d0ClientShouldSetFormData_dxValue_by_sName[sbName] = {
+        "sbValue": sbValue,
+      };
+    ############################################################################
+    elif s0LowerName in ["form-data-upload"]:
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
+      sValue = fsRequireArgumentValue();
+      tsFormNameAndFilePath = sValue.split("=", 1);
+      if len(tsFormNameAndFilePath) != 2:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " You must provide a value with the format \"",
+          COLOR_INFO, "name=<path to file>",
+          COLOR_INFO, oUploadFileSystemItem.sPath,
+          COLOR_NORMAL, "\" for the argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+      sName, sFilePath = tsFormNameAndFilePath;
+      oUploadFileSystemItem = cFileSystemItem(sFilePath);
+      if not oUploadFileSystemItem.fbIsFile():
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot find file \"",
+          COLOR_INFO, oUploadFileSystemItem.sPath,
+          COLOR_NORMAL, "\"."
+        );
+        sys.exit(guExitCodeBadArgument);
+      try:
+        sbValue = oUploadFileSystemItem.fsbRead();
+      except Exception as oException:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot read from file ",
+          COLOR_INFO, oUploadFileSystemItem.sPath,
+          COLOR_NORMAL, ".",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
+      if d0ClientShouldSetFormData_dxValue_by_sName is None:
+        d0ClientShouldSetFormData_dxValue_by_sName = {};
+      sbName = fsbEncodeHTMLEntities(sName);
+      sbFileName = fsbEncodeHTMLEntities(os.path.split(sFilePath)[1]);
+      d0ClientShouldSetFormData_dxValue_by_sName[sbName] = {
+        "sbFileName": sbFileName,
+        "sbContentType": b"application/octet-stream",
+        "sbValue": sbValue,
+      };
+    ############################################################################
     elif s0LowerName in ["header"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
+      asRunAsClientArguments.append(sArgument);
+      sbValue = fsbConvertToBytes(fsRequireArgumentValue());
       tsbHeaderNameAndValue = sbValue.split(b":", 1);
       if len(tsbHeaderNameAndValue) == 1:
         sbHeaderName = sbValue;
@@ -315,13 +427,15 @@ try:
       else:
         sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sbHeaderValue);
+    ############################################################################
     elif s0LowerName in ["header-"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sbHeaderName = bytes(ord(s) for s in fsRequireArgumentValue());
+      asRunAsClientArguments.append(sArgument);
+      sbHeaderName = fsbConvertToBytes(fsRequireArgumentValue());
       asbClientShouldRemoveHeadersForLowerNames.append(sbHeaderName.lower());
+    ############################################################################
     elif s0LowerName in ["header+"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sbValue = bytes(ord(s) for s in fsRequireArgumentValue());
+      asRunAsClientArguments.append(sArgument);
+      sbValue = fsbConvertToBytes(fsRequireArgumentValue());
       tsbHeaderNameAndValue = sbValue.split(b":", 1);
       if len(tsbHeaderNameAndValue) == 1:
         sbHeaderName = sbValue;
@@ -329,8 +443,8 @@ try:
       else:
         sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
       atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sbHeaderValue));
+    ############################################################################
     elif s0LowerName in ["hex", "hex-output", "hex-output-body"]:
-      # This argument makes sense for client, server and proxy
       bForceHexOutputOfHTTPMessageBody = True;
       if s0Value is not None:
         try:
@@ -344,6 +458,7 @@ try:
             COLOR_NORMAL, "\" must be a positive integer number greater than zero.",
           );
           sys.exit(guExitCodeBadArgument);
+    ############################################################################
     elif s0LowerName in ["h", "host", "hostname"]:
         if fbIsProvided(sbzServerShouldUseHost):
           oConsole.fOutput(
@@ -354,7 +469,7 @@ try:
           sys.exit(guExitCodeBadArgument);
         if s0Value:
           try:
-            sbzServerShouldUseHost = bytes(s0Value, "ascii", "strict");
+            sbzServerShouldUseHost = fsbConvertToBytes(s0Value, "ascii", "strict");
           except:
             oConsole.fOutput(
               "The ",
@@ -364,33 +479,38 @@ try:
             sys.exit(guExitCodeBadArgument);
         else:
           sbzServerShouldUseHost = zNotProvided;
+    ############################################################################
     elif s0LowerName in ["json"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
       sValue = fsRequireArgumentValue();
       tsJSONNameAndValue = sValue.split(":", 1);
       if len(tsJSONNameAndValue) == 1:
         sName = sValue; sValue = "";
       else:
-        sName, sValue = tsFormNameAndValue;
+        sName, sValue = tsJSONNameAndValue;
       if d0ClientShouldSetJSON_sValue_by_sName is None:
         d0ClientShouldSetJSON_sValue_by_sName = {};
       d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
+    ############################################################################
     elif s0LowerName in ["m3u"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldProcessM3UFile = True;
       bClientShouldDownloadToFile = True;
       # If a path is provided for downloading, set it.
       if s0Value is not None:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["sm3u", "segmented-m3u"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldProcessM3UFile = True;
       bClientShouldDownloadToFile = True;
       bClientShouldProcessSegmentedM3U = True;
       if s0Value is not None:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["p", "port", "port-number"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsServerArguments.append(sArgument);
       if fbIsProvided(uzServerShouldUsePortNumber):
         oConsole.fOutput(
           "A ",
@@ -411,9 +531,10 @@ try:
           sys.exit(guExitCodeBadArgument);
       else:
         uzServerShouldUsePortNumber = zNotProvided;
+    ############################################################################
     elif s0LowerName in ["media-type", "mime-type"]:
       sExtension = fsRequireArgumentValue();
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       sb0MediaType = fsb0GetMediaTypeForExtension(sExtension);
       if not sb0MediaType:
         oConsole.fOutput(
@@ -423,10 +544,10 @@ try:
         );
         sys.exit(guExitCodeBadArgument);
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", sb0MediaType);
-
       s0MediaType = s0Value;
+    ############################################################################
     elif s0LowerName in ["proxy", "http-proxy"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldUseProxy = True;
       if s0Value:
         if o0ClientShouldUseHTTPProxyServerURL is not None:
@@ -435,9 +556,10 @@ try:
             COLOR_NORMAL, " You can only provide one proxy server URL.",
           );
           sys.exit(guExitCodeBadArgument);
-        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(bytes(ord(s) for s in s0Value));
+        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(fsbConvertToBytes(s0Value));
+    ############################################################################
     elif s0LowerName in ["r", "max-redirects", "follow-redirects"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       if s0Value:
         try:
           u0ClientShouldUseMaxRedirects = int(s0Value);
@@ -452,14 +574,17 @@ try:
           sys.exit(guExitCodeBadArgument);
       else:
         u0ClientShouldUseMaxRedirects = 32;
+    ############################################################################
     elif s0LowerName in ["save", "save-response", "save-responses"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bSaveHTTPResponsesToFiles = True;
       if s0Value:
         o0SaveHTTPResponsesToFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["s", "srv", "serve", "server",]:
       asRunAsServerArguments.append(sArgument);
       bRunAsServer = True;
+    ############################################################################
     elif s0LowerName in ["secure"]:
       bzSecureConnections = fbParseBooleanArgument(s0Value);
       if bzSecureConnections and not m0SSL:
@@ -470,16 +595,19 @@ try:
           COLOR_NORMAL, "\" requires that mSSL is available but it is not.",
         );
         sys.exit(guExitCodeBadArgument);
+    ############################################################################
     elif s0LowerName in ["insecure", "non-secure"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bzSecureConnections = not fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["sv", "segmented-video"]:
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
+      asRunAsClientArguments.append(sArgument);
       bClientShouldProcessSegmentedVideo = True;
       bClientShouldDownloadToFile = True;
       # If a path is provided for downloading, set it. If not, make sure we download by setting it to None
       if s0Value:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
+    ############################################################################
     elif s0LowerName in ["send-delay"]:
       if s0Value is None or s0Value.lower() == "none":
         oConsole.fOutput(
@@ -501,16 +629,22 @@ try:
             COLOR_NORMAL, "\" must be a number larger than or equal to zero.",
           );
           sys.exit(guExitCodeBadArgument);
+    ############################################################################
     elif s0LowerName in ["show-details"]:
       bzShowDetails = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["show-body", "show-message-body"]:
       bzShowMessageBody = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["show-progress"]:
       bzShowProgress = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["show-request"]:
       bzShowRequest = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["show-response"]:
       bzShowResponse = fbParseBooleanArgument(s0Value);
+    ############################################################################
     elif s0LowerName in ["t", "timeout"]:
       if s0Value is None or s0Value.lower() == "none":
         n0zTimeoutInSeconds = None;
@@ -527,9 +661,9 @@ try:
           );
           sys.exit(guExitCodeBadArgument);
     elif s0LowerName.startswith("spoof:"):
-      asRunAsClientArguments.append(sArgument); # This argument only makes sense for clients.
-      sbHost = bytes(ord(s) for s in s0LowerName.split(":", 1)[1]);
-      sbIPaddress = bytes(ord(s) for s in fsRequireArgumentValue());
+      asRunAsClientArguments.append(sArgument);
+      sbHost = fsbConvertToBytes(s0LowerName.split(":", 1)[1]);
+      sbIPaddress = fsbConvertToBytes(fsRequireArgumentValue());
       dsbSpoofedHost_by_sbHost[sbHost] = sbIPaddress;
     else:
       oConsole.fOutput(
@@ -605,10 +739,71 @@ try:
   bShowMessageBody = bzShowMessageBody if fbIsProvided(bzShowMessageBody) else True;
   bShowRequest = bzShowRequest if fbIsProvided(bzShowRequest) else bShowRequestResponseDefault;
   bShowResponse = bzShowResponse if fbIsProvided(bzShowResponse) else bShowRequestResponseDefault;
-  bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else False;
+  bShowDetails = bzShowDetails if fbIsProvided(bzShowDetails) else True;
 
   if sRunAs == "client":
+    # We have multiple arguments that can set the request body but we can only
+    # use one at a time. Check that the user did not provide multiple values.
+    if len(asProvidedArgumentsThatSetBody) > 0:
+      oConsole.fOutput(
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " The following arguments cannot be provided simultaneously: ",
+      );
+      for sArgument in asProvidedArgumentsThatSetBody:
+        oConsole.fOutput(
+          COLOR_NORMAL, " ",
+          COLOR_LIST, CHAR_LIST,
+          COLOR_HILITE, sArgument,
+        );
+      oConsole.fOutput(
+        COLOR_NORMAL, "  The request body can only be set through one of these arguments.",
+      );
+      
+      try:
+        sbEncodedName = bytes(urllib.parse.quote(sName), "latin1", "strict");
+        sbEncodedFileName = bytes(urllib.parse.quote(os.path.split(sFilePath)[1]), "latin1", "strict");
+      except UnicodeDecodeError:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " You must provide a value with the format \"",
+          COLOR_INFO, "name=<path to file>",
+          COLOR_INFO, oUploadFileSystemItem.sPath,
+          COLOR_NORMAL, "\" using \"latin1\" characters only for the argument \"",
+          COLOR_INFO, sArgument,
+          COLOR_NORMAL, "\".",
+        );
+        sys.exit(guExitCodeBadArgument);
+
+    if d0ClientShouldSetFormData_dxValue_by_sName is not None:
+      sbBoundary = b"-".join([b"BOUNDARY"] * 5);
+      sbData = b"";
+      for (sbName, dxValue) in d0ClientShouldSetFormData_dxValue_by_sName.items():
+        sbData += b"--%s\r\n" % (sbBoundary,);
+        
+        sbContentDisposition = b"form-data; name=\"%s\"" % (sbName,);
+        if "sbFilePath" in dxValue:
+          sbContentDisposition += b"; filename=\"%s\"" % (dxValue["sbFileName"],);
+        sbData += b"Content-Disposition: %s\r\n" % sbContentDisposition;
+        
+        if "sbContentType" in dxValue:
+          sbData += b"Content-Type: %s\r\n" % (sbContentType,);
+        sbData += b"\r\n";
+        sbData += b"%s\r\n" % dxValue["sbValue"];
+      
+      sbData += b"--%s--\r\n" % (sbBoundary,),
+      if (
+        b"content-type" not in dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName
+      ):
+        dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (
+          b"Content-Type",
+          b"multipart/form-data; boundary=%s" % sbBoundary
+        );
+      sx0ClientShouldUseData = sbData;
+    
     fRunAsClient(
+      bAddContentLengthHeaderForBody = bClientShouldAddContentLengthHeaderForBody,
+      bCompressBody = bClientShouldCompressBody,
+      bApplyChunkedEncodingToBody = bClientShouldApplyChunkedEncodingToBody,
       bDecodeBodyOfHTTPMessages = bDecodeBodyOfHTTPMessages,
       bDownloadToFile = bClientShouldDownloadToFile,
       bFailOnDecodeBodyErrors = bFailOnDecodeBodyErrors,
@@ -635,15 +830,14 @@ try:
       nSendDelayPerByteInSeconds = nSendDelayPerByteInSeconds,
       o0CookieStoreJSONFileSystemItem = o0ClientShouldUseCookieStoreJSONFileSystemItem,
       o0DownloadToFileSystemItem = o0ClientShouldDownloadToFileSystemItem,
-      o0HTTPRequestFileSystemItem = o0InputFileSystemItem,
-      o0HTTPProxyServerURL = o0ClientShouldUseHTTPProxyServerURL,
+      o0RequestFileSystemItem = o0InputFileSystemItem,
+      o0ProxyServerURL = o0ClientShouldUseHTTPProxyServerURL,
       o0NetscapeCookiesFileSystemItem = o0ClientShouldUseNetscapeCookiesFileSystemItem,
       o0SaveHTTPResponsesToFileSystemItem = o0SaveHTTPResponsesToFileSystemItem,
       o0URL = o0ClientShouldUseURL,
-      s0SetHTTPRequestData = s0ClientShouldSetHTTPRequestData,
-      sb0SetHTTPRequestBody = sb0ClientShouldSetHTTPRequestBody,
-      sbzSetHTTPVersion = sbzSetHTTPVersion,
-      sbzSetMethod = sbzClientShouldSetMethod,
+      sx0Body = sx0ClientShouldUseBody,
+      sbzHTTPVersion = sbzHTTPVersion,
+      sbzMethod = sbzClientShouldUseMethod,
       u0MaxRedirects = u0ClientShouldUseMaxRedirects,
       uHexOutputCharsPerLine = uHexOutputCharsPerLine,
     );

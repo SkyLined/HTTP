@@ -22,7 +22,7 @@ def fOutputRequestReceived(sToChar, sFromChar, sFromDescription, oConnection, oR
     COLOR_REQUEST,      STR_REQUEST_RECEIVED_SECURELY3 if oConnection.bSecure else STR_REQUEST_RECEIVED3,
     COLOR_ACTIVE,       sFromChar,
     COLOR_NORMAL,       " Received ",
-    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
+    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStartLine()),
     COLOR_NORMAL,       " request (",
     COLOR_INFO, fsBytesToHumanReadableString(len(oRequest.fsbSerialize())),
     COLOR_NORMAL,       ") ",

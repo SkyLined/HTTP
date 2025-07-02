@@ -21,7 +21,7 @@ def fOutputRequestSent(sFromChar, sToChar, sToDescription, oConnection, oRequest
     COLOR_REQUEST,      STR_REQUEST_SENT_SECURELY3 if oConnection.bSecure else STR_REQUEST_SENT3,
     COLOR_ACTIVE,       sToChar,
     COLOR_NORMAL,       " Sent ",
-    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStatusLine()),
+    COLOR_REQUEST_STATUS_LINE, fsCP437FromBytesString(oRequest.fsbGetStartLine()),
     COLOR_NORMAL,       " request (",
     COLOR_INFO,         fsBytesToHumanReadableString(len(oRequest.fsbSerialize())),
     COLOR_NORMAL,       ") ",

@@ -24,13 +24,16 @@ asbWebDAVMethods = [
 def ftxHandleRequest_OPTIONS(oHTTPServer, oRequest, oBaseFolder):
   # We will allow everything on anything for now.
   asbAllowedMethods = asbHTTPMethods + asbWebDAVMethods;
-  oResponse = oRequest.foCreateResponse(uzStatusCode = 204, bAddContentLengthHeader = True);
+  oResponse = oRequest.foCreateResponse(
+    uzStatusCode = 204,
+    bAddContentLengthHeader = True,
+  );
   oResponse.oHeaders.foAddHeaderForNameAndValue(b"Allow", b", ".join(asbAllowedMethods));
 
   # Add CORS headers to response if needed:
   bCORSHeadersAdded = False;
   # Respond to "Origin" with "Access-Control-Allow-Origin"
-  aoOriginHeaders = oRequest.oHeaders.faoGetHeadersForName(b"Origin");
+  aoOriginHeaders = oRequest.oHeaders.faoGetForNormalizedName(b"Origin");
   if aoOriginHeaders:
     asbAllowOrigins = [
       oOriginHeader.sbValue
@@ -40,12 +43,12 @@ def ftxHandleRequest_OPTIONS(oHTTPServer, oRequest, oBaseFolder):
     oResponse.oHeaders.foAddHeaderForNameAndValue(b"Access-Control-Allow-Origin", b", ".join(asbAllowOrigins));
     bCORSHeadersAdded = True;
   # Respond to "Access-Control-Request-Method" with "Access-Control-Allow-Methods"
-  aoCORSMethodHeaders = oRequest.oHeaders.faoGetHeadersForName(b"Access-Control-Request-Method");
+  aoCORSMethodHeaders = oRequest.oHeaders.faoGetForNormalizedName(b"Access-Control-Request-Method");
   if aoCORSMethodHeaders:
     oResponse.oHeaders.foAddHeaderForNameAndValue(b"Access-Control-Allow-Methods", b", ".join(asbAllowedMethods));
     bCORSHeadersAdded = True;
   # Respond to "Access-Control-Request-Headers" with "Access-Control-Allow-Headers"
-  aoCORSHeadersHeaders = oRequest.oHeaders.faoGetHeadersForName(b"Access-Control-Request-Headers");
+  aoCORSHeadersHeaders = oRequest.oHeaders.faoGetForNormalizedName(b"Access-Control-Request-Headers");
   if aoCORSHeadersHeaders:
     asbAllowedHeaders = []
     for oCORSHeadersHeader in aoCORSHeadersHeaders:

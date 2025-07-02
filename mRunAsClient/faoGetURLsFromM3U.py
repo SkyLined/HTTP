@@ -1,6 +1,4 @@
-from mHTTPProtocol import (
-  cHTTPInvalidURLException,
-);
+from mHTTPProtocol import cInvalidURLException;
 
 gbDebugOutput = False;
 
@@ -29,7 +27,7 @@ def faoGetURLsFromM3U(sM3UContents, oBaseURL):
     sbURL = bytes(sURL, "utf-8", "strict");
     try:
       oURL = oBaseURL.foFromAbsoluteOrRelativeBytesString(sbURL);
-    except cHTTPInvalidURLException:
+    except cInvalidURLException:
       if gbDebugOutput: print("- Invalid URL: %s" % repr(sbURL));
     else:
       if gbDebugOutput: print("+ Valid URL:   %s" % repr(sbURL));

@@ -45,7 +45,7 @@ def fOutputResponseReceived(sToChar, sFromChar, sFromDescription, oConnection, o
     COLOR_RESPONSE,       STR_RESPONSE_RECEIVED_SECURELY3 if oConnection.bSecure else STR_RESPONSE_RECEIVED3,
     COLOR_ACTIVE,         sFromChar,
     COLOR_NORMAL,         " Received ",
-    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStatusLine()),
+    COLOR_RESPONSE_STATUS_LINE, fsCP437FromBytesString(oResponse.fsbGetStartLine()),
     COLOR_NORMAL,         " response (",
     COLOR_INFO,           fsBytesToHumanReadableString(len(oResponse.fsbSerialize())),
     [

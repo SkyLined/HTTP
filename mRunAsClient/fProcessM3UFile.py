@@ -20,10 +20,12 @@ def fProcessM3UFile(
   *,
   oHTTPClient,
   oURL,
-  sbzSetHTTPVersion,
-  sbzSetMethod,
-  sb0SetHTTPRequestBody,
-  s0SetHTTPRequestData,
+  sbzHTTPVersion,
+  sbzMethod,
+  sx0Body,
+  bAddContentLengthHeaderForBody,
+  bApplyChunkedEncodingToBody,
+  bCompressBody,
   asbRemoveHeadersForLowerNames,
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
@@ -41,10 +43,12 @@ def fProcessM3UFile(
   oResponse = foGetResponseForURL(
     oHTTPClient = oHTTPClient,
     oURL = oURL,
-    sbzSetHTTPVersion = sbzSetHTTPVersion,
-    sbzSetMethod = sbzSetMethod,
-    sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
-    s0SetHTTPRequestData = s0SetHTTPRequestData,
+    sbzHTTPVersion = sbzHTTPVersion,
+    sbzMethod = sbzMethod,
+    sx0Body = sx0Body,
+    bAddContentLengthHeaderForBody = bAddContentLengthHeaderForBody,
+    bApplyChunkedEncodingToBody = bApplyChunkedEncodingToBody,
+    bCompressBody = bCompressBody,
     asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
     dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
     atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
@@ -66,7 +70,18 @@ def fProcessM3UFile(
       COLOR_NORMAL, " Cannot download M3U file.",
     );
     sys.exit(guExitCodeNoValidResponseReceived);
-  s0M3UContents = oResponse.fs0GetData();
+  try:
+    s0M3UContents = oResponse.fs0GetData(
+      bRemoveCompression = True,
+      bTryOtherCompressionTypesOnFailure = True, # best effort
+    );
+  except cHTTPInvalidEncodedDataException:
+    oConsole.fOutput(
+      "      ",
+      COLOR_ERROR, CHAR_ERROR,
+      COLOR_NORMAL, " Provided URL contains an compressed M3U file that cannot be decompressed.",
+    );
+    sys.exit(guExitCodeNoValidResponseReceived);
   if s0M3UContents is None:
     oConsole.fOutput(
       "      ",
@@ -87,7 +102,7 @@ def fProcessM3UFile(
   if bProcessSegmentedM3U and o0DownloadToFileSystemItem is None:
     asPathSegments = oURL.asURLDecodedPath;
     if asPathSegments:
-      o0DownloadToFileSystemItem = cFileSyetemItem(asPathSegments[-1] + ".mp4");
+      o0DownloadToFileSystemItem = cFileSystemItem(asPathSegments[-1] + ".mp4");
     else:
       o0DownloadToFileSystemItem = cFileSystemItem("video.mp4");
   oConsole.fOutput(
@@ -99,10 +114,12 @@ def fProcessM3UFile(
     oResponse = foGetResponseForURL(
       oHTTPClient = oHTTPClient,
       oURL = oURL,
-      sbzSetHTTPVersion = sbzSetHTTPVersion,
-      sbzSetMethod = sbzSetMethod,
-      sb0SetHTTPRequestBody = sb0SetHTTPRequestBody,
-      s0SetHTTPRequestData = s0SetHTTPRequestData,
+      sbzHTTPVersion = sbzHTTPVersion,
+      sbzMethod = sbzMethod,
+      sx0Body = sx0Body,
+      bAddContentLengthHeaderForBody = bAddContentLengthHeaderForBody,
+      bApplyChunkedEncodingToBody = bApplyChunkedEncodingToBody,
+      bCompressBody = bCompressBody,
       asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,
       dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbReplaceHeaderNameAndValue_by_sLowerName,
       atsbAddHeadersNameAndValue = atsbAddHeadersNameAndValue,
