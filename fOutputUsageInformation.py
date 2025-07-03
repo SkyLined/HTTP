@@ -131,11 +131,11 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "-t=<seconds|none>",  COLOR_NORMAL, ", ", COLOR_INFO, "--timeout=<seconds|none>");
     oConsole.fOutput("    Set the response timeout to the given number of seconds. Use 'none' to ");
     oConsole.fOutput("    disable timeouts altogether.");
-    oConsole.fOutput("  ", COLOR_INFO, "--spoof:<host>=<spoofed host>");
-    oConsole.fOutput("    For URLs that use the first host, all requests will be send to the second");
-    oConsole.fOutput("    host instead, without modification. The \"Host\" header, cookies, and HTTPS");
-    oConsole.fOutput("    certificate checks are unaffected. This allows you to \"spoof\" the server");
-    oConsole.fOutput("    at the first host (DNS name or IP address) using the server at the second.");
+    oConsole.fOutput("  ", COLOR_INFO, "--spoof:<spoofed host>=<spoofing host>");
+    oConsole.fOutput("    For URLs that use the spoofed host, all requests will be send to the");
+    oConsole.fOutput("    spoofing host instead, without modification. The \"Host\" header, cookies, and");
+    oConsole.fOutput("    HTTPS certificate checks are unaffected. This allows the server at the");
+    oConsole.fOutput("    spoofing host to send response to requests intended for the spoofed host.");
                       ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Output options", COLOR_NORMAL, ":");
