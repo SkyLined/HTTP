@@ -624,7 +624,7 @@ try:
     ############################################################################
     elif s0LowerName in ["save", "save-response", "save-responses"]:
       asRunAsClientArguments.append(sArgument);
-      bSaveHTTPResponsesToFiles = True;
+      bClientShouldSaveHTTPResponsesToFiles = True;
       if s0Value:
         o0SaveHTTPResponsesToFileSystemItem = cFileSystemItem(s0Value);
     ############################################################################
