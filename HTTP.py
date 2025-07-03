@@ -44,6 +44,7 @@ try:
   from fsbEncodeHTMLEntities import fsbEncodeHTMLEntities;
   from mColorsAndChars import (
     COLOR_ERROR, CHAR_ERROR,
+    COLOR_HILITE,
     COLOR_INFO, 
     COLOR_LIST, CHAR_LIST,
     COLOR_NORMAL
@@ -791,7 +792,7 @@ try:
   if sRunAs == "client":
     # We have multiple arguments that can set the request body but we can only
     # use one at a time. Check that the user did not provide multiple values.
-    if len(asProvidedArgumentsThatSetBody) > 0:
+    if len(asProvidedArgumentsThatSetBody) > 1:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The following arguments cannot be provided simultaneously: ",
@@ -800,27 +801,14 @@ try:
         oConsole.fOutput(
           COLOR_NORMAL, " ",
           COLOR_LIST, CHAR_LIST,
+          COLOR_NORMAL, " ",
           COLOR_HILITE, sArgument,
         );
       oConsole.fOutput(
         COLOR_NORMAL, "  The request body can only be set through one of these arguments.",
       );
+      sys.exit(guExitCodeBadArgument);
       
-      try:
-        sbEncodedName = bytes(urllib.parse.quote(sName), "latin1", "strict");
-        sbEncodedFileName = bytes(urllib.parse.quote(os.path.split(sFilePath)[1]), "latin1", "strict");
-      except UnicodeDecodeError:
-        oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " You must provide a value with the format \"",
-          COLOR_INFO, "name=<path to file>",
-          COLOR_INFO, oUploadFileSystemItem.sPath,
-          COLOR_NORMAL, "\" using \"latin1\" characters only for the argument \"",
-          COLOR_INFO, sArgument,
-          COLOR_NORMAL, "\".",
-        );
-        sys.exit(guExitCodeBadArgument);
-
     if d0ClientShouldSetFormData_dxValue_by_sName is not None:
       sbBoundary = b"-".join([b"BOUNDARY"] * 5);
       sbData = b"";
