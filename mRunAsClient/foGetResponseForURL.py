@@ -49,7 +49,7 @@ def foGetResponseForURL(
     fApplyBodyToRequest(
       oRequest = oRequest,
       sxBody = sx0Body,
-      bCompressBody = bCompressBody,
+      bCompress = bCompressBody,
       bApplyChunkedEncoding = bApplyChunkedEncodingToBody,
       bSetContentLengthHeader = bAddContentLengthHeaderForBody,
     );
