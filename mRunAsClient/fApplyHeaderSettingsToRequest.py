@@ -8,7 +8,6 @@ def fApplyHeaderSettingsToRequest(
   for sbHeaderLowerName in asbRemoveHeadersForLowerNames:
     oRequest.oHeaders.fbRemoveForNormalizedName(sbHeaderLowerName);
   for (sbHeaderLowerName, (sbHeaderName, sbHeaderValue)) in dtsbReplaceHeaderNameAndValue_by_sLowerName.items():
-    oRequest.oHeaders.fbRemoveForNormalizedName(sbHeaderLowerName);
-    oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
+    oRequest.oHeaders.foReplaceOrAddUniqueNameAndValue(sbHeaderName, sbHeaderValue);
   for (sbHeaderName, sbHeaderValue) in atsbAddHeadersNameAndValue:
-    oRequest.oHeaders.foAddHeaderForNameAndValue(sbHeaderName, sbHeaderValue);
+    oRequest.oHeaders.foAddNameAndValue(sbHeaderName, sbHeaderValue);
