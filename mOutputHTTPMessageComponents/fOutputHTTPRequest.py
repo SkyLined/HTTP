@@ -53,7 +53,7 @@ def fOutputHTTPRequest(
     [COLOR_EOF, CHAR_EOF] if bShowDetails and not oRequest.sbBody else [],
   );
   # Output request body if any
-  if bShowMessageBody:
+  if bShowMessageBody and oRequest.sbBody:
     fOutputHTTPMessageBody(
       oMessage = oRequest,
       bDecodeBody = bDecodeBody,
