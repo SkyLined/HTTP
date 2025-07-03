@@ -569,18 +569,29 @@ try:
         uzServerShouldUsePortNumber = zNotProvided;
     ############################################################################
     elif s0LowerName in ["media-type", "mime-type"]:
-      sExtension = fsRequireArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sb0MediaType = fsb0GetMediaTypeForExtension(sExtension);
-      if not sb0MediaType:
-        oConsole.fOutput(
-          "The media type for ",
-          COLOR_INFO, sExtension,
-          COLOR_NORMAL, " is not known.",
-        );
-        sys.exit(guExitCodeBadArgument);
-      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", sb0MediaType);
-      s0MediaType = s0Value;
+      sValue = fsRequireArgumentValue();
+      if sValue.startswith("."):
+        sb0MediaType = fsb0GetMediaTypeForExtension(sValue);
+        if not sb0MediaType:
+          oConsole.fOutput(
+            "The media type for file extension ",
+            COLOR_INFO, sValue,
+            COLOR_NORMAL, " is not known.",
+          );
+          sys.exit(guExitCodeBadArgument);
+        sbMediaType = sb0MediaType;
+      else:
+        try:
+          sbMediaType = sValue(s0Value, "ascii", "strict");
+        except:
+          oConsole.fOutput(
+            "The ",
+            COLOR_INFO, s0LowerName,
+            COLOR_NORMAL, " argument must contain a valid host!",
+          );
+          sys.exit(guExitCodeBadArgument);
+      dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", sbMediaType);
     ############################################################################
     elif s0LowerName in ["proxy", "http-proxy"]:
       asRunAsClientArguments.append(sArgument);

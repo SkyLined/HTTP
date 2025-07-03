@@ -53,6 +53,10 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
     oConsole.fOutput("    Use the content of the given file in the request body as-is (without");
     oConsole.fOutput("    applying any encoding/compression).");
+    oConsole.fOutput("  ", COLOR_INFO, "--media-type=<value>]");
+    oConsole.fOutput("    Add a Content-Type header indicating the Media Type to the requests. If the");
+    oConsole.fOutput("    value starts with a dot ('.'), HTTP will translate this into the associated");
+    oConsole.fOutput("    Media Type in the header. Other values are used as-is.");
     oConsole.fOutput("");
                       ################################################################### 80 chars ###
     oConsole.fOutput("  ", COLOR_HILITE, "Request options: forms/json data", COLOR_NORMAL, ":");
