@@ -1,56 +1,48 @@
 @ECHO OFF
 SETLOCAL ENABLEDELAYEDEXPANSION
-SET REDIRECT_STDOUT_FILE_PATH=!TEMP!\HTTP Test stdout !RANDOM!.txt
-SET TEST_DOWNLOAD_FILE_PATH=!TEMP!\HTTP Test download !RANDOM!.txt
 
-ECHO   * Test usage help...
-CALL "%~dp0\..\HTTP.cmd" --help >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test version info...
-CALL "%~dp0\..\HTTP.cmd" --version >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test version check...
-CALL "%~dp0\..\HTTP.cmd" --version-check >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test license info...
-CALL "%~dp0\..\HTTP.cmd" --license >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test license update...
-CALL "%~dp0\..\HTTP.cmd" --license-update >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test GET http://example.com and don't show details...
-CALL "%~dp0\..\HTTP.cmd" GET "http://example.com" --show-details=false >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-ECHO   * Test GET https://example.com and decode body...
-CALL "%~dp0\..\HTTP.cmd" GET "https://example.com" --decode-body >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
+REM Ran a standard tests file that executes HTTP with a number of arguments.
+CALL "%~dp0\TestPythonApplication.cmd"
+IF ERRORLEVEL 1 EXIT /B !ERRORLEVEL!
 
-ECHO   * Test download GET http://skylined.nl (redirect to https://ascii.skylined.nl) with debug output...
-CALL "%~dp0\..\HTTP.cmd" GET "http://skylined.nl" --debug -r=10 --download="!TEST_DOWNLOAD_FILE_PATH!" >"!REDIRECT_STDOUT_FILE_PATH!"
-IF ERRORLEVEL 1 GOTO :ERROR
-IF NOT EXIST "!TEST_DOWNLOAD_FILE_PATH!" (
-  ECHO - Downloaded file "!TEST_DOWNLOAD_FILE_PATH!" not found!
-) ELSE (
-  DEL "!TEST_DOWNLOAD_FILE_PATH!" /Q
+REM Test downloading a file 
+CALL :fSetApplicationScript "%~dp0\.."
+IF NOT EXIST "!sApplicationScript!" (
+  ECHO - Cannot find application script [1;37m!sApplicationScript![0m.
+  EXIT /B 1
+);
+SET sTempFilePath="!TEMP!\Test download for HTTP.txt"
+
+CALL :RUN_TEST GET "https://ascii.skylined.nl" --download=!sTempFilePath!
+IF ERRORLEVEL 1 EXIT /B !ERRORLEVEL!
+
+IF NOT EXIST !sTempFilePath! (
+  ECHO - Downloaded file !sTempFilePath! not found!
+  EXIT /B 1
 )
-IF EXIST "!REDIRECT_STDOUT_FILE_PATH!" (
-  DEL "!REDIRECT_STDOUT_FILE_PATH!" /Q
+DEL !sTempFilePath! /Q
+
+CALL :RUN_TEST GET "https://ascii.skylined.nl" --save=!sTempFilePath!
+IF ERRORLEVEL 1 EXIT /B !ERRORLEVEL!
+
+IF NOT EXIST !sTempFilePath! (
+  ECHO - Saved response !sTempFilePath! not found!
+  EXIT /B 1
 )
+DEL !sTempFilePath! /Q
 
 ECHO + Test.cmd completed.
 EXIT /B 0
 
-:ERROR
-  SET EXIT_CODE=!ERRORLEVEL!
-  ECHO     - Failed with error level !EXIT_CODE!
-  CALL :CLEANUP
-  EXIT /B !EXIT_CODE!
+:fSetApplicationScript
+  SET sApplicationScript="%~dpn1\%~n1.cmd"
+  EXIT /B 0
 
-:CLEANUP
-  IF EXIST "!TEST_DOWNLOAD_FILE_PATH!" (
-    DEL "!TEST_DOWNLOAD_FILE_PATH!" /Q
-  )
-  IF EXIST "!REDIRECT_STDOUT_FILE_PATH!" (
-    POWERSHELL $OutputEncoding = New-Object -Typename System.Text.UTF8Encoding; Get-Content -Encoding utf8 '"!REDIRECT_STDOUT_FILE_PATH!"'
-    DEL "!REDIRECT_STDOUT_FILE_PATH!" /Q
-  )
+:RUN_TEST
+  SET sArguments=%*
+  CLS
+  TITLE Testing !sApplicationScript! !sArguments!
+  ECHO [1;37m!sApplicationScript! !sArguments![0m
+  ECHO --------------------------------------------------------------------------------
+  CALL !sApplicationScript! !sArguments!
+  EXIT /B !ERRORLEVEL!

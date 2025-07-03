@@ -1,0 +1,12 @@
+# Standard tests for all applications:
+--help
+--version
+--version-check
+--license
+--license-update
+# Tests specific to this application:
+POST "http://example.com" --show-details=false --header=X:Y --header=X: --header=A:B --data=X
+GET "http://example.com" --show-request=false --show-response=false --form=X=Y
+CONNECT "https://SPOOF" --decode-body --json=X:Y --spoof:SPOOF=example.com --insecure
+# This redirects and ends up at https://ascii.skylined.nl
+GET "http://skylined.nl" --debug -r=10 
