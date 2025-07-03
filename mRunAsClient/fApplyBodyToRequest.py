@@ -59,7 +59,7 @@ def fApplyBodyToRequest(*,
       sys.exit(guExitCodeUnhandledCharacterEncoding);
   elif sxBody is not None:
     sbBody = sxBody; # assume bytes
-  if bCompressBody:
+  if bCompress:
     try:
       sbBody = oRequest.fsbCompressData(
         sbData = sbBody,
