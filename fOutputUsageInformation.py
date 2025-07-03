@@ -77,7 +77,11 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Set the default `Content-Type` header to `application/json` and add the");
     oConsole.fOutput("    given name-value pair to a dictionary in the request body.  This argument");
     oConsole.fOutput("    can be provided multiple times to add multiple name-value pairs to the");
-    oConsole.fOutput("    dictionary.");
+    oConsole.fOutput("    dictionary. Note that this can only be used to add string values.");
+    oConsole.fOutput("  ", COLOR_INFO, "--json-file=<file path>");
+    oConsole.fOutput("    Set the default `Content-Type` header to `application/json` and use the");
+    oConsole.fOutput("    the utf-8 encoded content of the given file as data in the request body");
+    oConsole.fOutput("    after applying the compression and encoding selected in the headers.");
                       ################################################################### 80 chars ###
     oConsole.fOutput("");
     oConsole.fOutput("  ", COLOR_HILITE, "Response options", COLOR_NORMAL, ":");

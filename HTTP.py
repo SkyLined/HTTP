@@ -492,6 +492,42 @@ try:
       if d0ClientShouldSetJSON_sValue_by_sName is None:
         d0ClientShouldSetJSON_sValue_by_sName = {};
       d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
+    elif s0LowerName in ["json-file"]:
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
+      oJSONFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+      if not oJSONFileSystemItem.fbIsFile():
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot find file \"",
+          COLOR_INFO, oJSONFileSystemItem.sPath,
+          COLOR_NORMAL, "\"."
+        );
+        sys.exit(guExitCodeBadArgument);
+      try:
+        sbFileContent = oJSONFileSystemItem.fsbRead();
+      except Exception as oException:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot read from file ",
+          COLOR_INFO, oJSONFileSystemItem.sPath,
+          COLOR_NORMAL, ".",
+        );
+        fOutputExceptionAndExit(oException, guExitCodeCannotReadRequestBodyFromFile);
+      try:
+        sx0ClientShouldUseBody = str(sbFileContent, "utf-8", "strict");
+      except UnicodeDecodeError as oException:
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot decode file content as UTF-8: ",
+          COLOR_INFO, oException.reason,
+          COLOR_NORMAL, ".",
+        );
+        sys.exit(guExitCodeCannotReadRequestBodyFromFile);
+      if (
+        b"content-type" not in dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName
+      ):
+        dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", b"application/json");
     ############################################################################
     elif s0LowerName in ["m3u"]:
       asRunAsClientArguments.append(sArgument);
