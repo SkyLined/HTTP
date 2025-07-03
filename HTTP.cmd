@@ -25,7 +25,5 @@ ECHO   correct path, or add Python to the "PATH" environment variable.
 EXIT /B 1
 
 :RUN_PYTHON
-  REM We did not find `/?` in the arguments.
-  ECHO !PYTHON! !sScript! !sArguments!
   CALL !PYTHON! !sScript! !sArguments!
   EXIT /B !ERRORLEVEL!
