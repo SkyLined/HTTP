@@ -44,15 +44,27 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Add the given HTTP header to the requests. If no value is provided, the");
     oConsole.fOutput("    header is removed instead. HTTP normally uses a set of default headers");
     oConsole.fOutput("    for each request. This argument can be used to modify them.");
-    oConsole.fOutput("  ", COLOR_INFO, "--data=<text>");
-    oConsole.fOutput("    Use utf-8 encoded \"<text>\" as data in the request body after applying the");
-    oConsole.fOutput("    compression and encoding selected in the headers.");
-    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
-    oConsole.fOutput("    Use the utf-8 encoded content of the given file as data in the request body");
-    oConsole.fOutput("    after applying the compression and encoding selected in the headers.");
+    oConsole.fOutput("  ", COLOR_INFO, "--body[=<text>]");
+    oConsole.fOutput("    Use  \"<text>\" as the request body without applying compression or");
+    oConsole.fOutput("    encoding. If no value is provided an empty body is used.");
+    oConsole.fOutput("    Appropriate headers are set in the request to indicate the presence of a");
+    oConsole.fOutput("    body.");
     oConsole.fOutput("  ", COLOR_INFO, "-bf=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--body-file=<file path>");
     oConsole.fOutput("    Use the content of the given file in the request body as-is (without");
     oConsole.fOutput("    applying any encoding/compression).");
+    oConsole.fOutput("    Appropriate headers are set in the request to indicate the presence of a");
+    oConsole.fOutput("    body.");
+    oConsole.fOutput("  ", COLOR_INFO, "--data[=<text>]");
+    oConsole.fOutput("    Use utf-8 encoded \"<text>\" as data in the request body after applying the");
+    oConsole.fOutput("    compression and encoding selected in the headers. If no value is provided");
+    oConsole.fOutput("    an empty body is used.");
+    oConsole.fOutput("    Appropriate headers are set in the request to indicate the presence of a");
+    oConsole.fOutput("    body.");
+    oConsole.fOutput("  ", COLOR_INFO, "-df=<file path>", COLOR_NORMAL, ",  ", COLOR_INFO, "--data-file=<file path>");
+    oConsole.fOutput("    Use the utf-8 encoded content of the given file as data in the request body");
+    oConsole.fOutput("    after applying the compression and encoding selected in the headers.");
+    oConsole.fOutput("    Appropriate headers are set in the request to indicate the presence of a");
+    oConsole.fOutput("    body.");
     oConsole.fOutput("  ", COLOR_INFO, "--media-type=<value>]");
     oConsole.fOutput("    Add a Content-Type header indicating the Media Type to the requests. If the");
     oConsole.fOutput("    value starts with a dot ('.'), HTTP will translate this into the associated");
@@ -177,27 +189,46 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    Check for updates and show version information.");
                       ################################################################### 80 chars ###
     oConsole.fOutput();
-    oConsole.fOutput("You can encode characters using \"\\x##\" (e.g. \"\\x41\" == \"A\") in the value of the arguments");
-    oConsole.fOutput(COLOR_INFO, "--data", COLOR_NORMAL, ", ",
-                     COLOR_INFO, "--data-file", COLOR_NORMAL, ", ",
-                     COLOR_INFO, "--header", COLOR_NORMAL, ", and ",
-                     COLOR_INFO, "--form", COLOR_NORMAL, ".");
-    oConsole.fOutput(COLOR_HILITE, "Exit codes:");
-    oConsole.fOutput("  ", COLOR_OK,    "0", COLOR_NORMAL,"  = Success.");
-    oConsole.fOutput("  ", COLOR_ERROR, "1", COLOR_NORMAL, "  = There was an internal error: please report the details!");
-    oConsole.fOutput("  ", COLOR_ERROR, "2", COLOR_NORMAL, "  = Unable to parse the command-line arguments provided.");
-    oConsole.fOutput("  ", COLOR_ERROR, "3", COLOR_NORMAL, "  = There was an error while loading a dependency.");
-    oConsole.fOutput("  ", COLOR_ERROR, "4", COLOR_NORMAL, "  = You do not have a valid license to run HTTP.");
-    oConsole.fOutput("  ", COLOR_ERROR, "5", COLOR_NORMAL, "  = A file could not be read from.");
-    oConsole.fOutput("  ", COLOR_ERROR, "6", COLOR_NORMAL, "  = A file could not be written to.");
-    oConsole.fOutput("  ", COLOR_ERROR, "7", COLOR_NORMAL, "  = HTTP was terminated by the user.");
-    oConsole.fOutput("  ", COLOR_ERROR, "10", COLOR_NORMAL, "  = The cookies could not be loaded from file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "11", COLOR_NORMAL, "  = The cookies could not be saved to file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "12", COLOR_NORMAL, "  = The request body could not be read from file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "13", COLOR_NORMAL, "  = The response body could not be saved to file.");
-    oConsole.fOutput("  ", COLOR_ERROR, "14", COLOR_NORMAL, "  = A secure connection could not be established.");
-    oConsole.fOutput("  ", COLOR_ERROR, "15", COLOR_NORMAL, "  = The server did not return a valid response.");
-    oConsole.fOutput("  ", COLOR_ERROR, "16", COLOR_NORMAL, " = There were too many consecutive redirects.");
+    oConsole.fOutput(COLOR_HILITE, "Notes:");
+    oConsole.fOutput("  ", COLOR_LIST, CHAR_LIST, COLOR_NORMAL,
+                        " You can add double quotes around arguments such as URLs to prevent cmd.exe");
+    oConsole.fOutput("    From interpreting character such as ", COLOR_INFO, '&|<>',  COLOR_NORMAL, " as special characters.");
+    oConsole.fOutput("  ", COLOR_LIST, CHAR_LIST, COLOR_NORMAL,
+                        " You can use ", COLOR_INFO, "\\x##", COLOR_NORMAL, " escapes to encode characters in all argument values");
+    oConsole.fOutput("    except for file/folder paths. This can be used to prevent cmd.exe from");\
+    oConsole.fOutput("    interpreting characters like ", COLOR_INFO, '%!',  COLOR_NORMAL, " as special characters.");
+    oConsole.fOutput("    It can also be used to put ", COLOR_INFO, '=:',  COLOR_NORMAL, " in names of form/json data.");
+    oConsole.fOutput("    Examples: ",
+                        COLOR_INFO, '!',  COLOR_NORMAL, " (", COLOR_INFO, "\\x21", COLOR_NORMAL, "), ",
+                        COLOR_INFO, '"',  COLOR_NORMAL, " (", COLOR_INFO, "\\x22", COLOR_NORMAL, "), ",
+                        COLOR_INFO, "%",  COLOR_NORMAL, " (", COLOR_INFO, "\\x25", COLOR_NORMAL, "), ",
+                        COLOR_INFO, ":",  COLOR_NORMAL, " (", COLOR_INFO, "\\x3A", COLOR_NORMAL, "), ",
+                        COLOR_INFO, "=",  COLOR_NORMAL, " (", COLOR_INFO, "\\x3D", COLOR_NORMAL, "), and ",
+                        COLOR_INFO, "\\", COLOR_NORMAL, " (", COLOR_INFO, "\\x5C", COLOR_NORMAL, ") ",);
+    oConsole.fOutput("  ", COLOR_LIST, CHAR_LIST, COLOR_NORMAL,
+                        " The ", COLOR_INFO, "\\x##", COLOR_NORMAL, " decoding is also applied to argument values provided in a file");
+    oConsole.fOutput("    using the ", COLOR_INFO, "--arguments", COLOR_NORMAL, " argument.");
                       ################################################################### 80 chars ###
+    oConsole.fOutput();
+    oConsole.fOutput(COLOR_HILITE, "Exit codes:");
+    oConsole.fOutput("   ", COLOR_OK,    "0", COLOR_NORMAL, " Success.");
+    oConsole.fOutput("   ", COLOR_ERROR, "1", COLOR_NORMAL, " There was an internal error: please report the details!");
+    oConsole.fOutput("   ", COLOR_ERROR, "2", COLOR_NORMAL, " Unable to parse the command-line arguments provided.");
+    oConsole.fOutput("   ", COLOR_ERROR, "3", COLOR_NORMAL, " There was an error while loading a dependency.");
+    oConsole.fOutput("   ", COLOR_ERROR, "4", COLOR_NORMAL, " You do not have a valid license to run HTTP.");
+    oConsole.fOutput("   ", COLOR_ERROR, "5", COLOR_NORMAL, " A file could not be read from.");
+    oConsole.fOutput("   ", COLOR_ERROR, "6", COLOR_NORMAL, " A file could not be written to.");
+    oConsole.fOutput("   ", COLOR_ERROR, "7", COLOR_NORMAL, " HTTP was terminated by the user.");
+    oConsole.fOutput("  ", COLOR_ERROR, "10", COLOR_NORMAL, " The cookies could not be loaded from file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "11", COLOR_NORMAL, " The cookies could not be saved to file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "12", COLOR_NORMAL, " The request body could not be read from file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "13", COLOR_NORMAL, " The response body could not be saved to file.");
+    oConsole.fOutput("  ", COLOR_ERROR, "14", COLOR_NORMAL, " A secure connection could not be established.");
+    oConsole.fOutput("  ", COLOR_ERROR, "15", COLOR_NORMAL, " The server did not return a valid response.");
+    oConsole.fOutput("  ", COLOR_ERROR, "16", COLOR_NORMAL, " There were too many consecutive redirects.");
+    oConsole.fOutput("  ", COLOR_ERROR, "17", COLOR_NORMAL, " The request data cannot be encoded with the provided character encoding.");
+    oConsole.fOutput("  ", COLOR_ERROR, "18", COLOR_NORMAL, " The provided character encoding for the request data is not implemented.");
+    oConsole.fOutput("  ", COLOR_ERROR, "19", COLOR_NORMAL, " The provided compression type for the request data is not implemented.");
+                      ##                 ##                  ############################################################### 80 chars ###
   finally:             
     oConsole.fUnlock();

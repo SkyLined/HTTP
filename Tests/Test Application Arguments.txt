@@ -8,5 +8,8 @@
 POST "http://example.com" --show-details=false --header=X:Y --header=X: --header=A:B --data=X
 GET "http://example.com" --show-request=false --show-response=false --form=X=Y
 CONNECT "https://SPOOF" --decode-body --json=X:Y --spoof:SPOOF=example.com --insecure
+FOOBAR "https://example.com" --show-response=false --body=FOOBAR --host=FOOBAR
+GET "https\x3A//ex\x61mple.com" --body
+GET "https://example.com" --data
 # This redirects and ends up at https://ascii.skylined.nl
 GET "http://skylined.nl" --debug -r=10 

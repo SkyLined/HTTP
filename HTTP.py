@@ -64,23 +64,6 @@ try:
     fOutputUsageInformation(bOutputAllOptions = False);
     sys.exit(guExitCodeSuccess);
   
-  def fbParseBooleanArgument(s0Value):
-    if s0Value is None or s0Value.lower() == "true":
-      return True;
-    if s0Value.lower() == "false":
-      return False;
-    oConsole.fOutput(
-      COLOR_ERROR, CHAR_ERROR,
-      COLOR_NORMAL, " The value for \"",
-      COLOR_INFO, sArgument,
-      COLOR_NORMAL, "\" must be \"",
-      COLOR_INFO, "true",
-      COLOR_NORMAL, "\" (default) or \"",
-      COLOR_INFO, "false",
-      COLOR_NORMAL, "\".",
-    );
-    sys.exit(guExitCodeBadArgument);
-
   rURL = re.compile(r"^https?://.*$", re.I);
   rMethod = re.compile(r"^[A-Z]+$", re.I);
   rHTTPVersion = re.compile(r"^HTTP\/\d+\.\d+$", re.I);
@@ -140,6 +123,43 @@ try:
   asProvidedArgumentsThatSetBody = [];
 
   for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
+    def fsUnescape(sValue):
+      return "".join([
+          (
+            oMatch.group(1) if oMatch.group(1) else 
+            chr(int(oMatch.group(2), 16)) if oMatch.group(2) else
+            ""
+          )
+          for oMatch in rCharEncoding.finditer(sValue)
+        ]);
+    def ts0SplitAndUnescape(sValue, sSeparator):
+      tsComponents = sValue.split(sSeparator, 1);
+      if len(tsComponents) == 1:
+        return (
+          fsUnescape(sValue),
+          ""
+        );
+      return (
+        fsUnescape(tsComponents[0]),
+        fsUnescape(tsComponents[1]),
+      );
+    def fbGetBooleanArgumentValue():
+      sValue = fsUnescape(s0Value or "").lower();
+      if sValue in ["", "true"]:
+        return True;
+      if s0Value == "false":
+        return False;
+      oConsole.fOutput(
+        COLOR_ERROR, CHAR_ERROR,
+        COLOR_NORMAL, " The value for \"",
+        COLOR_INFO, sArgument,
+        COLOR_NORMAL, "\" must be \"",
+        COLOR_INFO, "true",
+        COLOR_NORMAL, "\" (default) or \"",
+        COLOR_INFO, "false",
+        COLOR_NORMAL, "\".",
+      );
+      sys.exit(guExitCodeBadArgument);
     def fsbConvertToBytes(sValue):
       auBytes = [ord(s) for s in sValue];
       uBadCharsCount = False;
@@ -167,13 +187,8 @@ try:
         );
         sys.exit(guExitCodeBadArgument);
       return bytes(auBytes);
-    def fsRequireArgumentValue():
-      if s0Value:
-        return "".join([
-          oMatch.group(1) if oMatch.group(1)
-              else chr(int(oMatch.group(2), 16)) if oMatch.group(2) else ""
-          for oMatch in rCharEncoding.finditer(s0Value)
-        ]);
+    def fRequiredArgumentValue():
+      if s0Value: return;
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " You must provide a value for \"",
@@ -182,10 +197,13 @@ try:
       );
       sys.exit(guExitCodeBadArgument);
     if not s0LowerName:
-      if o0ClientShouldUseURL is None and rURL.match(sArgument):
+      sUnescapedArgument = fsUnescape(sArgument);
+      if o0ClientShouldUseURL is None and rURL.match(sUnescapedArgument):
         asRunAsClientArguments.append(sArgument);
         try:
-          o0ClientShouldUseURL = cURL.foFromBytesString(fsbConvertToBytes(sArgument));
+          o0ClientShouldUseURL = cURL.foFromBytesString(
+            fsbConvertToBytes(sUnescapedArgument)
+          );
         except cInvalidURLException:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
@@ -194,12 +212,11 @@ try:
             COLOR_NORMAL, "\" is not a valid URL.",
           );
           sys.exit(guExitCodeBadArgument);
-      elif not fbIsProvided(sbzClientShouldUseMethod) and rMethod.match(sArgument):
+      elif not fbIsProvided(sbzClientShouldUseMethod) and rMethod.match(sUnescapedArgument):
         asRunAsClientArguments.append(sArgument);
-        sbzClientShouldUseMethod = fsbConvertToBytes(sArgument);
-
-      elif rHTTPVersion.match(sArgument):
-        sbzHTTPVersion = fsbConvertToBytes(sArgument);
+        sbzClientShouldUseMethod = fsbConvertToBytes(sUnescapedArgument);
+      elif rHTTPVersion.match(sUnescapedArgument):
+        sbzHTTPVersion = fsbConvertToBytes(sUnescapedArgument);
       elif o0InputFileSystemItem:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -208,42 +225,66 @@ try:
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      elif not cFileSystemItem.fbIsValidPath(sArgument) or not cFileSystemItem(sArgument).fbExists():
-        oConsole.fOutput(
-          COLOR_ERROR, CHAR_ERROR,
-          COLOR_NORMAL, " Unrecognized argument \"",
-          COLOR_INFO, sArgument,
-          COLOR_NORMAL, "\".",
-        );
-        oConsole.fOutput(
-          COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing file/folder.",
-        );
-        sys.exit(guExitCodeBadArgument);
-      else:
-        o0InputFileSystemItem = cFileSystemItem(sArgument);
-        if bClientShouldProcessM3UFile:
+      elif not cFileSystemItem.fbIsValidPath(sArgument):
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " You cannot use a HTTP request file as input and process a .m3u file response at the same time.",
+            COLOR_NORMAL, " Unrecognized argument \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\".",
+          );
+          oConsole.fOutput(
+            COLOR_NORMAL, "  It is neither a HTTP method, version, URL or a valid file/folder path.",
           );
           sys.exit(guExitCodeBadArgument);
-        if bClientShouldProcessSegmentedVideo:
+      else:
+        o0InputFileSystemItem = cFileSystemItem(sArgument);
+        if not o0InputFileSystemItem.fbExists():
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " You cannot use a HTTP request file as input and process a segmented video response at the same time.",
+            COLOR_NORMAL, " Unrecognized argument \"",
+            COLOR_INFO, sArgument,
+            COLOR_NORMAL, "\".",
           );
+          oConsole.fOutput(
+            COLOR_NORMAL, "  It is neither a HTTP method, version, URL or an existing file/folder.",
+          );
+          sys.exit(guExitCodeBadArgument);
+        else:
+          if bClientShouldProcessM3UFile:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot use a HTTP request file as input and process a .m3u file response at the same time.",
+            );
+            sys.exit(guExitCodeBadArgument);
+          if bClientShouldProcessSegmentedVideo:
+            oConsole.fOutput(
+              COLOR_ERROR, CHAR_ERROR,
+              COLOR_NORMAL, " You cannot use a HTTP request file as input and process a segmented video response at the same time.",
+            );
+            sys.exit(guExitCodeBadArgument);
     ############################################################################
     elif s0LowerName in ["bl", "basic-login"]:
       asRunAsClientArguments.append(sArgument);
-      sbBase64EncodedUserNameColonPassword = base64.b64encode(fsbConvertToBytes(s0Value or ""));
+      sbBase64EncodedUserNameColonPassword = base64.b64encode(
+        fsbConvertToBytes(fsUnescape(s0Value or ""))
+      );
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"authorization"] = (
         b"Authorization",
         b"basic %s" % sbBase64EncodedUserNameColonPassword
       );
     ############################################################################
     elif s0LowerName in ["c", "cookies", "netscape-cookies"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      o0ClientShouldUseNetscapeCookiesFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+      o0ClientShouldUseNetscapeCookiesFileSystemItem = cFileSystemItem(s0Value);
+      if not o0ClientShouldUseNetscapeCookiesFileSystemItem.fbIsFile():
+        oConsole.fOutput(
+          COLOR_ERROR, CHAR_ERROR,
+          COLOR_NORMAL, " Cannot find file \"",
+          COLOR_INFO, o0ClientShouldUseNetscapeCookiesFileSystemItem.sPath,
+          COLOR_NORMAL, "\"."
+        );
+        sys.exit(guExitCodeBadArgument);
     ############################################################################
     elif s0LowerName in ["cs", "cookie-store"]:
       asRunAsClientArguments.append(sArgument);
@@ -251,15 +292,19 @@ try:
       if s0Value:
         o0ClientShouldUseCookieStoreJSONFileSystemItem = cFileSystemItem(s0Value);
     ############################################################################
-    elif s0LowerName in ["data"]:
+    elif s0LowerName in ["body"]:
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      sx0ClientShouldUseBody = fsRequireArgumentValue();
+      sx0ClientShouldUseBody = fsbConvertToBytes(fsUnescape(s0Value or ""));
+      # We are adding a raw body; don't apply compression or chunked encoding
+      bClientShouldCompressBody = False;
+      bClientShouldApplyChunkedEncodingToBody = False;
     ############################################################################
     elif s0LowerName in ["bf", "body-file"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+      oDataFileSystemItem = cFileSystemItem(s0Value);
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -282,10 +327,16 @@ try:
       bClientShouldCompressBody = False;
       bClientShouldApplyChunkedEncodingToBody = False;
     ############################################################################
-    elif s0LowerName in ["df", "data-file"]:
+    elif s0LowerName in ["data"]:
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      oDataFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+      sx0ClientShouldUseBody = fsUnescape(s0Value or "");
+    ############################################################################
+    elif s0LowerName in ["df", "data-file"]:
+      fRequiredArgumentValue();
+      asRunAsClientArguments.append(sArgument);
+      asProvidedArgumentsThatSetBody.append(sArgument);
+      oDataFileSystemItem = cFileSystemItem(s0Value);
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -316,7 +367,7 @@ try:
         sys.exit(guExitCodeCannotReadRequestBodyFromFile);
     ############################################################################
     elif s0LowerName in ["debug"]:
-      if fbParseBooleanArgument(s0Value):
+      if fbGetBooleanArgumentValue():
         if not m0DebugOutput:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
@@ -328,10 +379,10 @@ try:
         m0DebugOutput.fEnableAllDebugOutput();
     ############################################################################
     elif s0LowerName in ["db", "decode", "decode-body"]:
-      bDecodeBodyOfHTTPMessages = fbParseBooleanArgument(s0Value);
+      bDecodeBodyOfHTTPMessages = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["fail-on-decode-errors", "report-decode-body-errors"]:
-      bFailOnDecodeBodyErrors = fbParseBooleanArgument(s0Value);
+      bFailOnDecodeBodyErrors = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["dl", "download"]:
       asRunAsClientArguments.append(sArgument);
@@ -340,27 +391,19 @@ try:
         o0ClientShouldDownloadToFileSystemItem = cFileSystemItem(s0Value);
     ############################################################################
     elif s0LowerName in ["form"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      sValue = fsRequireArgumentValue();
-      tsFormNameAndValue = sValue.split("=", 1);
-      if len(tsFormNameAndValue) == 1:
-        sName = sValue; sValue = "";
-      else:
-        sName, sValue = tsFormNameAndValue;
+      sName, sValue = ts0SplitAndUnescape(s0Value, "=");
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
       d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
     ############################################################################
     elif s0LowerName in ["form-data"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      sValue = fsRequireArgumentValue();
-      tsFormDataNameAndValue = sValue.split("=", 1);
-      if len(tsFormDataNameAndValue) == 1:
-        sName = sValue; sValue = "";
-      else:
-        sName, sValue = tsFormNameAndValue;
+      sName, sValue = ts0SplitAndUnescape(s0Value, "=");
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
       d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
@@ -373,22 +416,23 @@ try:
       };
     ############################################################################
     elif s0LowerName in ["form-data-upload"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      sValue = fsRequireArgumentValue();
-      tsFormNameAndFilePath = sValue.split("=", 1);
-      if len(tsFormNameAndFilePath) != 2:
+      # Only the name must be un-escaped, so we cannot use `ts0SplitAndUnescape`
+      tsSplitNameAndFilePath = s0Value.split("=", 1);
+      if len(tsSplitNameAndFilePath) != 2:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
           COLOR_NORMAL, " You must provide a value with the format \"",
           COLOR_INFO, "name=<path to file>",
-          COLOR_INFO, oUploadFileSystemItem.sPath,
           COLOR_NORMAL, "\" for the argument \"",
           COLOR_INFO, sArgument,
           COLOR_NORMAL, "\".",
         );
         sys.exit(guExitCodeBadArgument);
-      sName, sFilePath = tsFormNameAndFilePath;
+      sName, sFilePath = tsSplitNameAndFilePath;
+      sName = fsUnescape(sName);
       oUploadFileSystemItem = cFileSystemItem(sFilePath);
       if not oUploadFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -419,30 +463,26 @@ try:
       };
     ############################################################################
     elif s0LowerName in ["header"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sbValue = fsbConvertToBytes(fsRequireArgumentValue());
-      tsbHeaderNameAndValue = sbValue.split(b":", 1);
-      if len(tsbHeaderNameAndValue) == 1:
-        sbHeaderName = sbValue;
-        sbHeaderValue = b"";
-      else:
-        sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
+      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
+      sbHeaderName = fsbConvertToBytes(sName);
+      sbHeaderValue = fsbConvertToBytes(sValue);
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sbHeaderValue);
     ############################################################################
     elif s0LowerName in ["header-"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sbHeaderName = fsbConvertToBytes(fsRequireArgumentValue());
+      sbHeaderName = fsbConvertToBytes(fsUnescape(s0Value));
       asbClientShouldRemoveHeadersForLowerNames.append(sbHeaderName.lower());
     ############################################################################
     elif s0LowerName in ["header+"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sbValue = fsbConvertToBytes(fsRequireArgumentValue());
-      tsbHeaderNameAndValue = sbValue.split(b":", 1);
-      if len(tsbHeaderNameAndValue) == 1:
-        sbHeaderName = sbValue;
-        sbHeaderValue = b"";
-      else:
-        sbHeaderName, sbHeaderValue = tsbHeaderNameAndValue;
+      sbValue = fsbConvertToBytes(fsUnescape(s0Value));
+      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
+      sbHeaderName = fsbConvertToBytes(sName);
+      sbHeaderValue = fsbConvertToBytes(sValue);
       atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sbHeaderValue));
     ############################################################################
     elif s0LowerName in ["hex", "hex-output", "hex-output-body"]:
@@ -461,42 +501,29 @@ try:
           sys.exit(guExitCodeBadArgument);
     ############################################################################
     elif s0LowerName in ["h", "host", "hostname"]:
-        if fbIsProvided(sbzServerShouldUseHost):
-          oConsole.fOutput(
-            "A ",
-            COLOR_INFO, "host",
-            COLOR_NORMAL, " can only be provided once!",
-          );
-          sys.exit(guExitCodeBadArgument);
-        if s0Value:
-          try:
-            sbzServerShouldUseHost = fsbConvertToBytes(s0Value, "ascii", "strict");
-          except:
-            oConsole.fOutput(
-              "The ",
-              COLOR_INFO, s0LowerName,
-              COLOR_NORMAL, " argument must contain a valid host!",
-            );
-            sys.exit(guExitCodeBadArgument);
-        else:
-          sbzServerShouldUseHost = zNotProvided;
+      fRequiredArgumentValue();
+      if fbIsProvided(sbzServerShouldUseHost):
+        oConsole.fOutput(
+          "A ",
+          COLOR_INFO, "host",
+          COLOR_NORMAL, " can only be provided once!",
+        );
+        sys.exit(guExitCodeBadArgument);
+      sbzServerShouldUseHost = fsbConvertToBytes(fsUnescape(s0Value));
     ############################################################################
     elif s0LowerName in ["json"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      sValue = fsRequireArgumentValue();
-      tsJSONNameAndValue = sValue.split(":", 1);
-      if len(tsJSONNameAndValue) == 1:
-        sName = sValue; sValue = "";
-      else:
-        sName, sValue = tsJSONNameAndValue;
+      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
       if d0ClientShouldSetJSON_sValue_by_sName is None:
         d0ClientShouldSetJSON_sValue_by_sName = {};
       d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
     elif s0LowerName in ["json-file"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
       asProvidedArgumentsThatSetBody.append(sArgument);
-      oJSONFileSystemItem = cFileSystemItem(fsRequireArgumentValue());
+      oJSONFileSystemItem = cFileSystemItem(s0Value);
       if not oJSONFileSystemItem.fbIsFile():
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -570,8 +597,9 @@ try:
         uzServerShouldUsePortNumber = zNotProvided;
     ############################################################################
     elif s0LowerName in ["media-type", "mime-type"]:
+      fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sValue = fsRequireArgumentValue();
+      sValue = fsUnescape(s0Value or "");
       if sValue.startswith("."):
         sb0MediaType = fsb0GetMediaTypeForExtension(sValue);
         if not sb0MediaType:
@@ -589,22 +617,23 @@ try:
           oConsole.fOutput(
             "The ",
             COLOR_INFO, s0LowerName,
-            COLOR_NORMAL, " argument must contain a valid host!",
+            COLOR_NORMAL, " argument must contain a valid host.",
           );
           sys.exit(guExitCodeBadArgument);
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[b"content-type"] = (b"Content-Type", sbMediaType);
     ############################################################################
     elif s0LowerName in ["proxy", "http-proxy"]:
       asRunAsClientArguments.append(sArgument);
-      bClientShouldUseProxy = True;
-      if s0Value:
+      if bClientShouldUseProxy:
         if o0ClientShouldUseHTTPProxyServerURL is not None:
           oConsole.fOutput(
             COLOR_ERROR, CHAR_ERROR,
-            COLOR_NORMAL, " You can only provide one proxy server URL.",
+            COLOR_NORMAL, " You can only provide one proxy argument.",
           );
           sys.exit(guExitCodeBadArgument);
-        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(fsbConvertToBytes(s0Value));
+      bClientShouldUseProxy = True;
+      if s0Value:
+        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(fsbConvertToBytes(fsUnescape(s0Value or "")));
     ############################################################################
     elif s0LowerName in ["r", "max-redirects", "follow-redirects"]:
       asRunAsClientArguments.append(sArgument);
@@ -634,7 +663,7 @@ try:
       bRunAsServer = True;
     ############################################################################
     elif s0LowerName in ["secure"]:
-      bzSecureConnections = fbParseBooleanArgument(s0Value);
+      bzSecureConnections = fbGetBooleanArgumentValue();
       if bzSecureConnections and not m0SSL:
         oConsole.fOutput(
           COLOR_ERROR, CHAR_ERROR,
@@ -646,7 +675,7 @@ try:
     ############################################################################
     elif s0LowerName in ["insecure", "non-secure"]:
       asRunAsClientArguments.append(sArgument);
-      bzSecureConnections = not fbParseBooleanArgument(s0Value);
+      bzSecureConnections = not fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["sv", "segmented-video"]:
       asRunAsClientArguments.append(sArgument);
@@ -679,20 +708,26 @@ try:
           sys.exit(guExitCodeBadArgument);
     ############################################################################
     elif s0LowerName in ["show-details"]:
-      bzShowDetails = fbParseBooleanArgument(s0Value);
+      bzShowDetails = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["show-body", "show-message-body"]:
-      bzShowMessageBody = fbParseBooleanArgument(s0Value);
+      bzShowMessageBody = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["show-progress"]:
-      bzShowProgress = fbParseBooleanArgument(s0Value);
+      bzShowProgress = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["show-request"]:
-      bzShowRequest = fbParseBooleanArgument(s0Value);
+      bzShowRequest = fbGetBooleanArgumentValue();
     ############################################################################
     elif s0LowerName in ["show-response"]:
-      bzShowResponse = fbParseBooleanArgument(s0Value);
+      bzShowResponse = fbGetBooleanArgumentValue();
     ############################################################################
+    elif s0LowerName.startswith("spoof:"):
+      fRequiredArgumentValue();
+      asRunAsClientArguments.append(sArgument);
+      sbHost = fsbConvertToBytes(fsUnescape(s0LowerName.split(":", 1)[1]));
+      sbIPaddress = fsbConvertToBytes(fsUnescape(s0Value or ""));
+      dsbSpoofedHost_by_sbHost[sbHost] = sbIPaddress;
     elif s0LowerName in ["t", "timeout"]:
       if s0Value is None or s0Value.lower() == "none":
         n0zTimeoutInSeconds = None;
@@ -708,11 +743,6 @@ try:
             COLOR_NORMAL, "\" must be a number larger than zero.",
           );
           sys.exit(guExitCodeBadArgument);
-    elif s0LowerName.startswith("spoof:"):
-      asRunAsClientArguments.append(sArgument);
-      sbHost = fsbConvertToBytes(s0LowerName.split(":", 1)[1]);
-      sbIPaddress = fsbConvertToBytes(fsRequireArgumentValue());
-      dsbSpoofedHost_by_sbHost[sbHost] = sbIPaddress;
     else:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
