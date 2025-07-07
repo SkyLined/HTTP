@@ -202,7 +202,9 @@ try:
         asRunAsClientArguments.append(sArgument);
         try:
           o0ClientShouldUseURL = cURL.foFromBytesString(
-            fsbConvertToBytes(sUnescapedArgument)
+            fsbConvertToBytes(sUnescapedArgument),
+            # We're not picky: we want to allow going outside the protocol:
+            bAllowInvalidURLs = True,
           );
         except cInvalidURLException:
           oConsole.fOutput(
@@ -633,7 +635,11 @@ try:
           sys.exit(guExitCodeBadArgument);
       bClientShouldUseProxy = True;
       if s0Value:
-        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(fsbConvertToBytes(fsUnescape(s0Value or "")));
+        o0ClientShouldUseHTTPProxyServerURL = cURL.foFromBytesString(
+          fsbConvertToBytes(fsUnescape(s0Value or ""))
+          # Here we are picky: we want the URL to be valid, so we can talk to
+          # the proxy.
+        );
     ############################################################################
     elif s0LowerName in ["r", "max-redirects", "follow-redirects"]:
       asRunAsClientArguments.append(sArgument);
