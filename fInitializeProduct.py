@@ -24,11 +24,10 @@
       os.path.join(sProductFolderPath, "modules"),
     ]
     sys.path = asModulesPaths + [sPath for sPath in sys.path if sPath not in asModulesPaths];
-  if bDebugOutput:
-    if bProductIsAnApplication:
-      print(" Module search paths:");
-      for sPath in sys.path:
-        print("  * %s." % sPath);
+  if bDebugOutput and bProductIsAnApplication:
+    print(" Module search paths:");
+    for sPath in sys.path:
+      print("  * %s." % sPath);
 
   def fo0LoadModule(sProductName, sModuleName, bOptional = False):
     if sModuleName in sys.modules:
@@ -41,7 +40,7 @@
       oModule = __import__(sModuleName, dict(globals()), {}, [], 0);
     except Exception as oException:
       bModuleNotFound = isinstance(oException, ModuleNotFoundError) and oException.args[0] == "No module named '%s'" % sModuleName;
-      if bProductIsAnApplication or bDebugOutput:
+      if bDebugOutput:
         if bModuleNotFound:
           print("- Optional module %s is not available!" % sModuleName);
         else:
