@@ -3,7 +3,7 @@
                     ║╠══╣║    ║║     ║║    ║╠══╩╝    ╱╱  ╱╱                   
          ┄┄┄┄┄┄┄┄┄┄╘╩╩┄┄╩╩╛┄┄╘╩╩╛┄┄┄╘╩╩╛┄┄╘╩╩╛┄┄┄┄▀┄╱╱┄┄╱╱┄┄┄┄┄┄┄┄            
                                                     ‾   ‾                  """;
-import base64, os, re, sys, urllib;
+import base64, json, os, re, sys, urllib;
 
 sModulePath = os.path.dirname(__file__);
 sys.path = [sModulePath] + [sPath for sPath in sys.path if sPath.lower() != sModulePath.lower()];
@@ -532,7 +532,7 @@ try:
       # TODO: handle `--json="name with : in it":"value"` correctly.
       try:
         # Allow `--json=A` to be converted to `{"A": null}`
-        xValue = json.parse(s0Value or "null");
+        xValue = json.loads(s0Value or "null");
       except ValueError:
         # Allow `--json=A:B` to be converted to `{"A": "B"}`
         xValue = s0Value;
@@ -912,7 +912,7 @@ try:
       bUseProxy = bClientShouldUseProxy,
       bVerifyCertificates = False if bzSecureConnections is False else True, # default to secure connections
       d0SetForm_sValue_by_sName = d0ClientShouldSetForm_sValue_by_sName,
-      d0SetJSON_xValue_by_sName = d0ClientShouldSetJSON_s0Value_by_sName,
+      d0SetJSON_xValue_by_sName = d0ClientShouldSetJSON_xValue_by_sName,
       asbRemoveHeadersForLowerNames = asbClientShouldRemoveHeadersForLowerNames,
       dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName,
       atsbAddHeadersNameAndValue = atsbClientShouldAddHeadersNameAndValue,
