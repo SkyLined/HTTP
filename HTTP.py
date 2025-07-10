@@ -405,28 +405,25 @@ try:
     elif s0LowerName in ["form"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sName, sValue = ts0SplitAndUnescape(s0Value, "=");
       # We accept multiple copies of this argument with different values.
       osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
+      sFormName, s0FormValue = ts0SplitAndUnescape(s0Value, "=");
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
-      d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
+      d0ClientShouldSetForm_sValue_by_sName[sFormName] = s0FormValue or "";
     ############################################################################
     elif s0LowerName in ["form-data"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sName, sValue = ts0SplitAndUnescape(s0Value, "=");
-      if d0ClientShouldSetForm_sValue_by_sName is None:
-        d0ClientShouldSetForm_sValue_by_sName = {};
-      d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
       # We accept multiple copies of this argument with different values.
       osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
+      sFormDataName, s0FormValue = ts0SplitAndUnescape(s0Value, "=");
+      sbFormDataName = fsbEncodeHTMLEntities(sFormDataName);
+      sbFormDataValue = fsbEncodeHTMLEntities(s0FormValue or "");
       if d0ClientShouldSetFormData_dxValue_by_sName is None:
         d0ClientShouldSetFormData_dxValue_by_sName = {};
-      sbName = fsbEncodeHTMLEntities(sName);
-      sbValue = fsbEncodeHTMLEntities(sValue);
-      d0ClientShouldSetFormData_dxValue_by_sName[sbName] = {
-        "sbValue": sbValue,
+      d0ClientShouldSetFormData_dxValue_by_sName[sbFormDataName] = {
+        "sbValue": sbFormDataValue,
       };
     ############################################################################
     elif s0LowerName in ["form-data-upload"]:
