@@ -478,9 +478,9 @@ try:
     elif s0LowerName in ["header"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
-      sbHeaderName = fsbConvertToBytes(sName);
-      sbHeaderValue = fsbConvertToBytes(sValue);
+      sHeaderName, s0HeaderValue = ts0SplitAndUnescape(s0Value, ":");
+      sbHeaderName = fsbConvertToBytes(sHeaderName);
+      sbHeaderValue = fsbConvertToBytes(s0HeaderValue or "");
       dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName[sbHeaderName.lower()] = (sbHeaderName, sbHeaderValue);
     ############################################################################
     elif s0LowerName in ["header-"]:
@@ -492,10 +492,9 @@ try:
     elif s0LowerName in ["header+"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sbValue = fsbConvertToBytes(fsUnescape(s0Value));
-      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
-      sbHeaderName = fsbConvertToBytes(sName);
-      sbHeaderValue = fsbConvertToBytes(sValue);
+      sHeaderName, s0HeaderValue = ts0SplitAndUnescape(s0Value, ":");
+      sbHeaderName = fsbConvertToBytes(sHeaderName);
+      sbHeaderValue = fsbConvertToBytes(s0HeaderValue or "");
       atsbClientShouldAddHeadersNameAndValue.append((sbHeaderName, sbHeaderValue));
     ############################################################################
     elif s0LowerName in ["hex", "hex-output", "hex-output-body"]:
