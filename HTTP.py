@@ -133,11 +133,13 @@ try:
           for oMatch in rCharEncoding.finditer(sValue)
         ]);
     def ts0SplitAndUnescape(sValue, sSeparator):
+      if sValue == "":
+        return (None, None);
       tsComponents = sValue.split(sSeparator, 1);
       if len(tsComponents) == 1:
         return (
           fsUnescape(sValue),
-          ""
+          None
         );
       return (
         fsUnescape(tsComponents[0]),
