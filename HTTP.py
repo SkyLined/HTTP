@@ -120,7 +120,7 @@ try:
   u0ClientShouldUseMaxRedirects = None;
   uzServerShouldUsePortNumber = zNotProvided;
   uHexOutputCharsPerLine = 16;
-  asProvidedArgumentsThatSetBody = [];
+  osProvidedArgumentsThatSetBody = set();
 
   for (sArgument, s0LowerName, s0Value) in fatsArgumentLowerNameAndValue():
     def fsUnescape(sValue):
@@ -298,7 +298,9 @@ try:
     ############################################################################
     elif s0LowerName in ["body"]:
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       sx0ClientShouldUseBody = fsbConvertToBytes(fsUnescape(s0Value or ""));
       # We are adding a raw body; don't apply compression or chunked encoding
       bClientShouldCompressBody = False;
@@ -307,7 +309,9 @@ try:
     elif s0LowerName in ["bf", "body-file"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       oDataFileSystemItem = cFileSystemItem(s0Value);
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -333,13 +337,17 @@ try:
     ############################################################################
     elif s0LowerName in ["data"]:
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       sx0ClientShouldUseBody = fsUnescape(s0Value or "");
     ############################################################################
     elif s0LowerName in ["df", "data-file"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       oDataFileSystemItem = cFileSystemItem(s0Value);
       if not oDataFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -397,8 +405,9 @@ try:
     elif s0LowerName in ["form"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
       sName, sValue = ts0SplitAndUnescape(s0Value, "=");
+      # We accept multiple copies of this argument with different values.
+      osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
       d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
@@ -406,11 +415,12 @@ try:
     elif s0LowerName in ["form-data"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
       sName, sValue = ts0SplitAndUnescape(s0Value, "=");
       if d0ClientShouldSetForm_sValue_by_sName is None:
         d0ClientShouldSetForm_sValue_by_sName = {};
       d0ClientShouldSetForm_sValue_by_sName[sName] = sValue;
+      # We accept multiple copies of this argument with different values.
+      osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
       if d0ClientShouldSetFormData_dxValue_by_sName is None:
         d0ClientShouldSetFormData_dxValue_by_sName = {};
       sbName = fsbEncodeHTMLEntities(sName);
@@ -422,7 +432,9 @@ try:
     elif s0LowerName in ["form-data-upload"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       # Only the name must be un-escaped, so we cannot use `ts0SplitAndUnescape`
       tsSplitNameAndFilePath = s0Value.split("=", 1);
       if len(tsSplitNameAndFilePath) != 2:
@@ -518,15 +530,18 @@ try:
     elif s0LowerName in ["json"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
       sName, sValue = ts0SplitAndUnescape(s0Value, ":");
       if d0ClientShouldSetJSON_sValue_by_sName is None:
         d0ClientShouldSetJSON_sValue_by_sName = {};
       d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
+      # We accept multiple copies of this argument with different values.
+      osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
     elif s0LowerName in ["json-file"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      asProvidedArgumentsThatSetBody.append(sArgument);
+      # We accept two exactly the same copies of this argument but not two with
+      # different values.
+      osProvidedArgumentsThatSetBody.add(sArgument);
       oJSONFileSystemItem = cFileSystemItem(s0Value);
       if not oJSONFileSystemItem.fbIsFile():
         oConsole.fOutput(
@@ -830,12 +845,12 @@ try:
   if sRunAs == "client":
     # We have multiple arguments that can set the request body but we can only
     # use one at a time. Check that the user did not provide multiple values.
-    if len(asProvidedArgumentsThatSetBody) > 1:
+    if len(osProvidedArgumentsThatSetBody) > 1:
       oConsole.fOutput(
         COLOR_ERROR, CHAR_ERROR,
         COLOR_NORMAL, " The following arguments cannot be provided simultaneously: ",
       );
-      for sArgument in asProvidedArgumentsThatSetBody:
+      for sArgument in sorted(osProvidedArgumentsThatSetBody, key=lower):
         oConsole.fOutput(
           COLOR_NORMAL, " ",
           COLOR_LIST, CHAR_LIST,
