@@ -96,7 +96,7 @@ try:
   bzShowResponse = zNotProvided;
   bzShowDetails = zNotProvided;
   d0ClientShouldSetForm_sValue_by_sName = None;
-  d0ClientShouldSetJSON_sValue_by_sName = None;
+  d0ClientShouldSetJSON_xValue_by_sName = None;
   d0ClientShouldSetFormData_dxValue_by_sName = None;
   dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName = {};
   atsbClientShouldAddHeadersNameAndValue = [];
@@ -526,12 +526,19 @@ try:
     elif s0LowerName in ["json"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
-      sName, sValue = ts0SplitAndUnescape(s0Value, ":");
-      if d0ClientShouldSetJSON_sValue_by_sName is None:
-        d0ClientShouldSetJSON_sValue_by_sName = {};
-      d0ClientShouldSetJSON_sValue_by_sName[sName] = sValue;
       # We accept multiple copies of this argument with different values.
       osProvidedArgumentsThatSetBody.add(f"--{s0LowerName}=...");
+      sName, s0Value = ts0SplitAndUnescape(s0Value, ":");
+      # TODO: handle `--json="name with : in it":"value"` correctly.
+      try:
+        # Allow `--json=A` to be converted to `{"A": null}`
+        xValue = json.parse(s0Value or "null");
+      except ValueError:
+        # Allow `--json=A:B` to be converted to `{"A": "B"}`
+        xValue = s0Value;
+      if d0ClientShouldSetJSON_xValue_by_sName is None:
+        d0ClientShouldSetJSON_xValue_by_sName = {};
+      d0ClientShouldSetJSON_xValue_by_sName[sName] = xValue;
     elif s0LowerName in ["json-file"]:
       fRequiredArgumentValue();
       asRunAsClientArguments.append(sArgument);
@@ -905,7 +912,7 @@ try:
       bUseProxy = bClientShouldUseProxy,
       bVerifyCertificates = False if bzSecureConnections is False else True, # default to secure connections
       d0SetForm_sValue_by_sName = d0ClientShouldSetForm_sValue_by_sName,
-      d0SetJSON_sValue_by_sName = d0ClientShouldSetJSON_sValue_by_sName,
+      d0SetJSON_xValue_by_sName = d0ClientShouldSetJSON_s0Value_by_sName,
       asbRemoveHeadersForLowerNames = asbClientShouldRemoveHeadersForLowerNames,
       dtsbReplaceHeaderNameAndValue_by_sLowerName = dtsbClientShouldReplaceHeaderNameAndValue_by_sLowerName,
       atsbAddHeadersNameAndValue = atsbClientShouldAddHeadersNameAndValue,

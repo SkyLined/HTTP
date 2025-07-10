@@ -26,7 +26,7 @@ def foGetResponseForURL(
   dtsbReplaceHeaderNameAndValue_by_sLowerName,
   atsbAddHeadersNameAndValue,
   d0SetForm_sValue_by_sName,
-  d0SetJSON_sValue_by_sName,
+  d0SetJSON_xValue_by_sName,
   u0MaxRedirects,
   bDownloadToFile,
   bFailOnDecodeBodyErrors,
@@ -37,7 +37,7 @@ def foGetResponseForURL(
   bShowProgress,
 ):
   if not fbIsProvided(sbzMethod):
-    if d0SetForm_sValue_by_sName is not None or d0SetJSON_sValue_by_sName is not None:
+    if d0SetForm_sValue_by_sName is not None or d0SetJSON_xValue_by_sName is not None:
       sbzMethod = b"POST";
   # Construct the HTTP request
   oRequest = oClient.foGetRequestForURL(
@@ -60,9 +60,9 @@ def foGetResponseForURL(
   if d0SetForm_sValue_by_sName:
     for (sName, sValue) in d0SetForm_sValue_by_sName.items():
       oRequest.fSetFormValue(sName, sValue);
-  if d0SetJSON_sValue_by_sName:
-    for (sName, sValue) in d0SetJSON_sValue_by_sName.items():
-      oRequest.fSetJSONValue(sName, sValue);
+  if d0SetJSON_xValue_by_sName:
+    for (sName, xValue) in d0SetJSON_xValue_by_sName.items():
+      oRequest.fSetJSONValue(sName, xValue);
   # Apply headers provided through arguments to request
   fApplyHeaderSettingsToRequest(
     asbRemoveHeadersForLowerNames = asbRemoveHeadersForLowerNames,

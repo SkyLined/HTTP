@@ -89,11 +89,12 @@ def fOutputUsageInformation(bOutputAllOptions = True):
     oConsole.fOutput("    contents of the given file as a name-value pair to the request body. This");
     oConsole.fOutput("    argument can be provided multiple times and to add multiple files. This");
     oConsole.fOutput("    arguments can be combined with `--form-data` arguments.");
-    oConsole.fOutput("  ", COLOR_INFO, "--json=<name>[:<value>]");
+    oConsole.fOutput("  ", COLOR_INFO, "--json=<name>[:<serialized value>]");
     oConsole.fOutput("    Set the default `Content-Type` header to `application/json` and add the");
-    oConsole.fOutput("    given name-value pair to a dictionary in the request body.  This argument");
+    oConsole.fOutput("    given name-value pair to a dictionary in the request body. This argument");
     oConsole.fOutput("    can be provided multiple times to add multiple name-value pairs to the");
-    oConsole.fOutput("    dictionary. Note that this can only be used to add string values.");
+    oConsole.fOutput("    dictionary. Note that you should provide serialized values. If the provided");
+    oConsole.fOutput("    value cannot be deserialized, the raw value is added as a string value.");
     oConsole.fOutput("  ", COLOR_INFO, "--json-file=<file path>");
     oConsole.fOutput("    Set the default `Content-Type` header to `application/json` and use the");
     oConsole.fOutput("    the utf-8 encoded content of the given file as data in the request body");
